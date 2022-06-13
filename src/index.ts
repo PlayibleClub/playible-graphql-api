@@ -30,6 +30,7 @@ const main = async () => {
   const whitelist = [
     "http://localhost:3000",
     "https://studio.apollographql.com",
+    "http://18.142.245.213",
   ]
   const corsOptions = {
     origin: function (origin: any, callback: any) {
