@@ -1,7 +1,15 @@
 import { Field, ID, Int, ObjectType } from "type-graphql"
-import { BaseEntity, Column, Entity, PrimaryGeneratedColumn } from "typeorm"
+import {
+  BaseEntity,
+  Column,
+  Entity,
+  OneToMany,
+  PrimaryGeneratedColumn,
+  Relation,
+} from "typeorm"
 
 import { SportType } from "../utils/types"
+import { GameTeam } from "./GameTeam"
 
 @ObjectType()
 @Entity()
@@ -41,4 +49,10 @@ export class Game extends BaseEntity {
     default: SportType.MLB,
   })
   sport: SportType = SportType.MLB
+
+  @Field(() => [GameTeam])
+  @OneToMany(() => GameTeam, (gameTeam) => gameTeam.game, {
+    cascade: true,
+  })
+  teams!: Relation<GameTeam>[]
 }

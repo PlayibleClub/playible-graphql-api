@@ -4,9 +4,12 @@ import {
   Column,
   Entity,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   Relation,
 } from "typeorm"
+import { AthleteStat } from "./AthleteStat"
+import { GameTeamAthlete } from "./GameTeamAthlete"
 import { Team } from "./Team"
 
 @ObjectType()
@@ -59,4 +62,20 @@ export class Athlete extends BaseEntity {
   @Field(() => String, { nullable: true })
   @Column({ type: "text", nullable: true })
   nftAnimation?: string
+
+  @Field(() => [GameTeamAthlete])
+  @OneToMany(
+    () => GameTeamAthlete,
+    (gameTeamAthlete) => gameTeamAthlete.athlete,
+    {
+      cascade: true,
+    }
+  )
+  gameTeamAthletes!: Relation<GameTeamAthlete>[]
+
+  @Field(() => [AthleteStat])
+  @OneToMany(() => AthleteStat, (stat) => stat.athlete, {
+    cascade: true,
+  })
+  stats!: Relation<AthleteStat>[]
 }

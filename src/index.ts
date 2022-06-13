@@ -85,12 +85,12 @@ const main = async () => {
 
   apolloServer.applyMiddleware({ app, cors: false })
 
-  app.listen(8000, () => {
-    console.log("server started at localhost:8000")
+  app.listen(80, () => {
+    console.log("server started at localhost:80")
   })
 
   const nest = await NestFactory.create(AppModule)
-  nest.listen(8001, () => {
+  nest.listen(8000, () => {
     console.log("nest started at localhost:8001")
   })
 }

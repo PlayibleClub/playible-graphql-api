@@ -8,36 +8,41 @@ import {
   PrimaryGeneratedColumn,
   Relation,
 } from "typeorm"
+
 import { Account } from "./Account"
-import { Collection } from "./Collection"
+import { Game } from "./Game"
 import { GameTeamAthlete } from "./GameTeamAthlete"
 
 @ObjectType()
 @Entity()
-export class Asset extends BaseEntity {
+export class GameTeam extends BaseEntity {
   @Field(() => ID)
   @PrimaryGeneratedColumn()
   id!: number
 
   @Field(() => String)
-  @Column("text", { unique: true })
-  tokenId!: string
+  @Column({ type: "varchar", length: 155 })
+  name!: string
+
+  @Field(() => Number)
+  @Column({ type: "numeric" })
+  fantasyScore!: number
+
+  @Field(() => Game)
+  @ManyToOne(() => Game, (game) => game.teams)
+  game!: Relation<Game>
 
   @Field(() => Account)
-  @ManyToOne(() => Account, (account) => account.assets)
+  @ManyToOne(() => Account, (account) => account.teams)
   account!: Relation<Account>
-
-  @Field(() => Collection)
-  @ManyToOne(() => Collection, (collection) => collection.assets)
-  collection!: Relation<Collection>
 
   @Field(() => [GameTeamAthlete])
   @OneToMany(
     () => GameTeamAthlete,
-    (gameTeamAthlete) => gameTeamAthlete.asset,
+    (gameTeamAthlete) => gameTeamAthlete.gameTeam,
     {
       cascade: true,
     }
   )
-  gameTeamAthletes!: Relation<GameTeamAthlete>[]
+  athletes!: Relation<GameTeamAthlete>[]
 }

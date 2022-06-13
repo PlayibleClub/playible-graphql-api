@@ -8,6 +8,7 @@ import {
   Relation,
 } from "typeorm"
 import { Asset } from "./Asset"
+import { GameTeam } from "./GameTeam"
 
 @ObjectType()
 @Entity()
@@ -25,4 +26,10 @@ export class Account extends BaseEntity {
     cascade: true,
   })
   assets!: Relation<Asset>[]
+
+  @Field(() => [GameTeam])
+  @OneToMany(() => GameTeam, (gameTeam) => gameTeam.account, {
+    cascade: true,
+  })
+  teams!: Relation<GameTeam>[]
 }
