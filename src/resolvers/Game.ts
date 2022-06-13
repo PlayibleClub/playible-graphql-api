@@ -17,7 +17,12 @@ class GameResponse {
 export class GameResolver {
   @Query(() => Game)
   async getGameById(@Arg("id") id: number): Promise<Game> {
-    return await Game.findOneOrFail({ where: { id } })
+    return await Game.findOneOrFail({
+      where: { id },
+      relations: {
+        teams: { athletes: { asset: true, athlete: true }, account: true },
+      },
+    })
   }
 
   @Query(() => GameResponse)
@@ -67,6 +72,9 @@ export class GameResolver {
       where: filter?.sport
         ? { ...args.where, sport: filter?.sport }
         : args.where,
+      relations: {
+        teams: { athletes: { asset: true, athlete: true }, account: true },
+      },
     })
     return { data, count }
   }
@@ -76,7 +84,7 @@ export class GameResolver {
     @Arg("args")
     { name, startTime, endTime, duration, prize, sport }: CreateGameArgs
   ): Promise<Game> {
-    return await Game.create({
+    const game = await Game.create({
       name,
       startTime,
       endTime,
@@ -84,5 +92,12 @@ export class GameResolver {
       prize,
       sport,
     }).save()
+
+    return await Game.findOneOrFail({
+      where: { id: game.id },
+      relations: {
+        teams: { athletes: { asset: true, athlete: true }, account: true },
+      },
+    })
   }
 }
