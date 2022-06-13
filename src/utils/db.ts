@@ -1,6 +1,12 @@
 import { DataSource } from "typeorm"
-import { User } from "../entities/User"
 import "dotenv-safe/config"
+
+import { User } from "../entities/User"
+import { Account } from "../entities/Account"
+import { Asset } from "../entities/Asset"
+import { Athlete } from "../entities/Athlete"
+import { Collection } from "../entities/Collection"
+import { Team } from "../entities/Team"
 
 export const AppDataSource = new DataSource({
   type: "postgres",
@@ -9,7 +15,7 @@ export const AppDataSource = new DataSource({
   username: process.env.DB_USER,
   password: process.env.DB_PASS,
   port: 5432,
-  entities: [User],
+  entities: [User, Account, Asset, Athlete, Collection, Team],
   synchronize: true,
-  logging: process.env.NODE_ENV === "development",
+  logging: false,
 })

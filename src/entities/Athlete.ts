@@ -1,0 +1,62 @@
+import { Field, Float, ID, Int, ObjectType } from "type-graphql"
+import {
+  BaseEntity,
+  Column,
+  Entity,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  Relation,
+} from "typeorm"
+import { Team } from "./Team"
+
+@ObjectType()
+@Entity()
+export class Athlete extends BaseEntity {
+  @Field(() => ID)
+  @PrimaryGeneratedColumn()
+  id!: number
+
+  @Field(() => ID)
+  @Column("integer", { unique: true })
+  apiId!: number
+
+  @Field(() => String)
+  @Column({ type: "varchar", length: 155 })
+  firstName!: string
+
+  @Field(() => String)
+  @Column({ type: "varchar", length: 155 })
+  lastName!: string
+
+  @Field(() => String)
+  @Column({ type: "varchar" })
+  position!: string
+
+  @Field(() => Int, { nullable: true })
+  @Column("integer", { nullable: true })
+  jersey?: number | null
+
+  @Field(() => Team)
+  @ManyToOne(() => Team, (team) => team.athletes)
+  team!: Relation<Team>
+
+  @Field(() => Float, { nullable: true })
+  @Column("numeric", { nullable: true })
+  salary?: number | null
+
+  @Field(() => Boolean, { defaultValue: true })
+  @Column({ type: "boolean", default: true })
+  isActive: boolean = true
+
+  @Field(() => Boolean, { defaultValue: false })
+  @Column({ type: "boolean", default: false })
+  isInjured: boolean = false
+
+  @Field(() => String, { nullable: true })
+  @Column({ type: "text", nullable: true })
+  nftImage?: string
+
+  @Field(() => String, { nullable: true })
+  @Column({ type: "text", nullable: true })
+  nftAnimation?: string
+}

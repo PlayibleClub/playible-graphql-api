@@ -18,6 +18,12 @@ export type IContext = {
 }
 
 const main = async () => {
+  try {
+    await AppDataSource.initialize()
+  } catch (err) {
+    console.log(err)
+  }
+
   // EXPRESS
   const app = express()
   const whitelist = [
@@ -68,10 +74,6 @@ const main = async () => {
     }),
     csrfPrevention: false,
     context: async ({ req, res }: IContext) => {
-      try {
-        await AppDataSource.initialize()
-      } catch (_) {}
-
       return {
         req,
         res,

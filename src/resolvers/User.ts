@@ -95,7 +95,7 @@ export class UserResolver {
   // }
 
   @Query(() => User)
-  async getUser(@Arg("userId") userId: number): Promise<User> {
-    return await User.findOneOrFail({ where: { userId } })
+  async getUser(@Arg("id") id: number): Promise<User> {
+    return await User.findOneOrFail({ where: { id } })
   }
 }
