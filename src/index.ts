@@ -11,6 +11,7 @@ import { UserResolver } from "./resolvers/User"
 import { AppDataSource } from "./utils/db"
 import { NestFactory } from "@nestjs/core"
 import { AppModule } from "./app.module"
+import { GameResolver } from "./resolvers/Game"
 
 export type IContext = {
   req: Request<any> & { session: any }
@@ -69,7 +70,7 @@ const main = async () => {
   // APOLLO
   const apolloServer = new ApolloServer({
     schema: await buildSchema({
-      resolvers: [UserResolver],
+      resolvers: [UserResolver, GameResolver],
       validate: false,
     }),
     csrfPrevention: false,

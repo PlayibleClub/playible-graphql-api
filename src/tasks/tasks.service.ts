@@ -44,11 +44,11 @@ export class TasksService {
               secondaryColor: `#${team["SecondaryColor"]}`,
             }).save()
           } catch (e) {
-            this.logger.debug(e)
+            this.logger.error(e)
           }
         }
       } else {
-        this.logger.debug("MLB Teams Data: SPORTS DATA ERROR")
+        this.logger.error("MLB Teams Data: SPORTS DATA ERROR")
       }
     }
 
@@ -84,11 +84,11 @@ export class TasksService {
               isInjured: athlete["InjuryStatus"] !== null,
             }).save()
           } catch (e) {
-            this.logger.debug(e)
+            this.logger.error(e)
           }
         }
       } else {
-        this.logger.debug("MLB Athletes Data: SPORTS DATA ERROR")
+        this.logger.error("MLB Athletes Data: SPORTS DATA ERROR")
       }
     }
 
