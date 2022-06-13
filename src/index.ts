@@ -6,10 +6,10 @@ import { buildSchema } from "type-graphql"
 import { createClient } from "redis"
 import cors from "cors"
 
-import { __prod__ } from "./constants"
-import { UserResolver } from "./resolvers/User"
-import { AppDataSource } from "./utils/db"
 import { NestFactory } from "@nestjs/core"
+
+import { __prod__ } from "./constants"
+import { AppDataSource } from "./utils/db"
 import { AppModule } from "./app.module"
 import { GameResolver } from "./resolvers/Game"
 
@@ -30,7 +30,6 @@ const main = async () => {
   const whitelist = [
     "http://localhost:3000",
     "https://studio.apollographql.com",
-    "http://18.142.245.213",
   ]
   const corsOptions = {
     origin: function (origin: any, callback: any) {
@@ -71,7 +70,7 @@ const main = async () => {
   // APOLLO
   const apolloServer = new ApolloServer({
     schema: await buildSchema({
-      resolvers: [UserResolver, GameResolver],
+      resolvers: [GameResolver],
       validate: false,
     }),
     csrfPrevention: false,
