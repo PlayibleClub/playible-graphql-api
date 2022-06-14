@@ -1,10 +1,18 @@
 import { Injectable, Logger } from "@nestjs/common"
 import { Cron, Interval, Timeout } from "@nestjs/schedule"
+import convert from "xml-js"
+import S3 from "aws-sdk/clients/s3"
 import axios from "axios"
+import fs from "fs"
 
 import { Team } from "../entities/Team"
 import { Athlete } from "../entities/Athlete"
 import { SportType } from "../utils/types"
+import {
+  ATHLETE_MLB_BASE_ANIMATION,
+  ATHLETE_MLB_BASE_IMG,
+  ATHLETE_MLB_IMG,
+} from "../utils/svgTemplates"
 
 @Injectable()
 export class TasksService {
@@ -18,7 +26,60 @@ export class TasksService {
   // @Interval(10000)
   // handleInterval() {
   //   this.logger.debug("Called every 10 seconds")
+  //   console.log(ATHLETE_MLB_BASE_ANIMATION)
   // }
+
+  async testAnimation() {
+    const athlete = await Athlete.findOneOrFail({
+      where: { id: 1 },
+      relations: { team: true },
+    })
+    const baseImage = ATHLETE_MLB_BASE_IMG
+    var options = { compact: true, ignoreComment: true, spaces: 4 }
+    var result: any = convert.xml2js(baseImage, options)
+    console.log(result["svg"]["g"]["4"]["g"][3]["text"][0]["tspan"]["_cdata"]) // First name
+    console.log(
+      result["svg"]["g"]["4"]["g"][3]["g"]["text"][0]["tspan"]["_cdata"]
+    ) // First name
+
+    console.log(result["svg"]["g"][4]["g"][3]["text"][1]["tspan"]["_cdata"]) // Last name
+    console.log(
+      result["svg"]["g"][4]["g"][3]["g"]["text"][1]["tspan"]["_cdata"]
+    ) // Last name
+
+    console.log(
+      result["svg"]["g"][1]["g"][2]["g"]["path"]["_attributes"]["fill"]
+    ) // Primary color
+    console.log(
+      result["svg"]["g"][1]["g"][0]["g"]["path"]["_attributes"]["fill"]
+    ) // Secondary color
+
+    console.log(result["svg"]["g"][4]["g"][2]["g"]["text"]["tspan"]["_cdata"]) // Jersey
+    console.log(
+      result["svg"]["g"][4]["g"][0]["g"]["g"]["text"]["tspan"]["_cdata"]
+    ) // Position
+
+    result["svg"]["g"]["4"]["g"][3]["text"][0]["tspan"]["_cdata"] =
+      athlete.firstName
+    result["svg"]["g"]["4"]["g"][3]["g"]["text"][0]["tspan"]["_cdata"] =
+      athlete.firstName
+    result["svg"]["g"][4]["g"][3]["text"][1]["tspan"]["_cdata"] =
+      athlete.lastName
+    result["svg"]["g"][4]["g"][3]["g"]["text"][1]["tspan"]["_cdata"] =
+      athlete.lastName
+    result["svg"]["g"][1]["g"][2]["g"]["path"]["_attributes"]["fill"] =
+      athlete.team.primaryColor
+    result["svg"]["g"][1]["g"][0]["g"]["path"]["_attributes"]["fill"] =
+      athlete.team.secondaryColor
+    result["svg"]["g"][4]["g"][2]["g"]["text"]["tspan"]["_cdata"] =
+      athlete.jersey ? athlete.jersey.toString() : "00"
+    result["svg"]["g"][4]["g"][0]["g"]["g"]["text"]["tspan"]["_cdata"] =
+      athlete.position
+
+    const animation = convert.js2xml(result, options)
+    result = animation.replace("</svg>", ATHLETE_MLB_BASE_ANIMATION)
+    fs.writeFileSync("./testAthleteAnimation.svg", result)
+  }
 
   @Timeout(1)
   async syncMlbData() {
@@ -72,17 +133,103 @@ export class TasksService {
               where: { apiId: athlete["TeamID"] },
             })
 
-            await Athlete.create({
-              apiId: athlete["PlayerID"],
-              firstName: athlete["FirstName"],
-              lastName: athlete["LastName"],
-              position: athlete["Position"],
-              salary: athlete["Salary"],
-              jersey: athlete["Jersey"],
-              team,
-              isActive: athlete["Status"] === "Active",
-              isInjured: athlete["InjuryStatus"] !== null,
-            }).save()
+            var options = { compact: true, ignoreComment: true, spaces: 4 }
+            var result: any = convert.xml2js(ATHLETE_MLB_IMG, options)
+
+            result.svg.path[10]["_attributes"]["fill"] = team.primaryColor
+            result.svg.path[9]["_attributes"]["fill"] = team.secondaryColor
+            result.svg.g[0].text[0]["_text"] =
+              athlete["FirstName"].toUpperCase()
+            result.svg.g[0].text[1]["_text"] = athlete["LastName"].toUpperCase()
+            result.svg.g[0].text[2]["_text"] = athlete["Position"].toUpperCase()
+            result.svg.text["_text"] = athlete["Jersey"]
+              ? athlete["Jersey"]
+              : "00"
+
+            result = convert.js2xml(result, options)
+            var buffer = Buffer.from(result, "utf8")
+            const s3 = new S3({
+              accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+              secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+            })
+            const filename = `${athlete["PlayerID"]}.svg`
+            const s3_location = "media/athlete/"
+            const fileContent = buffer
+            const params: any = {
+              Bucket: process.env.AWS_BUCKET_NAME,
+              Key: `${s3_location}${filename}`,
+              Body: fileContent,
+            }
+
+            s3.upload(params, async (err: any, data: any) => {
+              if (err) {
+                this.logger.error(err)
+              } else {
+                const nftImage = data["Location"]
+
+                const baseImage = ATHLETE_MLB_BASE_IMG
+                var options = { compact: true, ignoreComment: true, spaces: 4 }
+                var result: any = convert.xml2js(baseImage, options)
+
+                result["svg"]["g"]["4"]["g"][3]["text"][0]["tspan"]["_cdata"] =
+                  athlete["FirstName"].toUpperCase()
+                result["svg"]["g"]["4"]["g"][3]["g"]["text"][0]["tspan"][
+                  "_cdata"
+                ] = athlete["FirstName"].toUpperCase()
+                result["svg"]["g"][4]["g"][3]["text"][1]["tspan"]["_cdata"] =
+                  athlete["LastName"].toUpperCase()
+                result["svg"]["g"][4]["g"][3]["g"]["text"][1]["tspan"][
+                  "_cdata"
+                ] = athlete["LastName"].toUpperCase()
+                result["svg"]["g"][1]["g"][2]["g"]["path"]["_attributes"][
+                  "fill"
+                ] = team.primaryColor
+                result["svg"]["g"][1]["g"][0]["g"]["path"]["_attributes"][
+                  "fill"
+                ] = team.secondaryColor
+                result["svg"]["g"][4]["g"][2]["g"]["text"]["tspan"]["_cdata"] =
+                  athlete["Jersey"] ? athlete["Jersey"].toString() : "00"
+                result["svg"]["g"][4]["g"][0]["g"]["g"]["text"]["tspan"][
+                  "_cdata"
+                ] = athlete["Position"].toUpperCase()
+
+                const animation = convert.js2xml(result, options)
+                result = animation.replace("</svg>", ATHLETE_MLB_BASE_ANIMATION)
+                var buffer = Buffer.from(result, "utf8")
+                const s3 = new S3({
+                  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+                  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+                })
+                const filename = `${athlete["PlayerID"]}.svg`
+                const s3_location = "media/athlete_animations/"
+                const fileContent = buffer
+                const params: any = {
+                  Bucket: process.env.AWS_BUCKET_NAME,
+                  Key: `${s3_location}${filename}`,
+                  Body: fileContent,
+                }
+
+                s3.upload(params, async (err: any, data: any) => {
+                  if (err) {
+                    this.logger.error(err)
+                  } else {
+                    await Athlete.create({
+                      apiId: athlete["PlayerID"],
+                      firstName: athlete["FirstName"],
+                      lastName: athlete["LastName"],
+                      position: athlete["Position"],
+                      salary: athlete["Salary"],
+                      jersey: athlete["Jersey"],
+                      team,
+                      isActive: athlete["Status"] === "Active",
+                      isInjured: athlete["InjuryStatus"] !== null,
+                      nftImage,
+                      nftAnimation: data["Location"],
+                    }).save()
+                  }
+                })
+              }
+            })
           } catch (e) {
             this.logger.error(e)
           }
