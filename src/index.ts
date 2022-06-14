@@ -45,7 +45,10 @@ const main = async () => {
 
   // REDIS
   let RedisStore = require("connect-redis")(session)
-  const redisClient = createClient({ legacyMode: true })
+  const redisClient = createClient({
+    url: process.env.REDIS_URL,
+    legacyMode: true,
+  })
   redisClient.connect().catch(console.error)
 
   app.use(
@@ -84,6 +87,10 @@ const main = async () => {
   await apolloServer.start()
 
   apolloServer.applyMiddleware({ app, cors: false })
+
+  app.get("/", (_, res) => {
+    res.send("Healthy!")
+  })
 
   app.listen(80, () => {
     console.log("server started at localhost:80")

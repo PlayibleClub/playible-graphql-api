@@ -14,10 +14,10 @@ import { AthleteStat } from "../entities/AthleteStat"
 
 export const AppDataSource = new DataSource({
   type: "postgres",
-  host: process.env.DB_HOST,
-  database: process.env.DB_NAME,
-  username: process.env.DB_USER,
-  password: process.env.DB_PASS,
+  host: process.env.POSTGRES_HOST,
+  database: process.env.POSTGRES_DB,
+  username: process.env.POSTGRES_USER,
+  password: process.env.POSTGRES_PASSWORD,
   port: 5432,
   entities: [
     User,
