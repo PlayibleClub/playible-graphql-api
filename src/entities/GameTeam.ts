@@ -24,9 +24,9 @@ export class GameTeam extends BaseEntity {
   @Column({ type: "varchar", length: 155 })
   name!: string
 
-  @Field(() => Number)
-  @Column({ type: "numeric" })
-  fantasyScore!: number
+  @Field(() => Number, { defaultValue: 0 })
+  @Column({ type: "numeric", default: 0 })
+  fantasyScore: number = 0
 
   @Field(() => Game)
   @ManyToOne(() => Game, (game) => game.teams)

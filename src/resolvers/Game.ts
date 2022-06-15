@@ -1,7 +1,15 @@
 import { Arg, Field, Mutation, ObjectType, Query, Resolver } from "type-graphql"
 
+import { Account } from "../entities/Account"
+import { Asset } from "../entities/Asset"
+import { Athlete } from "../entities/Athlete"
+import { Collection } from "../entities/Collection"
 import { Game } from "../entities/Game"
-import { CreateGameArgs, GetGameArgs } from "../args/GameArgs"
+import { GameTeam } from "../entities/GameTeam"
+import { Team } from "../entities/Team"
+import { GameTeamAthlete } from "../entities/GameTeamAthlete"
+
+import { CreateGameArgs, CreateTeamArgs, GetGameArgs } from "../args/GameArgs"
 import { GameTab } from "../utils/types"
 import { LessThanOrEqual, MoreThan, MoreThanOrEqual } from "typeorm"
 
@@ -13,6 +21,14 @@ class GameResponse {
   data?: Game[] | null
 }
 
+@ObjectType()
+class CreateTeamResponse {
+  @Field(() => [String], { nullable: true })
+  errors?: string[]
+  @Field(() => GameTeam, { nullable: true })
+  team?: GameTeam | null
+}
+
 @Resolver()
 export class GameResolver {
   @Query(() => Game)
@@ -20,7 +36,10 @@ export class GameResolver {
     return await Game.findOneOrFail({
       where: { id },
       relations: {
-        teams: { athletes: { asset: true, athlete: true }, account: true },
+        teams: {
+          account: true,
+          athletes: { athlete: true, asset: { collection: true } },
+        },
       },
     })
   }
@@ -73,7 +92,13 @@ export class GameResolver {
         ? { ...args.where, sport: filter?.sport }
         : args.where,
       relations: {
-        teams: { athletes: { asset: true, athlete: true }, account: true },
+        teams: {
+          account: true,
+          athletes: { athlete: true, asset: { collection: true } },
+        },
+      },
+      order: {
+        id: "ASC",
       },
     })
     return { data, count }
@@ -99,5 +124,87 @@ export class GameResolver {
         teams: { athletes: { asset: true, athlete: true }, account: true },
       },
     })
+  }
+
+  @Mutation(() => CreateTeamResponse)
+  async createTeam(
+    @Arg("args")
+    { name, gameId, walletAddr, athletes }: CreateTeamArgs
+  ): Promise<CreateTeamResponse> {
+    const errors: string[] = []
+
+    // Check if game exists
+    const game = await Game.findOne({ where: { id: gameId } })
+    if (!game) {
+      errors.push("Game does not exist.")
+    }
+
+    // Check if all athletes exist
+    for (let athlete of athletes) {
+      const curAthlete = await Athlete.findOne({ where: { id: athlete.id } })
+      if (!curAthlete) {
+        errors.push(`Athlete ${athlete.id} does not exist.`)
+      }
+    }
+
+    if (errors.length) return { errors }
+
+    let account = await Account.findOne({ where: { address: walletAddr } })
+    if (!account) {
+      account = await Account.create({
+        address: walletAddr,
+      }).save()
+    }
+
+    if (name && game && account) {
+      let gameTeam = await GameTeam.create({
+        name,
+        game,
+        account,
+      }).save()
+
+      for (let athlete of athletes) {
+        const curAthlete = await Athlete.findOneOrFail({
+          where: { id: athlete.id },
+        })
+
+        let collection = await Collection.findOneBy({
+          address: athlete.contractAddr,
+        })
+        if (!collection) {
+          collection = await Collection.create({
+            address: athlete.contractAddr,
+          }).save()
+        }
+
+        let asset = await Asset.findOneBy({ tokenId: athlete.tokenId })
+        if (!asset) {
+          asset = await Asset.create({
+            tokenId: athlete.tokenId,
+            account,
+            collection,
+          }).save()
+        }
+
+        await GameTeamAthlete.create({
+          gameTeam,
+          asset,
+          athlete: curAthlete,
+        }).save()
+      }
+
+      gameTeam = await GameTeam.findOneOrFail({
+        where: { id: gameTeam.id },
+        relations: {
+          game: true,
+          account: true,
+          athletes: { athlete: true, asset: { collection: true } },
+        },
+      })
+
+      return { team: gameTeam }
+    }
+
+    return { team: null }
   }
 }

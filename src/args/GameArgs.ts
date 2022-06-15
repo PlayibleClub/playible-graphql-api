@@ -20,6 +20,28 @@ export class CreateGameArgs {
 }
 
 @InputType()
+export class GameAthlete {
+  @Field()
+  id!: number
+  @Field()
+  tokenId!: string
+  @Field()
+  contractAddr!: string
+}
+
+@InputType()
+export class CreateTeamArgs {
+  @Field()
+  name!: string
+  @Field()
+  gameId!: number
+  @Field()
+  walletAddr!: string
+  @Field(() => [GameAthlete])
+  athletes!: GameAthlete[]
+}
+
+@InputType()
 export class GetGameFilter {
   @Field({ nullable: true })
   tab?: GameTab

@@ -17,7 +17,7 @@ export class Collection extends BaseEntity {
   id!: number
 
   @Field(() => String)
-  @Column("text")
+  @Column("text", { unique: true })
   address!: string
 
   @Field(() => [Asset])

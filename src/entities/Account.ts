@@ -18,7 +18,7 @@ export class Account extends BaseEntity {
   id!: number
 
   @Field(() => String)
-  @Column("text")
+  @Column("text", { unique: true })
   address!: string
 
   @Field(() => [Asset])
