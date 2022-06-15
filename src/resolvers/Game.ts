@@ -6,7 +6,6 @@ import { Athlete } from "../entities/Athlete"
 import { Collection } from "../entities/Collection"
 import { Game } from "../entities/Game"
 import { GameTeam } from "../entities/GameTeam"
-import { Team } from "../entities/Team"
 import { GameTeamAthlete } from "../entities/GameTeamAthlete"
 
 import { CreateGameArgs, CreateTeamArgs, GetGameArgs } from "../args/GameArgs"
@@ -38,7 +37,10 @@ export class GameResolver {
       relations: {
         teams: {
           account: true,
-          athletes: { athlete: true, asset: { collection: true } },
+          athletes: {
+            athlete: { team: true, stats: true },
+            asset: { collection: true },
+          },
         },
       },
     })
@@ -94,7 +96,10 @@ export class GameResolver {
       relations: {
         teams: {
           account: true,
-          athletes: { athlete: true, asset: { collection: true } },
+          athletes: {
+            athlete: { team: true, stats: true },
+            asset: { collection: true },
+          },
         },
       },
       order: {
@@ -121,7 +126,10 @@ export class GameResolver {
     return await Game.findOneOrFail({
       where: { id: game.id },
       relations: {
-        teams: { athletes: { asset: true, athlete: true }, account: true },
+        teams: {
+          athletes: { asset: true, athlete: { team: true, stats: true } },
+          account: true,
+        },
       },
     })
   }
@@ -198,7 +206,10 @@ export class GameResolver {
         relations: {
           game: true,
           account: true,
-          athletes: { athlete: true, asset: { collection: true } },
+          athletes: {
+            athlete: { team: true, stats: true },
+            asset: { collection: true },
+          },
         },
       })
 
