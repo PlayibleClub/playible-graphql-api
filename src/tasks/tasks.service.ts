@@ -78,7 +78,7 @@ export class TasksService {
 
     const animation = convert.js2xml(result, options)
     result = animation.replace("</svg>", ATHLETE_MLB_BASE_ANIMATION)
-    fs.writeFileSync("./testAthleteAnimation.svg", result)
+    // fs.writeFileSync("./testAthleteAnimation.svg", result)
   }
 
   @Timeout(1)
@@ -89,14 +89,14 @@ export class TasksService {
 
     if (teamsCount === 0) {
       const { data, status } = await axios.get(
-        `${process.env.SPORTS_DATA_URL}mlb/scores/json/teams?key=${process.env.SPORTS_DATA_KEY}`
+        `${process.env.SPORTS_DATA_URL}mlb/scores/json/teams?key=${process.env.SPORTS_DATA_MLB_KEY}`
       )
 
       if (status === 200) {
         for (let team of data) {
           try {
             await Team.create({
-              apiId: team["TeamID"],
+              apiId: team["GlobalTeamID"],
               name: team["Name"],
               key: team["Key"],
               location: team["City"],
@@ -123,14 +123,14 @@ export class TasksService {
 
     if (athletesCount === 0) {
       const { data, status } = await axios.get(
-        `${process.env.SPORTS_DATA_URL}mlb/scores/json/Players?key=${process.env.SPORTS_DATA_KEY}`
+        `${process.env.SPORTS_DATA_URL}mlb/scores/json/Players?key=${process.env.SPORTS_DATA_MLB_KEY}`
       )
 
       if (status === 200) {
         for (let athlete of data) {
           try {
             const team = await Team.findOneOrFail({
-              where: { apiId: athlete["TeamID"] },
+              where: { apiId: athlete["GlobalTeamID"] },
             })
 
             var options = { compact: true, ignoreComment: true, spaces: 4 }
@@ -241,6 +241,86 @@ export class TasksService {
 
     this.logger.debug(
       `MLB Athletes Data: ${
+        athletesCount ? "DID NOT SYNC" : "SYNCED SUCCESSFULLY"
+      }`
+    )
+  }
+
+  @Timeout(1)
+  async syncNflData() {
+    const teamsCount = await Team.count({
+      where: { sport: SportType.NFL },
+    })
+
+    if (teamsCount === 0) {
+      const { data, status } = await axios.get(
+        `${process.env.SPORTS_DATA_URL}nfl/scores/json/teams?key=${process.env.SPORTS_DATA_NFL_KEY}`
+      )
+
+      if (status === 200) {
+        for (let team of data) {
+          try {
+            await Team.create({
+              apiId: team["GlobalTeamID"],
+              name: team["Name"],
+              key: team["Key"],
+              location: team["City"],
+              sport: SportType.NFL,
+              primaryColor: `#${team["PrimaryColor"]}`,
+              secondaryColor: `#${team["SecondaryColor"]}`,
+            }).save()
+          } catch (e) {
+            this.logger.error(e)
+          }
+        }
+      } else {
+        this.logger.error("NFL Teams Data: SPORTS DATA ERROR")
+      }
+    }
+
+    this.logger.debug(
+      `NFL Teams Data: ${teamsCount ? "DID NOT SYNC" : "SYNCED SUCCESSFULLY"}`
+    )
+
+    const athletesCount = await Athlete.count({
+      where: { team: { sport: SportType.NFL } },
+    })
+
+    if (athletesCount === 0) {
+      const { data, status } = await axios.get(
+        `${process.env.SPORTS_DATA_URL}nfl/scores/json/Players?key=${process.env.SPORTS_DATA_NFL_KEY}`
+      )
+
+      if (status === 200) {
+        for (let athlete of data) {
+          try {
+            const team = await Team.findOne({
+              where: { apiId: athlete["GlobalTeamID"] },
+            })
+
+            if (team) {
+              await Athlete.create({
+                apiId: athlete["PlayerID"],
+                firstName: athlete["FirstName"],
+                lastName: athlete["LastName"],
+                position: athlete["Position"],
+                jersey: athlete["Number"],
+                team,
+                isActive: athlete["Status"] === "Active",
+                isInjured: athlete["InjuryStatus"] !== null,
+              }).save()
+            }
+          } catch (e) {
+            this.logger.error(e)
+          }
+        }
+      } else {
+        this.logger.error("NFL Athletes Data: SPORTS DATA ERROR")
+      }
+    }
+
+    this.logger.debug(
+      `NFL Athletes Data: ${
         athletesCount ? "DID NOT SYNC" : "SYNCED SUCCESSFULLY"
       }`
     )

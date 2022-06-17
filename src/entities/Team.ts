@@ -22,7 +22,7 @@ export class Team extends BaseEntity {
   apiId!: number
 
   @Field(() => String)
-  @Column({ type: "varchar", length: 155, unique: true })
+  @Column({ type: "varchar", length: 155 })
   name!: string
 
   @Field(() => String)

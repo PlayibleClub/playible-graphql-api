@@ -32,5 +32,5 @@ export const AppDataSource = new DataSource({
     AthleteStat,
   ],
   synchronize: true,
-  logging: true,
+  // logging: true,
 })
