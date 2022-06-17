@@ -328,7 +328,6 @@ export class TasksService {
     )
   }
 
-  @Timeout(1)
   @Interval(900000) // Runs every 15 mins
   async updateNflAthleteStats() {
     this.logger.debug("Update NFL Athlete Stats: STARTED")
