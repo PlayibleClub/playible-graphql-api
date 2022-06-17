@@ -147,6 +147,12 @@ export class GameResolver {
       errors.push("Game does not exist.")
     }
 
+    // Check if game could still be joined
+    const now = new Date()
+    if (game && now >= game?.startTime) {
+      errors.push("Game could not be joined anymore.")
+    }
+
     // Check if all athletes exist
     for (let athlete of athletes) {
       const curAthlete = await Athlete.findOne({
