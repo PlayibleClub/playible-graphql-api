@@ -149,9 +149,17 @@ export class GameResolver {
 
     // Check if all athletes exist
     for (let athlete of athletes) {
-      const curAthlete = await Athlete.findOne({ where: { id: athlete.id } })
+      const curAthlete = await Athlete.findOne({
+        where: { id: athlete.id },
+        relations: { team: true },
+      })
       if (!curAthlete) {
         errors.push(`Athlete ${athlete.id} does not exist.`)
+      }
+      if (curAthlete?.team.sport !== game?.sport) {
+        errors.push(
+          `Athlete ${athlete.id} does not match the sport of the game.`
+        )
       }
     }
 
