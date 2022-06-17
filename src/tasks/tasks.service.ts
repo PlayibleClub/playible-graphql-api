@@ -7,6 +7,8 @@ import fs from "fs"
 
 import { Team } from "../entities/Team"
 import { Athlete } from "../entities/Athlete"
+import { AthleteStat } from "../entities/AthleteStat"
+
 import { SportType } from "../utils/types"
 import {
   ATHLETE_MLB_BASE_ANIMATION,
@@ -153,7 +155,7 @@ export class TasksService {
               secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
             })
             const filename = `${athlete["PlayerID"]}.svg`
-            const s3_location = "media/athlete/"
+            const s3_location = "media/athlete/mlb/"
             const fileContent = buffer
             const params: any = {
               Bucket: process.env.AWS_BUCKET_NAME,
@@ -201,7 +203,7 @@ export class TasksService {
                   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
                 })
                 const filename = `${athlete["PlayerID"]}.svg`
-                const s3_location = "media/athlete_animations/"
+                const s3_location = "media/athlete_animations/mlb/"
                 const fileContent = buffer
                 const params: any = {
                   Bucket: process.env.AWS_BUCKET_NAME,
@@ -324,5 +326,55 @@ export class TasksService {
         athletesCount ? "DID NOT SYNC" : "SYNCED SUCCESSFULLY"
       }`
     )
+  }
+
+  @Timeout(1)
+  @Interval(900000) // Runs every 15 mins
+  async updateNflAthleteStats() {
+    this.logger.debug("Update NFL Athlete Stats: STARTED")
+
+    const season = new Date().getFullYear() - 1
+    const { data, status } = await axios.get(
+      `${process.env.SPORTS_DATA_URL}nfl/stats/json/PlayerSeasonStats/${season}?key=${process.env.SPORTS_DATA_NFL_KEY}`
+    )
+
+    if (status === 200) {
+      const newStats: AthleteStat[] = []
+      const updateStats: AthleteStat[] = []
+
+      for (let athleteStat of data) {
+        const apiId: any = athleteStat["PlayerID"]
+        const curStat = await AthleteStat.findOne({
+          where: { athlete: { apiId }, season: season.toString() },
+        })
+
+        if (curStat) {
+          // Update stats here
+          curStat.fantasyScore = athleteStat["FantasyPointsDraftKings"]
+          updateStats.push(curStat)
+        } else {
+          const curAthlete = await Athlete.findOne({
+            where: { apiId },
+          })
+
+          if (curAthlete) {
+            newStats.push(
+              AthleteStat.create({
+                athlete: curAthlete,
+                season: season.toString(),
+                position: athleteStat["Position"],
+                fantasyScore: athleteStat["FantasyPointsDraftKings"],
+              })
+            )
+          }
+        }
+      }
+
+      await AthleteStat.save([...newStats, ...updateStats], { chunk: 20 })
+
+      this.logger.debug("Update NFL Athlete Stats: FINISHED")
+    } else {
+      this.logger.error("NFL Athlete Stats Data: SPORTS DATA ERROR")
+    }
   }
 }
