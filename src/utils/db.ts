@@ -11,6 +11,7 @@ import { Game } from "../entities/Game"
 import { GameTeam } from "../entities/GameTeam"
 import { GameTeamAthlete } from "../entities/GameTeamAthlete"
 import { AthleteStat } from "../entities/AthleteStat"
+import { AdminWallet } from "../entities/AdminWallet"
 
 export const AppDataSource = new DataSource({
   type: "postgres",
@@ -30,6 +31,7 @@ export const AppDataSource = new DataSource({
     GameTeam,
     GameTeamAthlete,
     AthleteStat,
+    AdminWallet,
   ],
   synchronize: true,
   // logging: true,

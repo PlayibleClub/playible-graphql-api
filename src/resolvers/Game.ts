@@ -1,4 +1,12 @@
-import { Arg, Field, Mutation, ObjectType, Query, Resolver } from "type-graphql"
+import {
+  Arg,
+  Authorized,
+  Field,
+  Mutation,
+  ObjectType,
+  Query,
+  Resolver,
+} from "type-graphql"
 
 import { Account } from "../entities/Account"
 import { Asset } from "../entities/Asset"
@@ -109,6 +117,7 @@ export class GameResolver {
     return { data, count }
   }
 
+  @Authorized("ADMIN")
   @Mutation(() => Game)
   async createGame(
     @Arg("args")

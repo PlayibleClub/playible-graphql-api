@@ -2,16 +2,21 @@ import "dotenv-safe/config"
 import { ApolloServer } from "apollo-server-express"
 import express, { Request, Response } from "express"
 import session from "express-session"
-import { buildSchema } from "type-graphql"
+import { AuthChecker, buildSchema } from "type-graphql"
 import { createClient } from "redis"
 import cors from "cors"
+import argon from "argon2"
 
 import { NestFactory } from "@nestjs/core"
 
 import { __prod__ } from "./constants"
 import { AppDataSource } from "./utils/db"
 import { AppModule } from "./app.module"
+import { ContextType } from "@nestjs/common"
+
 import { GameResolver } from "./resolvers/Game"
+import { UserResolver } from "./resolvers/User"
+import { AdminWallet } from "./entities/AdminWallet"
 
 export type IContext = {
   req: Request<any> & { session: any }
@@ -70,11 +75,31 @@ const main = async () => {
     })
   )
 
+  const authChecker: AuthChecker<ContextType> = async (
+    { context }: { context: any },
+    roles
+  ) => {
+    const token = context.req.headers.authorization.substring("Bearer ".length)
+
+    if (token.length && roles.includes("ADMIN")) {
+      const admins = await AdminWallet.find()
+
+      for (let admin of admins) {
+        if (await argon.verify(admin.address, token)) {
+          return true
+        }
+      }
+    }
+
+    return false
+  }
+
   // APOLLO
   const apolloServer = new ApolloServer({
     schema: await buildSchema({
-      resolvers: [GameResolver],
+      resolvers: [GameResolver, UserResolver],
       validate: false,
+      authChecker,
     }),
     csrfPrevention: false,
     context: async ({ req, res }: IContext) => {

@@ -3,7 +3,7 @@ import { Cron, Interval, Timeout } from "@nestjs/schedule"
 import convert from "xml-js"
 import S3 from "aws-sdk/clients/s3"
 import axios from "axios"
-import fs from "fs"
+import moment from "moment"
 
 import { Team } from "../entities/Team"
 import { Athlete } from "../entities/Athlete"
@@ -375,5 +375,41 @@ export class TasksService {
     } else {
       this.logger.error("NFL Athlete Stats Data: SPORTS DATA ERROR")
     }
+  }
+
+  // @Interval(1000)
+  @Cron("55 11 * * *", {
+    name: "updateNflTeamScores",
+    timeZone: "Asia/Manila",
+  })
+  async updateNflTeamScores() {
+    const getNflWeek = (): number => {
+      const currentDate = new Date()
+      currentDate.setFullYear(2021)
+      currentDate.setMonth(8)
+      const startDate = new Date(currentDate.getFullYear(), 0, 1)
+      const delta = +currentDate - +startDate
+      const days = Math.floor(delta / (24 * 60 * 60 * 1000))
+      let weekNumber = Math.ceil(days / 7) - 35
+      weekNumber = weekNumber > 0 ? weekNumber : 1
+      return weekNumber
+    }
+    const SEASON = "2021REG"
+
+    // const { data, status } = await axios.get(
+    // `${
+    //   process.env.SPORTS_DATA_URL
+    // }nfl/stats/json/PlayerGameStatsByWeek/${SEASON}/${getNflWeek()}?key=${
+    //   process.env.SPORTS_DATA_NFL_KEY
+    // }`
+    // )
+
+    console.log(
+      `${
+        process.env.SPORTS_DATA_URL
+      }nfl/stats/json/PlayerGameStatsByWeek/${SEASON}/${getNflWeek()}?key=${
+        process.env.SPORTS_DATA_NFL_KEY
+      }`
+    )
   }
 }
