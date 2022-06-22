@@ -143,6 +143,13 @@ export class GameResolver {
     })
   }
 
+  @Authorized("ADMIN")
+  @Mutation(() => Boolean)
+  async deleteGamebyId(@Arg("id") id: number): Promise<Boolean> {
+    await Game.delete({ id })
+    return true
+  }
+
   @Mutation(() => CreateTeamResponse)
   async createTeam(
     @Arg("args")

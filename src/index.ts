@@ -16,6 +16,8 @@ import { ContextType } from "@nestjs/common"
 
 import { GameResolver } from "./resolvers/Game"
 import { UserResolver } from "./resolvers/User"
+import { AthleteResolver } from "./resolvers/Athlete"
+
 import { AdminWallet } from "./entities/AdminWallet"
 
 export type IContext = {
@@ -97,7 +99,7 @@ const main = async () => {
   // APOLLO
   const apolloServer = new ApolloServer({
     schema: await buildSchema({
-      resolvers: [GameResolver, UserResolver],
+      resolvers: [GameResolver, UserResolver, AthleteResolver],
       validate: false,
       authChecker,
     }),
