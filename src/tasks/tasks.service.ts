@@ -1,13 +1,16 @@
 import { Injectable, Logger } from "@nestjs/common"
 import { Cron, Interval, Timeout } from "@nestjs/schedule"
+import { LessThanOrEqual, MoreThanOrEqual } from "typeorm"
 import convert from "xml-js"
 import S3 from "aws-sdk/clients/s3"
 import axios from "axios"
 import moment from "moment"
 
-import { Team } from "../entities/Team"
 import { Athlete } from "../entities/Athlete"
 import { AthleteStat } from "../entities/AthleteStat"
+import { Game } from "../entities/Game"
+import { GameTeam } from "../entities/GameTeam"
+import { Team } from "../entities/Team"
 
 import { SportType } from "../utils/types"
 import {
@@ -332,84 +335,154 @@ export class TasksService {
   async updateNflAthleteStats() {
     this.logger.debug("Update NFL Athlete Stats: STARTED")
 
-    const season = new Date().getFullYear() - 1
-    const { data, status } = await axios.get(
-      `${process.env.SPORTS_DATA_URL}nfl/stats/json/PlayerSeasonStats/${season}?key=${process.env.SPORTS_DATA_NFL_KEY}`
+    const timeFrames = await axios.get(
+      `https://api.sportsdata.io/v3/nfl/scores/json/Timeframes/current?key=${process.env.SPORTS_DATA_NFL_KEY}`
     )
 
-    if (status === 200) {
-      const newStats: AthleteStat[] = []
-      const updateStats: AthleteStat[] = []
+    if (timeFrames.status === 200) {
+      const timeFrame = timeFrames.data[0]
 
-      for (let athleteStat of data) {
-        const apiId: any = athleteStat["PlayerID"]
-        const curStat = await AthleteStat.findOne({
-          where: { athlete: { apiId }, season: season.toString() },
-        })
+      if (timeFrame) {
+        const season = new Date().getFullYear() - 1
+        // const season = timeFrame.ApiSeason
 
-        if (curStat) {
-          // Update stats here
-          curStat.fantasyScore = athleteStat["FantasyPointsDraftKings"]
-          updateStats.push(curStat)
-        } else {
-          const curAthlete = await Athlete.findOne({
-            where: { apiId },
-          })
+        const { data, status } = await axios.get(
+          `${process.env.SPORTS_DATA_URL}nfl/stats/json/PlayerSeasonStats/${season}?key=${process.env.SPORTS_DATA_NFL_KEY}`
+        )
 
-          if (curAthlete) {
-            newStats.push(
-              AthleteStat.create({
-                athlete: curAthlete,
-                season: season.toString(),
-                position: athleteStat["Position"],
-                fantasyScore: athleteStat["FantasyPointsDraftKings"],
+        if (status === 200) {
+          const newStats: AthleteStat[] = []
+          const updateStats: AthleteStat[] = []
+
+          for (let athleteStat of data) {
+            const apiId: any = athleteStat["PlayerID"]
+            const curStat = await AthleteStat.findOne({
+              where: { athlete: { apiId }, season: season.toString() },
+            })
+
+            if (curStat) {
+              // Update stats here
+              curStat.fantasyScore = athleteStat["FantasyPointsDraftKings"]
+              curStat.completion = athleteStat["PassingCompletionPercentage"]
+              curStat.carries = athleteStat["RushingAttempts"]
+              curStat.passingYards = athleteStat["PassingYards"]
+              curStat.rushingYards = athleteStat["RushingYards"]
+              curStat.receivingYards = athleteStat["ReceivingYards"]
+              curStat.interceptions = athleteStat["PassingInterceptions"]
+              curStat.passingTouchdowns = athleteStat["PassingTouchdowns"]
+              curStat.rushingTouchdowns = athleteStat["RushingTouchdowns"]
+              curStat.receivingTouchdowns = athleteStat["ReceivingTouchdowns"]
+              curStat.targets = athleteStat["ReceivingTargets"]
+              curStat.receptions = athleteStat["Receptions"]
+              updateStats.push(curStat)
+            } else {
+              const curAthlete = await Athlete.findOne({
+                where: { apiId },
               })
-            )
+
+              if (curAthlete) {
+                newStats.push(
+                  AthleteStat.create({
+                    athlete: curAthlete,
+                    season: season.toString(),
+                    position: athleteStat["Position"],
+                    fantasyScore: athleteStat["FantasyPointsDraftKings"],
+                    completion: athleteStat["PassingCompletionPercentage"],
+                    carries: athleteStat["RushingAttempts"],
+                    passingYards: athleteStat["PassingYards"],
+                    rushingYards: athleteStat["RushingYards"],
+                    receivingYards: athleteStat["ReceivingYards"],
+                    passingTouchdowns: athleteStat["PassingTouchdowns"],
+                    interceptions: athleteStat["PassingInterceptions"],
+                    rushingTouchdowns: athleteStat["RushingTouchdowns"],
+                    receivingTouchdowns: athleteStat["ReceivingTouchdowns"],
+                    targets: athleteStat["ReceivingTargets"],
+                    receptions: athleteStat["Receptions"],
+                  })
+                )
+              }
+            }
           }
+
+          await AthleteStat.save([...newStats, ...updateStats], { chunk: 20 })
+
+          this.logger.debug("Update NFL Athlete Stats: FINISHED")
+        } else {
+          this.logger.error("NFL Athlete Stats Data: SPORTS DATA ERROR")
         }
       }
-
-      await AthleteStat.save([...newStats, ...updateStats], { chunk: 20 })
-
-      this.logger.debug("Update NFL Athlete Stats: FINISHED")
     } else {
-      this.logger.error("NFL Athlete Stats Data: SPORTS DATA ERROR")
+      this.logger.error("NFL Timeframes Data: SPORTS DATA ERROR")
     }
   }
 
-  // @Interval(1000)
   @Cron("55 11 * * *", {
     name: "updateNflTeamScores",
     timeZone: "Asia/Manila",
   })
   async updateNflTeamScores() {
-    const getNflWeek = (): number => {
-      const currentDate = new Date()
-      currentDate.setFullYear(2021)
-      currentDate.setMonth(8)
-      const startDate = new Date(currentDate.getFullYear(), 0, 1)
-      const delta = +currentDate - +startDate
-      const days = Math.floor(delta / (24 * 60 * 60 * 1000))
-      let weekNumber = Math.ceil(days / 7) - 35
-      weekNumber = weekNumber > 0 ? weekNumber : 1
-      return weekNumber
-    }
-    const SEASON = "2021REG"
+    this.logger.debug("Update NFL Team Scores: STARTED")
 
-    // const { data, status } = await axios.get(
-    // `${
-    //   process.env.SPORTS_DATA_URL
-    // }nfl/stats/json/PlayerGameStatsByWeek/${SEASON}/${getNflWeek()}?key=${
-    //   process.env.SPORTS_DATA_NFL_KEY
-    // }`
-    // )
-
-    console.log(
-      `${
-        process.env.SPORTS_DATA_URL
-      }nfl/stats/json/PlayerGameStatsByWeek/${SEASON}/${getNflWeek()}?key=${
-        process.env.SPORTS_DATA_NFL_KEY
-      }`
+    const timeFrames = await axios.get(
+      `https://api.sportsdata.io/v3/nfl/scores/json/Timeframes/current?key=${process.env.SPORTS_DATA_NFL_KEY}`
     )
+
+    if (timeFrames.status === 200) {
+      const timeFrame = timeFrames.data[0]
+
+      if (timeFrame) {
+        // const season = timeFrame.ApiSeason
+        const season = "2021REG"
+        const week = timeFrame.ApiWeek ? timeFrame.ApiWeek : 1
+
+        const { data, status } = await axios.get(
+          `${process.env.SPORTS_DATA_URL}nfl/stats/json/PlayerGameStatsByWeek/${season}/${week}?key=${process.env.SPORTS_DATA_NFL_KEY}`
+        )
+
+        if (status === 200) {
+          const now = new Date()
+          const gameTeams = []
+
+          // Get active games
+          const games = await Game.find({
+            where: {
+              startTime: LessThanOrEqual(now),
+              endTime: MoreThanOrEqual(now),
+            },
+            relations: {
+              teams: {
+                athletes: {
+                  athlete: true,
+                },
+              },
+            },
+          })
+
+          for (let game of games) {
+            for (let gameTeam of game.teams) {
+              var totalFantasyScore = 0
+
+              for (let athlete of gameTeam.athletes) {
+                const athleteData = data.find(
+                  (athleteData: any) =>
+                    athleteData.PlayerID === athlete.athlete.apiId
+                )
+
+                if (athleteData !== undefined) {
+                  totalFantasyScore += athleteData.FantasyPointsDraftKings
+                }
+              }
+
+              gameTeam.fantasyScore = totalFantasyScore
+              gameTeams.push(gameTeam)
+            }
+          }
+
+          await GameTeam.save(gameTeams, { chunk: 20 })
+
+          this.logger.debug("Update NFL Team Scores: FINISHED")
+        }
+      }
+    }
   }
 }
