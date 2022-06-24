@@ -10,6 +10,7 @@ export class AthleteResolver {
       where: { id },
       relations: {
         stats: true,
+        team: true,
       },
     })
   }
