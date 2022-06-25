@@ -1,12 +1,4 @@
-import {
-  Arg,
-  Authorized,
-  Field,
-  Mutation,
-  ObjectType,
-  Query,
-  Resolver,
-} from "type-graphql"
+import { Arg, Authorized, Field, Mutation, ObjectType, Query, Resolver } from "type-graphql"
 
 import { Account } from "../entities/Account"
 import { Asset } from "../entities/Asset"
@@ -55,9 +47,7 @@ export class GameResolver {
   }
 
   @Query(() => GameResponse)
-  async getGames(
-    @Arg("args", { nullable: true }) { filter, pagination }: GetGameArgs
-  ): Promise<GameResponse> {
+  async getGames(@Arg("args", { nullable: true }) { filter, pagination }: GetGameArgs): Promise<GameResponse> {
     let args: any = {}
     var now = new Date()
 
@@ -98,9 +88,7 @@ export class GameResolver {
 
     const [data, count] = await Game.findAndCount({
       ...args,
-      where: filter?.sport
-        ? { ...args.where, sport: filter?.sport }
-        : args.where,
+      where: filter?.sport ? { ...args.where, sport: filter?.sport } : args.where,
       relations: {
         teams: {
           account: true,
@@ -179,9 +167,7 @@ export class GameResolver {
         errors.push(`Athlete ${athlete.id} does not exist.`)
       }
       if (curAthlete?.team.sport !== game?.sport) {
-        errors.push(
-          `Athlete ${athlete.id} does not match the sport of the game.`
-        )
+        errors.push(`Athlete ${athlete.id} does not match the sport of the game.`)
       }
     }
 

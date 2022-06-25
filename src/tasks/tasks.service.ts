@@ -13,11 +13,7 @@ import { GameTeam } from "../entities/GameTeam"
 import { Team } from "../entities/Team"
 
 import { SportType } from "../utils/types"
-import {
-  ATHLETE_MLB_BASE_ANIMATION,
-  ATHLETE_MLB_BASE_IMG,
-  ATHLETE_MLB_IMG,
-} from "../utils/svgTemplates"
+import { ATHLETE_MLB_BASE_ANIMATION, ATHLETE_MLB_BASE_IMG, ATHLETE_MLB_IMG } from "../utils/svgTemplates"
 
 @Injectable()
 export class TasksService {
@@ -43,43 +39,25 @@ export class TasksService {
     var options = { compact: true, ignoreComment: true, spaces: 4 }
     var result: any = convert.xml2js(baseImage, options)
     console.log(result["svg"]["g"]["4"]["g"][3]["text"][0]["tspan"]["_cdata"]) // First name
-    console.log(
-      result["svg"]["g"]["4"]["g"][3]["g"]["text"][0]["tspan"]["_cdata"]
-    ) // First name
+    console.log(result["svg"]["g"]["4"]["g"][3]["g"]["text"][0]["tspan"]["_cdata"]) // First name
 
     console.log(result["svg"]["g"][4]["g"][3]["text"][1]["tspan"]["_cdata"]) // Last name
-    console.log(
-      result["svg"]["g"][4]["g"][3]["g"]["text"][1]["tspan"]["_cdata"]
-    ) // Last name
+    console.log(result["svg"]["g"][4]["g"][3]["g"]["text"][1]["tspan"]["_cdata"]) // Last name
 
-    console.log(
-      result["svg"]["g"][1]["g"][2]["g"]["path"]["_attributes"]["fill"]
-    ) // Primary color
-    console.log(
-      result["svg"]["g"][1]["g"][0]["g"]["path"]["_attributes"]["fill"]
-    ) // Secondary color
+    console.log(result["svg"]["g"][1]["g"][2]["g"]["path"]["_attributes"]["fill"]) // Primary color
+    console.log(result["svg"]["g"][1]["g"][0]["g"]["path"]["_attributes"]["fill"]) // Secondary color
 
     console.log(result["svg"]["g"][4]["g"][2]["g"]["text"]["tspan"]["_cdata"]) // Jersey
-    console.log(
-      result["svg"]["g"][4]["g"][0]["g"]["g"]["text"]["tspan"]["_cdata"]
-    ) // Position
+    console.log(result["svg"]["g"][4]["g"][0]["g"]["g"]["text"]["tspan"]["_cdata"]) // Position
 
-    result["svg"]["g"]["4"]["g"][3]["text"][0]["tspan"]["_cdata"] =
-      athlete.firstName
-    result["svg"]["g"]["4"]["g"][3]["g"]["text"][0]["tspan"]["_cdata"] =
-      athlete.firstName
-    result["svg"]["g"][4]["g"][3]["text"][1]["tspan"]["_cdata"] =
-      athlete.lastName
-    result["svg"]["g"][4]["g"][3]["g"]["text"][1]["tspan"]["_cdata"] =
-      athlete.lastName
-    result["svg"]["g"][1]["g"][2]["g"]["path"]["_attributes"]["fill"] =
-      athlete.team.primaryColor
-    result["svg"]["g"][1]["g"][0]["g"]["path"]["_attributes"]["fill"] =
-      athlete.team.secondaryColor
-    result["svg"]["g"][4]["g"][2]["g"]["text"]["tspan"]["_cdata"] =
-      athlete.jersey ? athlete.jersey.toString() : "00"
-    result["svg"]["g"][4]["g"][0]["g"]["g"]["text"]["tspan"]["_cdata"] =
-      athlete.position
+    result["svg"]["g"]["4"]["g"][3]["text"][0]["tspan"]["_cdata"] = athlete.firstName
+    result["svg"]["g"]["4"]["g"][3]["g"]["text"][0]["tspan"]["_cdata"] = athlete.firstName
+    result["svg"]["g"][4]["g"][3]["text"][1]["tspan"]["_cdata"] = athlete.lastName
+    result["svg"]["g"][4]["g"][3]["g"]["text"][1]["tspan"]["_cdata"] = athlete.lastName
+    result["svg"]["g"][1]["g"][2]["g"]["path"]["_attributes"]["fill"] = athlete.team.primaryColor
+    result["svg"]["g"][1]["g"][0]["g"]["path"]["_attributes"]["fill"] = athlete.team.secondaryColor
+    result["svg"]["g"][4]["g"][2]["g"]["text"]["tspan"]["_cdata"] = athlete.jersey ? athlete.jersey.toString() : "00"
+    result["svg"]["g"][4]["g"][0]["g"]["g"]["text"]["tspan"]["_cdata"] = athlete.position
 
     const animation = convert.js2xml(result, options)
     result = animation.replace("</svg>", ATHLETE_MLB_BASE_ANIMATION)
@@ -93,9 +71,7 @@ export class TasksService {
     })
 
     if (teamsCount === 0) {
-      const { data, status } = await axios.get(
-        `${process.env.SPORTS_DATA_URL}mlb/scores/json/teams?key=${process.env.SPORTS_DATA_MLB_KEY}`
-      )
+      const { data, status } = await axios.get(`${process.env.SPORTS_DATA_URL}mlb/scores/json/teams?key=${process.env.SPORTS_DATA_MLB_KEY}`)
 
       if (status === 200) {
         for (let team of data) {
@@ -118,18 +94,14 @@ export class TasksService {
       }
     }
 
-    this.logger.debug(
-      `MLB Teams Data: ${teamsCount ? "DID NOT SYNC" : "SYNCED SUCCESSFULLY"}`
-    )
+    this.logger.debug(`MLB Teams Data: ${teamsCount ? "DID NOT SYNC" : "SYNCED SUCCESSFULLY"}`)
 
     const athletesCount = await Athlete.count({
       where: { team: { sport: SportType.MLB } },
     })
 
     if (athletesCount === 0) {
-      const { data, status } = await axios.get(
-        `${process.env.SPORTS_DATA_URL}mlb/scores/json/Players?key=${process.env.SPORTS_DATA_MLB_KEY}`
-      )
+      const { data, status } = await axios.get(`${process.env.SPORTS_DATA_URL}mlb/scores/json/Players?key=${process.env.SPORTS_DATA_MLB_KEY}`)
 
       if (status === 200) {
         for (let athlete of data) {
@@ -143,13 +115,10 @@ export class TasksService {
 
             result.svg.path[10]["_attributes"]["fill"] = team.primaryColor
             result.svg.path[9]["_attributes"]["fill"] = team.secondaryColor
-            result.svg.g[0].text[0]["_text"] =
-              athlete["FirstName"].toUpperCase()
+            result.svg.g[0].text[0]["_text"] = athlete["FirstName"].toUpperCase()
             result.svg.g[0].text[1]["_text"] = athlete["LastName"].toUpperCase()
             result.svg.g[0].text[2]["_text"] = athlete["Position"].toUpperCase()
-            result.svg.text["_text"] = athlete["Jersey"]
-              ? athlete["Jersey"]
-              : "00"
+            result.svg.text["_text"] = athlete["Jersey"] ? athlete["Jersey"] : "00"
 
             result = convert.js2xml(result, options)
             var buffer = Buffer.from(result, "utf8")
@@ -176,27 +145,14 @@ export class TasksService {
                 var options = { compact: true, ignoreComment: true, spaces: 4 }
                 var result: any = convert.xml2js(baseImage, options)
 
-                result["svg"]["g"]["4"]["g"][3]["text"][0]["tspan"]["_cdata"] =
-                  athlete["FirstName"].toUpperCase()
-                result["svg"]["g"]["4"]["g"][3]["g"]["text"][0]["tspan"][
-                  "_cdata"
-                ] = athlete["FirstName"].toUpperCase()
-                result["svg"]["g"][4]["g"][3]["text"][1]["tspan"]["_cdata"] =
-                  athlete["LastName"].toUpperCase()
-                result["svg"]["g"][4]["g"][3]["g"]["text"][1]["tspan"][
-                  "_cdata"
-                ] = athlete["LastName"].toUpperCase()
-                result["svg"]["g"][1]["g"][2]["g"]["path"]["_attributes"][
-                  "fill"
-                ] = team.primaryColor
-                result["svg"]["g"][1]["g"][0]["g"]["path"]["_attributes"][
-                  "fill"
-                ] = team.secondaryColor
-                result["svg"]["g"][4]["g"][2]["g"]["text"]["tspan"]["_cdata"] =
-                  athlete["Jersey"] ? athlete["Jersey"].toString() : "00"
-                result["svg"]["g"][4]["g"][0]["g"]["g"]["text"]["tspan"][
-                  "_cdata"
-                ] = athlete["Position"].toUpperCase()
+                result["svg"]["g"]["4"]["g"][3]["text"][0]["tspan"]["_cdata"] = athlete["FirstName"].toUpperCase()
+                result["svg"]["g"]["4"]["g"][3]["g"]["text"][0]["tspan"]["_cdata"] = athlete["FirstName"].toUpperCase()
+                result["svg"]["g"][4]["g"][3]["text"][1]["tspan"]["_cdata"] = athlete["LastName"].toUpperCase()
+                result["svg"]["g"][4]["g"][3]["g"]["text"][1]["tspan"]["_cdata"] = athlete["LastName"].toUpperCase()
+                result["svg"]["g"][1]["g"][2]["g"]["path"]["_attributes"]["fill"] = team.primaryColor
+                result["svg"]["g"][1]["g"][0]["g"]["path"]["_attributes"]["fill"] = team.secondaryColor
+                result["svg"]["g"][4]["g"][2]["g"]["text"]["tspan"]["_cdata"] = athlete["Jersey"] ? athlete["Jersey"].toString() : "00"
+                result["svg"]["g"][4]["g"][0]["g"]["g"]["text"]["tspan"]["_cdata"] = athlete["Position"].toUpperCase()
 
                 const animation = convert.js2xml(result, options)
                 result = animation.replace("</svg>", ATHLETE_MLB_BASE_ANIMATION)
@@ -244,11 +200,7 @@ export class TasksService {
       }
     }
 
-    this.logger.debug(
-      `MLB Athletes Data: ${
-        athletesCount ? "DID NOT SYNC" : "SYNCED SUCCESSFULLY"
-      }`
-    )
+    this.logger.debug(`MLB Athletes Data: ${athletesCount ? "DID NOT SYNC" : "SYNCED SUCCESSFULLY"}`)
   }
 
   @Timeout(1)
@@ -258,9 +210,7 @@ export class TasksService {
     })
 
     if (teamsCount === 0) {
-      const { data, status } = await axios.get(
-        `${process.env.SPORTS_DATA_URL}nfl/scores/json/teams?key=${process.env.SPORTS_DATA_NFL_KEY}`
-      )
+      const { data, status } = await axios.get(`${process.env.SPORTS_DATA_URL}nfl/scores/json/teams?key=${process.env.SPORTS_DATA_NFL_KEY}`)
 
       if (status === 200) {
         for (let team of data) {
@@ -283,18 +233,14 @@ export class TasksService {
       }
     }
 
-    this.logger.debug(
-      `NFL Teams Data: ${teamsCount ? "DID NOT SYNC" : "SYNCED SUCCESSFULLY"}`
-    )
+    this.logger.debug(`NFL Teams Data: ${teamsCount ? "DID NOT SYNC" : "SYNCED SUCCESSFULLY"}`)
 
     const athletesCount = await Athlete.count({
       where: { team: { sport: SportType.NFL } },
     })
 
     if (athletesCount === 0) {
-      const { data, status } = await axios.get(
-        `${process.env.SPORTS_DATA_URL}nfl/scores/json/Players?key=${process.env.SPORTS_DATA_NFL_KEY}`
-      )
+      const { data, status } = await axios.get(`${process.env.SPORTS_DATA_URL}nfl/scores/json/Players?key=${process.env.SPORTS_DATA_NFL_KEY}`)
 
       if (status === 200) {
         for (let athlete of data) {
@@ -324,20 +270,14 @@ export class TasksService {
       }
     }
 
-    this.logger.debug(
-      `NFL Athletes Data: ${
-        athletesCount ? "DID NOT SYNC" : "SYNCED SUCCESSFULLY"
-      }`
-    )
+    this.logger.debug(`NFL Athletes Data: ${athletesCount ? "DID NOT SYNC" : "SYNCED SUCCESSFULLY"}`)
   }
 
   @Interval(900000) // Runs every 15 mins
   async updateNflAthleteStats() {
     this.logger.debug("Update NFL Athlete Stats: STARTED")
 
-    const timeFrames = await axios.get(
-      `https://api.sportsdata.io/v3/nfl/scores/json/Timeframes/current?key=${process.env.SPORTS_DATA_NFL_KEY}`
-    )
+    const timeFrames = await axios.get(`https://api.sportsdata.io/v3/nfl/scores/json/Timeframes/current?key=${process.env.SPORTS_DATA_NFL_KEY}`)
 
     if (timeFrames.status === 200) {
       const timeFrame = timeFrames.data[0]
@@ -423,9 +363,7 @@ export class TasksService {
   async updateNflTeamScores() {
     this.logger.debug("Update NFL Team Scores: STARTED")
 
-    const timeFrames = await axios.get(
-      `https://api.sportsdata.io/v3/nfl/scores/json/Timeframes/current?key=${process.env.SPORTS_DATA_NFL_KEY}`
-    )
+    const timeFrames = await axios.get(`https://api.sportsdata.io/v3/nfl/scores/json/Timeframes/current?key=${process.env.SPORTS_DATA_NFL_KEY}`)
 
     if (timeFrames.status === 200) {
       const timeFrame = timeFrames.data[0]
@@ -463,10 +401,7 @@ export class TasksService {
               var totalFantasyScore = 0
 
               for (let athlete of gameTeam.athletes) {
-                const athleteData = data.find(
-                  (athleteData: any) =>
-                    athleteData.PlayerID === athlete.athlete.apiId
-                )
+                const athleteData = data.find((athleteData: any) => athleteData.PlayerID === athlete.athlete.apiId)
 
                 if (athleteData !== undefined) {
                   totalFantasyScore += athleteData.FantasyPointsDraftKings

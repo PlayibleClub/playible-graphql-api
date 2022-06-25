@@ -1,12 +1,5 @@
 import { Field, ID, Int, ObjectType } from "type-graphql"
-import {
-  BaseEntity,
-  Column,
-  Entity,
-  OneToMany,
-  PrimaryGeneratedColumn,
-  Relation,
-} from "typeorm"
+import { BaseEntity, Column, Entity, OneToMany, PrimaryGeneratedColumn, Relation } from "typeorm"
 
 import { SportType } from "../utils/types"
 import { GameTeam } from "./GameTeam"

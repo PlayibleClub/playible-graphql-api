@@ -1,13 +1,5 @@
 import { Field, ID, ObjectType } from "type-graphql"
-import {
-  BaseEntity,
-  Column,
-  Entity,
-  ManyToOne,
-  OneToMany,
-  PrimaryGeneratedColumn,
-  Relation,
-} from "typeorm"
+import { BaseEntity, Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn, Relation } from "typeorm"
 import { Account } from "./Account"
 import { Collection } from "./Collection"
 import { GameTeamAthlete } from "./GameTeamAthlete"
@@ -32,12 +24,8 @@ export class Asset extends BaseEntity {
   collection!: Relation<Collection>
 
   @Field(() => [GameTeamAthlete])
-  @OneToMany(
-    () => GameTeamAthlete,
-    (gameTeamAthlete) => gameTeamAthlete.asset,
-    {
-      cascade: true,
-    }
-  )
+  @OneToMany(() => GameTeamAthlete, (gameTeamAthlete) => gameTeamAthlete.asset, {
+    cascade: true,
+  })
   gameTeamAthletes!: Relation<GameTeamAthlete>[]
 }

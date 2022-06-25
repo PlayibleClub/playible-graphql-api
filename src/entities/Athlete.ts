@@ -1,13 +1,5 @@
 import { Field, Float, ID, Int, ObjectType } from "type-graphql"
-import {
-  BaseEntity,
-  Column,
-  Entity,
-  ManyToOne,
-  OneToMany,
-  PrimaryGeneratedColumn,
-  Relation,
-} from "typeorm"
+import { BaseEntity, Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn, Relation } from "typeorm"
 import { AthleteStat } from "./AthleteStat"
 import { GameTeamAthlete } from "./GameTeamAthlete"
 import { Team } from "./Team"
@@ -64,13 +56,9 @@ export class Athlete extends BaseEntity {
   nftAnimation?: string
 
   @Field(() => [GameTeamAthlete])
-  @OneToMany(
-    () => GameTeamAthlete,
-    (gameTeamAthlete) => gameTeamAthlete.athlete,
-    {
-      cascade: true,
-    }
-  )
+  @OneToMany(() => GameTeamAthlete, (gameTeamAthlete) => gameTeamAthlete.athlete, {
+    cascade: true,
+  })
   gameTeamAthletes!: Relation<GameTeamAthlete>[]
 
   @Field(() => [AthleteStat])
