@@ -1,3 +1,4 @@
+import { GetAthletesArgs } from "../args/AthleteArgs"
 import { Arg, Query, Resolver } from "type-graphql"
 
 import { Athlete } from "../entities/Athlete"
@@ -11,6 +12,28 @@ export class AthleteResolver {
       relations: {
         stats: true,
         team: true,
+      },
+    })
+  }
+
+  @Query(() => [Athlete])
+  async getAthletes(@Arg("args", { nullable: true }) { filter, pagination }: GetAthletesArgs): Promise<Athlete[]> {
+    let args: any = {}
+
+    if (pagination) {
+      args["take"] = pagination.limit
+      args["skip"] = pagination.offset
+    }
+
+    return await Athlete.find({
+      ...args,
+      where: filter?.sport ? { team: { sport: filter?.sport } } : undefined,
+      relations: {
+        stats: true,
+        team: true,
+      },
+      order: {
+        id: "asc",
       },
     })
   }
