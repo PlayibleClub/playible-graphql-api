@@ -1,8 +1,6 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-// import { IContext } from "src"
 import argon from "argon2"
 
-import { Arg, Field, Mutation, ObjectType, Query, Resolver } from "type-graphql"
+import { Arg, Field, Mutation, ObjectType, Resolver } from "type-graphql"
 import { AdminWallet } from "../entities/AdminWallet"
 import { User } from "../entities/User"
 

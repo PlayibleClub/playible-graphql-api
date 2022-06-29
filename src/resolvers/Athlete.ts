@@ -1,5 +1,5 @@
-import { GetAthletesArgs } from "../args/AthleteArgs"
 import { Arg, Query, Resolver } from "type-graphql"
+import { GetAthletesArgs } from "../args/AthleteArgs"
 
 import { Athlete } from "../entities/Athlete"
 

@@ -1,5 +1,5 @@
+import { Field, InputType } from "type-graphql"
 import { GameTab, LimitOffset, SportType } from "../utils/types"
-import { InputType, Field } from "type-graphql"
 
 @InputType()
 export class CreateGameArgs {

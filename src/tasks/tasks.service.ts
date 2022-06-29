@@ -1,11 +1,10 @@
 import { Injectable, Logger } from "@nestjs/common"
 import { Cron, Interval, Timeout } from "@nestjs/schedule"
-import { LessThanOrEqual, MoreThanOrEqual } from "typeorm"
-import convert from "xml-js"
 import S3 from "aws-sdk/clients/s3"
 import axios from "axios"
-import moment from "moment"
 import fs from "fs"
+import { LessThanOrEqual, MoreThanOrEqual } from "typeorm"
+import convert from "xml-js"
 
 import { Athlete } from "../entities/Athlete"
 import { AthleteStat } from "../entities/AthleteStat"
@@ -13,23 +12,12 @@ import { Game } from "../entities/Game"
 import { GameTeam } from "../entities/GameTeam"
 import { Team } from "../entities/Team"
 
-import { SportType } from "../utils/types"
 import { ATHLETE_MLB_BASE_ANIMATION, ATHLETE_MLB_BASE_IMG, ATHLETE_MLB_IMG } from "../utils/svgTemplates"
+import { SportType } from "../utils/types"
 
 @Injectable()
 export class TasksService {
   private readonly logger = new Logger(TasksService.name)
-
-  // @Cron("45 * * * * *")
-  // handleCron() {
-  //   this.logger.debug("Called when the second is 45")
-  // }
-
-  // @Interval(10000)
-  // handleInterval() {
-  //   this.logger.debug("Called every 10 seconds")
-  //   console.log(ATHLETE_MLB_BASE_ANIMATION)
-  // }
 
   async testAnimation() {
     const athlete = await Athlete.findOneOrFail({
@@ -72,7 +60,9 @@ export class TasksService {
     })
 
     if (teamsCount === 0) {
-      const { data, status } = await axios.get(`${process.env.SPORTS_DATA_URL}mlb/scores/json/teams?key=${process.env.SPORTS_DATA_MLB_KEY}`)
+      const { data, status } = await axios.get(
+        `${process.env.SPORTS_DATA_URL}mlb/scores/json/teams?key=${process.env.SPORTS_DATA_MLB_KEY}`
+      )
 
       if (status === 200) {
         for (let team of data) {
@@ -102,7 +92,9 @@ export class TasksService {
     })
 
     if (athletesCount === 0) {
-      const { data, status } = await axios.get(`${process.env.SPORTS_DATA_URL}mlb/scores/json/Players?key=${process.env.SPORTS_DATA_MLB_KEY}`)
+      const { data, status } = await axios.get(
+        `${process.env.SPORTS_DATA_URL}mlb/scores/json/Players?key=${process.env.SPORTS_DATA_MLB_KEY}`
+      )
 
       if (status === 200) {
         for (let athlete of data) {
@@ -152,7 +144,9 @@ export class TasksService {
                 result["svg"]["g"][4]["g"][3]["g"]["text"][1]["tspan"]["_cdata"] = athlete["LastName"].toUpperCase()
                 result["svg"]["g"][1]["g"][2]["g"]["path"]["_attributes"]["fill"] = team.primaryColor
                 result["svg"]["g"][1]["g"][0]["g"]["path"]["_attributes"]["fill"] = team.secondaryColor
-                result["svg"]["g"][4]["g"][2]["g"]["text"]["tspan"]["_cdata"] = athlete["Jersey"] ? athlete["Jersey"].toString() : "00"
+                result["svg"]["g"][4]["g"][2]["g"]["text"]["tspan"]["_cdata"] = athlete["Jersey"]
+                  ? athlete["Jersey"].toString()
+                  : "00"
                 result["svg"]["g"][4]["g"][0]["g"]["g"]["text"]["tspan"]["_cdata"] = athlete["Position"].toUpperCase()
 
                 const animation = convert.js2xml(result, options)
@@ -211,7 +205,9 @@ export class TasksService {
     })
 
     if (teamsCount === 0) {
-      const { data, status } = await axios.get(`${process.env.SPORTS_DATA_URL}nfl/scores/json/teams?key=${process.env.SPORTS_DATA_NFL_KEY}`)
+      const { data, status } = await axios.get(
+        `${process.env.SPORTS_DATA_URL}nfl/scores/json/teams?key=${process.env.SPORTS_DATA_NFL_KEY}`
+      )
 
       if (status === 200) {
         for (let team of data) {
@@ -241,7 +237,9 @@ export class TasksService {
     })
 
     if (athletesCount === 0) {
-      const { data, status } = await axios.get(`${process.env.SPORTS_DATA_URL}nfl/scores/json/Players?key=${process.env.SPORTS_DATA_NFL_KEY}`)
+      const { data, status } = await axios.get(
+        `${process.env.SPORTS_DATA_URL}nfl/scores/json/Players?key=${process.env.SPORTS_DATA_NFL_KEY}`
+      )
 
       if (status === 200) {
         for (let athlete of data) {
@@ -313,7 +311,9 @@ export class TasksService {
   async updateNflAthleteStats() {
     this.logger.debug("Update NFL Athlete Stats: STARTED")
 
-    const timeFrames = await axios.get(`https://api.sportsdata.io/v3/nfl/scores/json/Timeframes/current?key=${process.env.SPORTS_DATA_NFL_KEY}`)
+    const timeFrames = await axios.get(
+      `https://api.sportsdata.io/v3/nfl/scores/json/Timeframes/current?key=${process.env.SPORTS_DATA_NFL_KEY}`
+    )
 
     if (timeFrames.status === 200) {
       const timeFrame = timeFrames.data[0]
@@ -399,7 +399,9 @@ export class TasksService {
   async updateNflTeamScores() {
     this.logger.debug("Update NFL Team Scores: STARTED")
 
-    const timeFrames = await axios.get(`https://api.sportsdata.io/v3/nfl/scores/json/Timeframes/current?key=${process.env.SPORTS_DATA_NFL_KEY}`)
+    const timeFrames = await axios.get(
+      `https://api.sportsdata.io/v3/nfl/scores/json/Timeframes/current?key=${process.env.SPORTS_DATA_NFL_KEY}`
+    )
 
     if (timeFrames.status === 200) {
       const timeFrame = timeFrames.data[0]

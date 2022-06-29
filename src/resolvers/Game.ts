@@ -8,9 +8,9 @@ import { Game } from "../entities/Game"
 import { GameTeam } from "../entities/GameTeam"
 import { GameTeamAthlete } from "../entities/GameTeamAthlete"
 
+import { LessThanOrEqual, MoreThan, MoreThanOrEqual } from "typeorm"
 import { CreateGameArgs, CreateTeamArgs, GetGameArgs } from "../args/GameArgs"
 import { GameTab } from "../utils/types"
-import { LessThanOrEqual, MoreThan, MoreThanOrEqual } from "typeorm"
 
 @ObjectType()
 class GameResponse {
