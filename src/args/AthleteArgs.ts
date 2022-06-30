@@ -7,8 +7,15 @@ export class GetAthletesFilter {
   sport?: SportType
 }
 
+export enum AthleteSortOptions {
+  ID = "id",
+  SCORE = "score",
+}
+
 @InputType()
 export class GetAthletesArgs {
+  @Field({ nullable: true })
+  sort?: AthleteSortOptions
   @Field({ nullable: true })
   filter?: GetAthletesFilter
   @Field({ nullable: true })
