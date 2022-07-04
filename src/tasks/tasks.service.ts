@@ -127,6 +127,7 @@ export class TasksService {
               Key: `${s3_location}${filename}`,
               Body: fileContent,
               ContentType: "image/svg+xml",
+              CacheControl: "no-cache",
             }
 
             s3.upload(params, async (err: any, data: any) => {
@@ -165,6 +166,7 @@ export class TasksService {
                   Key: `${s3_location}${filename}`,
                   Body: fileContent,
                   ContentType: "image/svg+xml",
+                  CacheControl: "no-cache",
                 }
 
                 s3.upload(params, async (err: any, data: any) => {
@@ -278,6 +280,7 @@ export class TasksService {
                 Key: `${s3_location}${filename}`,
                 Body: fileContent,
                 ContentType: "image/svg+xml",
+                CacheControl: "no-cache",
               }
 
               s3.upload(params, async (err: any, data: any) => {
