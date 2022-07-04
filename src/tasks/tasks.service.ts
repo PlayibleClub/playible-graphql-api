@@ -263,6 +263,7 @@ export class TasksService {
               }
 
               result = convert.js2xml(result, options)
+              result = '<?xml version="1.0" encoding="utf-8"?>' + result
               var buffer = Buffer.from(result, "utf8")
               const s3 = new S3({
                 accessKeyId: process.env.AWS_ACCESS_KEY_ID,
