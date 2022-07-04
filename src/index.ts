@@ -1,22 +1,24 @@
-import "dotenv-safe/config"
+import * as Sentry from "@sentry/node"
+import * as Tracing from "@sentry/tracing"
 import { ApolloServer } from "apollo-server-express"
+import argon from "argon2"
+import cors from "cors"
+import "dotenv-safe/config"
 import express, { Request, Response } from "express"
 import session from "express-session"
-import { AuthChecker, buildSchema } from "type-graphql"
 import { createClient } from "redis"
-import cors from "cors"
-import argon from "argon2"
+import { AuthChecker, buildSchema } from "type-graphql"
 
 import { NestFactory } from "@nestjs/core"
 
+import { ContextType } from "@nestjs/common"
+import { AppModule } from "./app.module"
 import { __prod__ } from "./constants"
 import { AppDataSource } from "./utils/db"
-import { AppModule } from "./app.module"
-import { ContextType } from "@nestjs/common"
 
+import { AthleteResolver } from "./resolvers/Athlete"
 import { GameResolver } from "./resolvers/Game"
 import { UserResolver } from "./resolvers/User"
-import { AthleteResolver } from "./resolvers/Athlete"
 
 import { AdminWallet } from "./entities/AdminWallet"
 
@@ -34,10 +36,12 @@ const main = async () => {
 
   // EXPRESS
   const app = express()
-  const whitelist = [
-    "http://localhost:3000",
-    "https://studio.apollographql.com",
-  ]
+  Sentry.init({
+    dsn: process.env.SENTRY_DSN,
+    integrations: [new Sentry.Integrations.Http({ tracing: true }), new Tracing.Integrations.Express({ app })],
+    tracesSampleRate: 1.0,
+  })
+  const whitelist = ["http://localhost:3000", "https://studio.apollographql.com"]
   const corsOptions = {
     origin: function (origin: any, callback: any) {
       if (whitelist.indexOf(origin) !== -1) {
@@ -49,6 +53,8 @@ const main = async () => {
     credentials: true,
   }
   app.use(cors(corsOptions))
+  app.use(Sentry.Handlers.requestHandler())
+  app.use(Sentry.Handlers.tracingHandler())
 
   // REDIS
   let RedisStore = require("connect-redis")(session)
@@ -77,10 +83,7 @@ const main = async () => {
     })
   )
 
-  const authChecker: AuthChecker<ContextType> = async (
-    { context }: { context: any },
-    roles
-  ) => {
+  const authChecker: AuthChecker<ContextType> = async ({ context }: { context: any }, roles) => {
     const token = context.req.headers.authorization.substring("Bearer ".length)
 
     if (token.length && roles.includes("ADMIN")) {
@@ -118,6 +121,8 @@ const main = async () => {
   app.get("/", (_, res) => {
     res.send("Healthy!")
   })
+
+  app.use(Sentry.Handlers.errorHandler())
 
   app.listen(80, () => {
     console.log("server started at localhost:80")

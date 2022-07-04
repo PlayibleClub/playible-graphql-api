@@ -35,6 +35,8 @@
     "@nestjs/core": "^8.4.6",
     "@nestjs/platform-express": "^8.4.6",
     "@nestjs/schedule": "^2.0.1",
+    "@sentry/node": "^7.4.1",
+    "@sentry/tracing": "^7.4.1",
     "@types/cron": "^2.0.0",
     "apollo-server-express": "^3.8.2",
     "argon2": "^0.28.5",
