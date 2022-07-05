@@ -4,7 +4,7 @@ import { AthleteSortOptions, GetAthletesArgs } from "../args/AthleteArgs"
 import { setup } from "../near-api"
 
 import { Athlete } from "../entities/Athlete"
-import { MoreThan, MoreThanOrEqual } from "typeorm"
+import { In, MoreThan, MoreThanOrEqual } from "typeorm"
 
 @ObjectType()
 class Distribution {
@@ -22,6 +22,14 @@ class TestResponse {
   prize: number
   @Field(() => [Distribution])
   distribution: Distribution[]
+}
+
+@ObjectType()
+class UserAthleteResponse {
+  @Field()
+  tokenId: string
+  @Field(() => Athlete)
+  athlete: Athlete
 }
 
 @Resolver()
@@ -81,21 +89,27 @@ export class AthleteResolver {
     return athletes
   }
 
-  @Query(() => TestResponse)
-  async testNearApi(): Promise<TestResponse> {
+  @Query(() => [UserAthleteResponse])
+  async getUserAthletePortfolio(@Arg("accountId") accountId: string): Promise<UserAthleteResponse[]> {
     const nearApi = await setup()
     const account = await nearApi.account("playible.testnet")
-    const contract: any = new Contract(account, "oracle.playible.testnet", {
-      viewMethods: ["contract_info", "owner", "game_info"],
+    const contract: any = new Contract(account, "athlete.playible.testnet", {
+      viewMethods: ["nft_tokens_for_owner"],
       changeMethods: [],
     })
 
-    const res: any = await contract.game_info({ game_id: "1" })
+    const res: any = await contract.nft_tokens_for_owner({ account_id: accountId })
+    const ids = res.map((token: any) => {
+      const idTrait = JSON.parse(token.metadata.extra).find((trait: any) => trait.trait_type === "athlete_id")
+      return { tokenId: token.token_id, id: parseInt(idTrait.value) }
+    })
+    const athletes = await Athlete.find({ where: { id: In(ids.map((id: any) => id.id)) } })
 
-    return {
-      gameId: res.game_id,
-      prize: res.prize,
-      distribution: res.distribution,
-    }
+    return athletes.map((athlete) => {
+      return {
+        tokenId: ids.find((id: any) => id.id === athlete.id)?.tokenId,
+        athlete: athlete,
+      }
+    })
   }
 }
