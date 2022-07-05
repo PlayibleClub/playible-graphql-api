@@ -84,17 +84,19 @@ const main = async () => {
   )
 
   const authChecker: AuthChecker<ContextType> = async ({ context }: { context: any }, roles) => {
-    const token = context.req.headers.authorization.substring("Bearer ".length)
+    try {
+      const token = context.req.headers.authorization.substring("Bearer ".length)
 
-    if (token.length && roles.includes("ADMIN")) {
-      const admins = await AdminWallet.find()
+      if (token.length && roles.includes("ADMIN")) {
+        const admins = await AdminWallet.find()
 
-      for (let admin of admins) {
-        if (await argon.verify(admin.address, token)) {
-          return true
+        for (let admin of admins) {
+          if (await argon.verify(admin.address, token)) {
+            return true
+          }
         }
       }
-    }
+    } catch (_) {}
 
     return false
   }

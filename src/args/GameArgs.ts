@@ -5,6 +5,8 @@ import { GameTab, LimitOffset, SportType } from "../utils/types"
 export class CreateGameArgs {
   @Field()
   name!: string
+  @Field({ nullable: true })
+  description?: string
   @Field()
   startTime!: Date
   @Field()

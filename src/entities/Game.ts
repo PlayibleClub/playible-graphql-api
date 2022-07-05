@@ -15,6 +15,10 @@ export class Game extends BaseEntity {
   @Column({ type: "varchar", length: 155 })
   name!: string
 
+  @Field(() => String, { nullable: true })
+  @Column({ type: "text", nullable: true })
+  description?: string
+
   @Field(() => Date)
   @Column({ type: "timestamptz" })
   startTime!: Date
