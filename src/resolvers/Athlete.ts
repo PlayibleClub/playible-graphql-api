@@ -93,7 +93,7 @@ export class AthleteResolver {
   async getUserAthletePortfolio(@Arg("accountId") accountId: string): Promise<UserAthleteResponse[]> {
     const nearApi = await setup()
     const account = await nearApi.account("playible.testnet")
-    const contract: any = new Contract(account, "athlete.playible.testnet", {
+    const contract: any = new Contract(account, process.env.ATHLETE_NFT_CONTRACT_ID || "", {
       viewMethods: ["nft_tokens_for_owner"],
       changeMethods: [],
     })

@@ -112,18 +112,7 @@
     <linearGradient id="linear-gradient-52" x1="298.54" y1="843.87" x2="372.9" y2="843.87" xlink:href="#linear-gradient-49"/>
     <linearGradient id="linear-gradient-53" x1="581.57" y1="647.88" x2="660.83" y2="647.88" xlink:href="#linear-gradient-49"/>
     <linearGradient id="linear-gradient-54" x1="540.88" y1="656.28" x2="632" y2="656.28" xlink:href="#linear-gradient-49"/>
-    <linearGradient id="linear-gradient-55" x1="77.73" y1="190.66" x2="100.01" y2="190.66" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#e6e7e8"/>
-      <stop offset="0.15" stop-color="#e1e2e3"/>
-      <stop offset="0.33" stop-color="#d3d4d5"/>
-      <stop offset="0.52" stop-color="#bcbdbf"/>
-      <stop offset="0.71" stop-color="#9c9d9f"/>
-      <stop offset="0.91" stop-color="#737476"/>
-      <stop offset="1" stop-color="#5f6062"/>
-    </linearGradient>
-    <linearGradient id="linear-gradient-56" x1="84.65" y1="224.16" x2="156.31" y2="224.16" xlink:href="#linear-gradient-55"/>
-    <linearGradient id="linear-gradient-57" x1="94" y1="328.72" x2="137.85" y2="328.72" xlink:href="#linear-gradient-55"/>
-    <linearGradient id="linear-gradient-58" x1="345.79" y1="814.33" x2="446.96" y2="814.33" xlink:href="#linear-gradient-49"/>
+    <linearGradient id="linear-gradient-55" x1="345.79" y1="814.33" x2="446.96" y2="814.33" xlink:href="#linear-gradient-49"/>
   </defs>
   <g id="BG">
     <path d="M-1367.55-249.23" transform="translate(-0.07 -0.16)" style="fill: url(#linear-gradient)"/>
@@ -572,17 +561,14 @@
     <path d="M301.73,887.85a347.72,347.72,0,0,0,25.32-25,350.49,350.49,0,0,0,45.85-63c-4.55,7.7-9.65,15.61-15.36,23.64a339.45,339.45,0,0,1-59,63.66Z" transform="translate(-0.07 -0.16)" style="fill: url(#linear-gradient-52)"/>
     <path d="M654.27,448.45l6.56-1.83v85L634.09,697.68l-5.09-1c-4.6,26.43-10.42,54.47-17.8,83.82-5.87,23.39-12.21,45.54-18.8,66.4l-10.83,2.22S634.53,699.07,654.27,448.45Z" transform="translate(-0.07 -0.16)" style="fill: url(#linear-gradient-53)"/>
     <path d="M616.41,459,632,454.75Q625.09,521,615.11,591.22q-7.33,51.18-15.76,99.9l-4.3-.81q-5.09,26.51-11.7,54.43c-9.47,39.74-20.33,76.73-31.85,110.85l-10.62,2.23S591.47,761.75,616.41,459Z" transform="translate(-0.07 -0.16)" style="fill: url(#linear-gradient-54)"/>
-    <path d="M94.29,169.13a35,35,0,0,0,5.72-1.81L78.63,214l-.9-6.62Z" transform="translate(-0.07 -0.16)" style="fill: url(#linear-gradient-55)"/>
-    <path d="M84.65,279.32l10.54-28,6.62,2.11s35.23-84.9,49.38-104.77l5.12-2.66s-46.77,87.19-69.66,156.33Z" transform="translate(-0.07 -0.16)" style="fill: url(#linear-gradient-56)"/>
-    <path d="M132.3,266.27S104.54,333.44,94,376.73l2.22,14.43S115.09,314,137.85,268.49Z" transform="translate(-0.07 -0.16)" style="fill: url(#linear-gradient-57)"/>
-    <path d="M345.79,897.16l5.06,1.06a511.48,511.48,0,0,0,40.3-53.61A515,515,0,0,0,447,730.44a505.28,505.28,0,0,1-21.06,49.07A514.4,514.4,0,0,1,345.79,897.16Z" transform="translate(-0.07 -0.16)" style="fill: url(#linear-gradient-58)"/>
+    <path d="M345.79,897.16l5.06,1.06a511.48,511.48,0,0,0,40.3-53.61A515,515,0,0,0,447,730.44a505.28,505.28,0,0,1-21.06,49.07A514.4,514.4,0,0,1,345.79,897.16Z" transform="translate(-0.07 -0.16)" style="fill: url(#linear-gradient-55)"/>
   </g>
   <g id="TEXT_Name_position_number_" data-name="TEXT (Name, position, number)">
-    <text transform="matrix(0.98, 0, -0.17, 0.98, 350, 300.53)" text-anchor="middle" style="font-size: 94px;fill: none;stroke: #fff;stroke-miterlimit: 10;stroke-width: 3px;font-family: Syncopate-Bold, Syncopate;font-weight: 700">30</text>
-    <text transform="matrix(0.98, 0, -0.17, 0.98, 350, 564.04)" text-anchor="middle" style="font-size: 55px;fill: #fff;font-family: Arimo-Bold, Arimo;font-weight: 700">PG</text>
-    <path d="M481,504.76H214.49l2.61-10.29,267.1-.09Q482.58,499.57,481,504.76Z" transform="translate(-0.07 -0.16)" style="fill: #fff"/>
-    <text transform="translate(350 383.09)" text-anchor="middle" style="font-size: 65px;fill: #fff;font-family: Arimo-Bold, Arimo;font-weight: 700">STEPHEN</text>
-    <text transform="translate(350 446.14)" text-anchor="middle" style="font-size: 65px;fill: #fff;font-family: Arimo-Bold, Arimo;font-weight: 700">CURRY</text>
+    <text transform="matrix(0.98, 0, -0.17, 0.98, 109.16, 303.08)" style="font-size: 94px;fill: none;stroke: #fff;stroke-miterlimit: 10;stroke-width: 3px;font-family: Syncopate-Bold, Syncopate;font-weight: 700">30</text>
+    <text transform="matrix(0.98, 0, -0.17, 0.98, 107.59, 564.04)" style="font-size: 55px;fill: #fff;font-family: Arimo-Bold, Arimo;font-weight: 700">PG</text>
+    <path d="M377.54,504.76H111.06l2.61-10.29,267.1-.09Q379.15,499.57,377.54,504.76Z" transform="translate(-0.07 -0.16)" style="fill: #fff"/>
+    <text transform="translate(107.16 383.09)" style="font-size: 65px;fill: #fff;font-family: Arimo-Bold, Arimo;font-weight: 700">STEPHEN</text>
+    <text transform="translate(108.26 446.14)" style="font-size: 65px;fill: #fff;font-family: Arimo-Bold, Arimo;font-weight: 700">CURRY</text>
   </g>
   <g id="Logo">
     <path d="M320.56,153.16s-4.47-8.94-4.47-18V99h67.76v37.26s.44,24.8-22.61,36.2l-11.48,5.69S335.2,171.66,329.94,166l6.61-11.53h16.33L369.28,126l-8.23-14.23-33-.11L336.49,126H353l-8.36,14.28H328.15Z" transform="translate(-0.07 -0.16)" style="fill: #fff"/>
