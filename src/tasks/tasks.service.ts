@@ -267,6 +267,12 @@ export class TasksService {
               }
 
               result = convert.js2xml(result, options)
+              // fs.writeFileSync(
+              //   `./nfl-images/${athlete["PlayerID"]}-${athlete["FirstName"].toLowerCase()}-${athlete[
+              //     "LastName"
+              //   ].toLowerCase()}.svg`,
+              //   result
+              // )
               var buffer = Buffer.from(result, "utf8")
               const s3 = new S3({
                 accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -275,7 +281,7 @@ export class TasksService {
               const filename = `${athlete["PlayerID"]}-${athlete["FirstName"].toLowerCase()}-${athlete[
                 "LastName"
               ].toLowerCase()}.svg`
-              const s3_location = "media/athlete/nfl/"
+              const s3_location = "media/athlete/nfl/images/"
               const fileContent = buffer
               const params: any = {
                 Bucket: process.env.AWS_BUCKET_NAME,
@@ -289,17 +295,72 @@ export class TasksService {
                 if (err) {
                   this.logger.error(err)
                 } else {
-                  await Athlete.create({
-                    apiId: athlete["PlayerID"],
-                    firstName: athlete["FirstName"],
-                    lastName: athlete["LastName"],
-                    position: athlete["Position"],
-                    jersey: athlete["Number"],
-                    team,
-                    isActive: athlete["Status"] === "Active",
-                    isInjured: athlete["InjuryStatus"] !== null,
-                    nftImage: data["Location"],
-                  }).save()
+                  const nftImage = data["Location"]
+
+                  var svgAnimationTemplate = fs.readFileSync(
+                    `./src/utils/nfl-svg-teams-animation-templates/${team.key}_Animation.svg`,
+                    "utf-8"
+                  )
+                  var options = { compact: true, ignoreComment: true, spaces: 4 }
+                  var result: any = convert.xml2js(svgAnimationTemplate, options)
+
+                  try {
+                    result.svg.g[4].text[0].tspan["_cdata"] = athlete["Number"] ? athlete["Number"].toString() : "00"
+                    result.svg.g[4].text[1].tspan["_cdata"] = athlete["Number"] ? athlete["Number"].toString() : "00"
+                    result.svg.g[4].text[2].tspan["_cdata"] = athlete["Position"].toUpperCase()
+                    result.svg.g[4].text[3].tspan["_cdata"] = athlete["Position"].toUpperCase()
+                    result.svg.g[4].text[4].tspan["_cdata"] = athlete["FirstName"].toUpperCase()
+                    result.svg.g[4].text[5].tspan["_cdata"] = athlete["FirstName"].toUpperCase()
+                    result.svg.g[4].text[6].tspan["_cdata"] = athlete["LastName"].toUpperCase()
+                    result.svg.g[4].text[7].tspan["_cdata"] = athlete["LastName"].toUpperCase()
+                    result = convert.js2xml(result, options)
+                  } catch (e) {
+                    console.log(`FAILED AT ATHLETE ID: ${athlete["PlayerID"]} and TEAM KEY: ${team.key}`)
+                    console.log(e)
+                  }
+
+                  // fs.writeFileSync(
+                  //   `./nfl-animations/${athlete["PlayerID"]}-${athlete["FirstName"].toLowerCase()}-${athlete[
+                  //     "LastName"
+                  //   ].toLowerCase()}.svg`,
+                  //   result
+                  // )
+                  var buffer = Buffer.from(result, "utf8")
+                  const s3 = new S3({
+                    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+                    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+                  })
+                  const filename = `${athlete["PlayerID"]}-${athlete["FirstName"].toLowerCase()}-${athlete[
+                    "LastName"
+                  ].toLowerCase()}.svg`
+                  const s3_location = "media/athlete/nfl/animations/"
+                  const fileContent = buffer
+                  const params: any = {
+                    Bucket: process.env.AWS_BUCKET_NAME,
+                    Key: `${s3_location}${filename}`,
+                    Body: fileContent,
+                    ContentType: "image/svg+xml",
+                    CacheControl: "no-cache",
+                  }
+
+                  s3.upload(params, async (err: any, data: any) => {
+                    if (err) {
+                      this.logger.error(err)
+                    } else {
+                      await Athlete.create({
+                        apiId: athlete["PlayerID"],
+                        firstName: athlete["FirstName"],
+                        lastName: athlete["LastName"],
+                        position: athlete["Position"],
+                        jersey: athlete["Number"],
+                        team,
+                        isActive: athlete["Status"] === "Active",
+                        isInjured: athlete["InjuryStatus"] !== null,
+                        nftImage,
+                        nftAnimation: data["Location"],
+                      }).save()
+                    }
+                  })
                 }
               })
             }
