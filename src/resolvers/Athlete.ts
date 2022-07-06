@@ -78,7 +78,7 @@ export class AthleteResolver {
       ...args,
       where: filter?.sport
         ? { team: { sport: filter?.sport }, stats: { fantasyScore: MoreThanOrEqual(0) } }
-        : undefined,
+        : { stats: { fantasyScore: MoreThanOrEqual(0) } },
       relations: {
         stats: true,
         team: true,
