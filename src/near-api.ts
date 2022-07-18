@@ -13,10 +13,10 @@ export const setup = async () => {
   const config: any = {
     networkId: process.env.NEAR_NETWORK_ID,
     keyStore,
-    nodeUrl: "https://rpc.testnet.near.org",
-    walletUrl: "https://wallet.testnet.near.org",
-    helperUrl: "https://helper.testnet.near.org",
-    explorerUrl: "https://explorer.testnet.near.org",
+    nodeUrl: `https://rpc.${process.env.NEAR_NETWORK_ID}.near.org`,
+    walletUrl: `https://wallet.${process.env.NEAR_NETWORK_ID}.near.org`,
+    helperUrl: `https://helper.${process.env.NEAR_NETWORK_ID}.near.org`,
+    explorerUrl: `https://explorer.${process.env.NEAR_NETWORK_ID}.near.org`,
   }
 
   const near = await connect(config)
