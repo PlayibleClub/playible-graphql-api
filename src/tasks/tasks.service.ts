@@ -319,12 +319,12 @@ export class TasksService {
                     console.log(e)
                   }
 
-                  fs.writeFileSync(
-                    `./nfl-animations/${athlete["PlayerID"]}-${athlete["FirstName"].toLowerCase()}-${athlete[
-                      "LastName"
-                    ].toLowerCase()}.svg`,
-                    result
-                  )
+                  // fs.writeFileSync(
+                  //   `./nfl-animations/${athlete["PlayerID"]}-${athlete["FirstName"].toLowerCase()}-${athlete[
+                  //     "LastName"
+                  //   ].toLowerCase()}.svg`,
+                  //   result
+                  // )
                   var buffer = Buffer.from(result, "utf8")
                   const s3 = new S3({
                     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
