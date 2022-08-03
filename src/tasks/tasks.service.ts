@@ -298,33 +298,33 @@ export class TasksService {
                   const nftImage = data["Location"]
 
                   var svgAnimationTemplate = fs.readFileSync(
-                    `./src/utils/nfl-svg-teams-animation-templates/${team.key}_Animation.svg`,
+                    `./src/utils/nfl-svg-teams-animation-templates/${team.key}.svg`,
                     "utf-8"
                   )
                   var options = { compact: true, ignoreComment: true, spaces: 4 }
                   var result: any = convert.xml2js(svgAnimationTemplate, options)
 
                   try {
-                    result.svg.g[4].text[0].tspan["_cdata"] = athlete["Number"] ? athlete["Number"].toString() : "00"
-                    result.svg.g[4].text[1].tspan["_cdata"] = athlete["Number"] ? athlete["Number"].toString() : "00"
-                    result.svg.g[4].text[2].tspan["_cdata"] = athlete["Position"].toUpperCase()
-                    result.svg.g[4].text[3].tspan["_cdata"] = athlete["Position"].toUpperCase()
-                    result.svg.g[4].text[4].tspan["_cdata"] = athlete["FirstName"].toUpperCase()
-                    result.svg.g[4].text[5].tspan["_cdata"] = athlete["FirstName"].toUpperCase()
-                    result.svg.g[4].text[6].tspan["_cdata"] = athlete["LastName"].toUpperCase()
-                    result.svg.g[4].text[7].tspan["_cdata"] = athlete["LastName"].toUpperCase()
+                    result.svg.g[5].text[0].tspan["_cdata"] = athlete["Number"] ? athlete["Number"].toString() : "00"
+                    result.svg.g[5].text[1].tspan["_cdata"] = athlete["Number"] ? athlete["Number"].toString() : "00"
+                    result.svg.g[5].text[2].tspan["_cdata"] = athlete["FirstName"].toUpperCase()
+                    result.svg.g[5].text[3].tspan["_cdata"] = athlete["FirstName"].toUpperCase()
+                    result.svg.g[5].text[4].tspan["_cdata"] = athlete["LastName"].toUpperCase()
+                    result.svg.g[5].text[5].tspan["_cdata"] = athlete["LastName"].toUpperCase()
+                    result.svg.g[5].g[0].text[0].tspan["_cdata"] = athlete["Position"].toUpperCase()
+                    result.svg.g[5].g[0].text[1].tspan["_cdata"] = athlete["Position"].toUpperCase()
                     result = convert.js2xml(result, options)
                   } catch (e) {
                     console.log(`FAILED AT ATHLETE ID: ${athlete["PlayerID"]} and TEAM KEY: ${team.key}`)
                     console.log(e)
                   }
 
-                  // fs.writeFileSync(
-                  //   `./nfl-animations/${athlete["PlayerID"]}-${athlete["FirstName"].toLowerCase()}-${athlete[
-                  //     "LastName"
-                  //   ].toLowerCase()}.svg`,
-                  //   result
-                  // )
+                  fs.writeFileSync(
+                    `./nfl-animations/${athlete["PlayerID"]}-${athlete["FirstName"].toLowerCase()}-${athlete[
+                      "LastName"
+                    ].toLowerCase()}.svg`,
+                    result
+                  )
                   var buffer = Buffer.from(result, "utf8")
                   const s3 = new S3({
                     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
