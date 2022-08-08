@@ -1,3 +1,4 @@
+import { SportType } from "./../utils/types"
 import { Contract } from "near-api-js"
 import { Arg, Authorized, Field, Mutation, ObjectType, Query, Resolver } from "type-graphql"
 import { AthleteSortOptions, GetAthletesArgs } from "../args/AthleteArgs"
@@ -91,10 +92,30 @@ export class AthleteResolver {
   }
 
   @Query(() => [UserAthleteResponse])
-  async getUserAthletePortfolio(@Arg("accountId") accountId: string): Promise<UserAthleteResponse[]> {
+  async getUserAthletePortfolio(
+    @Arg("accountId") accountId: string,
+    @Arg("sportType") sportType: SportType
+  ): Promise<UserAthleteResponse[]> {
     const nearApi = await setup()
     const account = await nearApi.account(process.env.NEAR_MAIN_ACCOUNT_ID || "")
-    const contract: any = new Contract(account, process.env.ATHLETE_NFT_ACCOUNT_ID || "", {
+    let contractId
+
+    switch (sportType) {
+      case SportType.NFL:
+        contractId = process.env.ATHLETE_NFL_NFT_ACCOUNT_ID
+        break
+      case SportType.NBA:
+        contractId = process.env.ATHLETE_NBA_NFT_ACCOUNT_ID
+        break
+      case SportType.MLB:
+        contractId = process.env.ATHLETE_MLB_NFT_ACCOUNT_ID
+        break
+      default:
+        contractId = process.env.ATHLETE_NFL_NFT_ACCOUNT_ID
+        break
+    }
+
+    const contract: any = new Contract(account, contractId || "", {
       viewMethods: ["nft_tokens_for_owner"],
       changeMethods: [],
     })
@@ -116,10 +137,27 @@ export class AthleteResolver {
 
   @Authorized("ADMIN")
   @Mutation(() => Boolean)
-  async addStarterAthletesToOpenPackContract(): Promise<Boolean> {
+  async addStarterAthletesToOpenPackContract(@Arg("sportType") sportType: SportType): Promise<Boolean> {
+    let contractId
+
+    switch (sportType) {
+      case SportType.NFL:
+        contractId = process.env.OPENPACK_NFL_ACCOUNT_ID
+        break
+      case SportType.NBA:
+        contractId = process.env.OPENPACK_NBA_ACCOUNT_ID
+        break
+      case SportType.MLB:
+        contractId = process.env.OPENPACK_MLB_ACCOUNT_ID
+        break
+      default:
+        contractId = process.env.OPENPACK_NFL_ACCOUNT_ID
+        break
+    }
+
     const nearApi = await setup()
     const account = await nearApi.account(process.env.NEAR_MAIN_ACCOUNT_ID || "")
-    const contract: any = new Contract(account, process.env.OPENPACK_ACCOUNT_ID || "", {
+    const contract: any = new Contract(account, contractId || "", {
       viewMethods: [],
       changeMethods: ["execute_add_athletes"],
     })
