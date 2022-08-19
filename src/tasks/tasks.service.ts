@@ -388,8 +388,8 @@ export class TasksService {
       const timeFrame = timeFrames.data[0]
 
       if (timeFrame) {
-        const season = new Date().getFullYear() - 1
-        // const season = timeFrame.ApiSeason
+        // const season = new Date().getFullYear() - 1
+        const season = timeFrame.ApiSeason
 
         const { data, status } = await axios.get(
           `${process.env.SPORTS_DATA_URL}nfl/stats/json/PlayerSeasonStats/${season}?key=${process.env.SPORTS_DATA_NFL_KEY}`
@@ -403,6 +403,9 @@ export class TasksService {
             const apiId: any = athleteStat["PlayerID"]
             const curStat = await AthleteStat.findOne({
               where: { athlete: { apiId }, season: season.toString() },
+              relations: {
+                athlete: true,
+              },
             })
 
             if (curStat) {
@@ -476,8 +479,8 @@ export class TasksService {
       const timeFrame = timeFrames.data[0]
 
       if (timeFrame) {
-        // const season = timeFrame.ApiSeason
-        const season = "2021REG"
+        const season = timeFrame.ApiSeason
+        // const season = "2021REG"
         const week = timeFrame.ApiWeek ? timeFrame.ApiWeek : 1
 
         const { data, status } = await axios.get(
