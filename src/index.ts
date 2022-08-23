@@ -126,7 +126,7 @@ const main = async () => {
 
   app.use(Sentry.Handlers.errorHandler())
 
-  app.listen(80, () => {
+  app.listen(process.env.PORT || 80, () => {
     console.log("server started at localhost:80")
   })
 
