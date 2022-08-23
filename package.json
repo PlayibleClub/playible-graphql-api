@@ -8,7 +8,7 @@
     "build": "tsc",
     "watch": "tsc -w",
     "dev": "nodemon dist/index.js",
-    "start": "node dist/index.js",
+    "start": "ts-node src/index.ts",
     "start2": "ts-node src/index.ts",
     "dev2": "nodemon --exec ts-node src/index.ts",
     "typeorm": "typeorm-ts-node-esm"
