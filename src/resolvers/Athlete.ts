@@ -6,8 +6,7 @@ import { setup } from "../near-api"
 
 import { Athlete } from "../entities/Athlete"
 import { In, MoreThanOrEqual } from "typeorm"
-import { CreateGameArgs } from "src/args/GameArgs"
-import { NFL_ATHLETE_IDS } from "src/utils/athlete-ids"
+import { NFL_ATHLETE_IDS } from "./../utils/athlete-ids"
 
 @ObjectType()
 class Distribution {
