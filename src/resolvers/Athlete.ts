@@ -7,6 +7,7 @@ import { setup } from "../near-api"
 import { Athlete } from "../entities/Athlete"
 import { In, MoreThanOrEqual } from "typeorm"
 import { CreateGameArgs } from "src/args/GameArgs"
+import { NFL_ATHLETE_IDS } from "src/utils/athlete-ids"
 
 @ObjectType()
 class Distribution {
@@ -139,10 +140,12 @@ export class AthleteResolver {
   @Mutation(() => Boolean)
   async addStarterAthletesToOpenPackContract(@Arg("sportType") sportType: SportType): Promise<Boolean> {
     let contractId
+    let athleteIds: number[] = []
 
     switch (sportType) {
       case SportType.NFL:
         contractId = process.env.OPENPACK_NFL_ACCOUNT_ID
+        athleteIds = NFL_ATHLETE_IDS
         break
       case SportType.NBA:
         contractId = process.env.OPENPACK_NBA_ACCOUNT_ID
@@ -162,7 +165,9 @@ export class AthleteResolver {
       changeMethods: ["execute_add_athletes"],
     })
 
-    const athlete_tokens = (await Athlete.find({ order: { id: "ASC" }, relations: { team: true } })).map((athlete) => {
+    const athlete_tokens = (
+      await Athlete.find({ where: { apiId: In(athleteIds) }, order: { id: "ASC" }, relations: { team: true } })
+    ).map((athlete) => {
       return {
         athlete_id: athlete.id.toString(),
         token_uri: athlete.nftImage,
