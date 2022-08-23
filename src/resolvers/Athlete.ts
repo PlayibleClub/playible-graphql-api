@@ -137,8 +137,8 @@ export class AthleteResolver {
   }
 
   @Authorized("ADMIN")
-  @Mutation(() => Boolean)
-  async addStarterAthletesToOpenPackContract(@Arg("sportType") sportType: SportType): Promise<Boolean> {
+  @Mutation(() => Number)
+  async addStarterAthletesToOpenPackContract(@Arg("sportType") sportType: SportType): Promise<Number> {
     let contractId
     let athleteIds: number[] = []
 
@@ -178,9 +178,8 @@ export class AthleteResolver {
       }
     })
 
-    const res: any = await contract.execute_add_athletes({ pack_type: "starter", athlete_tokens }, "300000000000000")
-    console.log(res)
+    await contract.execute_add_athletes({ pack_type: "starter", athlete_tokens }, "300000000000000")
 
-    return true
+    return athlete_tokens.length
   }
 }
