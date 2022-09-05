@@ -210,7 +210,7 @@ export class TasksService {
 
     if (teamsCount === 0) {
       const { data, status } = await axios.get(
-        `${process.env.SPORTS_DATA_URL}nfl/scores/json/teams?key=${process.env.SPORTS_DATA_NFL_KEY}`
+        `${process.env.SPORTS_DATA_URL}nfl/scores/json/Teams?key=${process.env.SPORTS_DATA_NFL_KEY}`
       )
 
       if (status === 200) {
