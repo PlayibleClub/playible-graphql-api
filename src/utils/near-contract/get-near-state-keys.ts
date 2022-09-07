@@ -1,7 +1,9 @@
 // file: view_state_keys.js
 import { setup } from "../../near-api";
+import * as dotenv from "dotenv";
 
 async function main() {
+  dotenv.config();
   const nearApi = await setup();
 
   const response = await nearApi.connection.provider.query({
