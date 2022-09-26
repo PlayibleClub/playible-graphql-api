@@ -261,7 +261,7 @@ export class TasksService {
                 result.svg.g[5].text[2]["_text"] = athlete["FirstName"].toUpperCase()
                 result.svg.g[5].text[3]["_text"] = athlete["LastName"].toUpperCase()
                 result.svg.g[5].text[1]["_text"] = athlete["Position"].toUpperCase()
-                result.svg.g[5].text[0]["_text"] = athlete["Number"] ? athlete["Number"] : "00"
+                result.svg.g[5].text[0]["_text"] = ""
               } catch (e) {
                 console.log(`FAILED AT ATHLETE ID: ${athlete["PlayerID"]} and TEAM KEY: ${team.key}`)
               }
@@ -305,8 +305,8 @@ export class TasksService {
                   var result: any = convert.xml2js(svgAnimationTemplate, options)
 
                   try {
-                    result.svg.g[5].text[0].tspan["_cdata"] = athlete["Number"] ? athlete["Number"].toString() : "00"
-                    result.svg.g[5].text[1].tspan["_cdata"] = athlete["Number"] ? athlete["Number"].toString() : "00"
+                    result.svg.g[5].text[0].tspan["_cdata"] = ""
+                    result.svg.g[5].text[1].tspan["_cdata"] = ""
                     result.svg.g[5].text[2].tspan["_cdata"] = athlete["FirstName"].toUpperCase()
                     result.svg.g[5].text[3].tspan["_cdata"] = athlete["FirstName"].toUpperCase()
                     result.svg.g[5].text[4].tspan["_cdata"] = athlete["LastName"].toUpperCase()
@@ -374,6 +374,116 @@ export class TasksService {
     }
 
     this.logger.debug(`NFL Athletes Data: ${athletesCount ? "DID NOT SYNC" : "SYNCED SUCCESSFULLY"}`)
+  }
+
+  // @Timeout(1)
+  async generateAthleteNflAssets() {
+    this.logger.debug("Generate Athlete NFL Assets: STARTED")
+
+    const athletes = await Athlete.find({
+      where: { team: { sport: SportType.NFL } },
+      relations: {
+        team: true,
+      },
+    })
+
+    for (let athlete of athletes) {
+      var svgTemplate = fs.readFileSync(`./src/utils/nfl-svg-teams-templates/${athlete.team.key}.svg`, "utf-8")
+      var options = { compact: true, ignoreComment: true, spaces: 4 }
+      var result: any = convert.xml2js(svgTemplate, options)
+
+      try {
+        result.svg.g[5].text[2]["_text"] = athlete.firstName.toUpperCase()
+        result.svg.g[5].text[3]["_text"] = athlete.lastName.toUpperCase()
+        result.svg.g[5].text[1]["_text"] = athlete.position.toUpperCase()
+        result.svg.g[5].text[0]["_text"] = ""
+      } catch (e) {
+        console.log(`FAILED AT ATHLETE ID: ${athlete.apiId} and TEAM KEY: ${athlete.team.key}`)
+      }
+
+      result = convert.js2xml(result, options)
+
+      var buffer = Buffer.from(result, "utf8")
+      const s3 = new S3({
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+      })
+      const filename = `${athlete.apiId}-${athlete.firstName.toLowerCase()}-${athlete.lastName.toLowerCase()}.svg`
+      const s3_location = "media/athlete/nfl/images/"
+      const fileContent = buffer
+      const params: any = {
+        Bucket: process.env.AWS_BUCKET_NAME,
+        Key: `${s3_location}${filename}`,
+        Body: fileContent,
+        ContentType: "image/svg+xml",
+        CacheControl: "no-cache",
+      }
+
+      s3.upload(params, async (err: any, data: any) => {
+        if (err) {
+          this.logger.error(err)
+        } else {
+          const nftImage = data["Location"]
+          athlete.nftImage = nftImage
+
+          var svgAnimationTemplate = fs.readFileSync(
+            `./src/utils/nfl-svg-teams-animation-templates/${athlete.team.key}.svg`,
+            "utf-8"
+          )
+          var options = { compact: true, ignoreComment: true, spaces: 4 }
+          var result: any = convert.xml2js(svgAnimationTemplate, options)
+
+          try {
+            result.svg.g[5].text[0].tspan["_cdata"] = ""
+            result.svg.g[5].text[1].tspan["_cdata"] = ""
+            result.svg.g[5].text[2].tspan["_cdata"] = athlete.firstName.toUpperCase()
+            result.svg.g[5].text[3].tspan["_cdata"] = athlete.firstName.toUpperCase()
+            result.svg.g[5].text[4].tspan["_cdata"] = athlete.lastName.toUpperCase()
+            result.svg.g[5].text[5].tspan["_cdata"] = athlete.lastName.toUpperCase()
+            result.svg.g[5].g[0].text[0].tspan["_cdata"] = athlete.position.toUpperCase()
+            result.svg.g[5].g[0].text[1].tspan["_cdata"] = athlete.position.toUpperCase()
+            result = convert.js2xml(result, options)
+          } catch (e) {
+            console.log(`FAILED AT ATHLETE ID: ${athlete.apiId} and TEAM KEY: ${athlete.team.key}`)
+            console.log(e)
+          }
+
+          // fs.writeFileSync(
+          //   `./nfl-animations/${athlete["PlayerID"]}-${athlete["FirstName"].toLowerCase()}-${athlete[
+          //     "LastName"
+          //   ].toLowerCase()}.svg`,
+          //   result
+          // )
+          var buffer = Buffer.from(result, "utf8")
+          const s3 = new S3({
+            accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+            secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+          })
+          const filename = `${athlete.apiId}-${athlete.firstName.toLowerCase()}-${athlete.lastName.toLowerCase()}.svg`
+          const s3_location = "media/athlete/nfl/animations/"
+          const fileContent = buffer
+          const params: any = {
+            Bucket: process.env.AWS_BUCKET_NAME,
+            Key: `${s3_location}${filename}`,
+            Body: fileContent,
+            ContentType: "image/svg+xml",
+            CacheControl: "no-cache",
+          }
+
+          s3.upload(params, async (err: any, data: any) => {
+            if (err) {
+              this.logger.error(err)
+            } else {
+              athlete.nftAnimation = data["Location"]
+            }
+          })
+        }
+      })
+    }
+
+    await Athlete.save(athletes, { chunk: 20 })
+
+    this.logger.debug("Generate Athlete NFL Assets: FINISHED")
   }
 
   @Interval(900000) // Runs every 15 mins
