@@ -79,6 +79,17 @@ export class AthleteResolver {
   }
 
   @Query(() => [Athlete])
+  async getAthleteByIds(@Arg("ids", () => [Number]) ids: number[]): Promise<Athlete[]> {
+    return await Athlete.find({
+      where: { id: In(ids) },
+      relations: {
+        stats: true,
+        team: true,
+      },
+    })
+  }
+
+  @Query(() => [Athlete])
   async getAthletes(
     @Arg("args", { nullable: true })
     { sort, filter, pagination }: GetAthletesArgs
