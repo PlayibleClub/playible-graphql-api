@@ -430,7 +430,6 @@ export class TasksService {
           this.logger.error(err)
         } else {
           const nftImage = data["Location"]
-          this.logger.debug(`NFT IMAGE URL: ${nftImage}`)
           athlete.nftImage = nftImage
 
           var svgAnimationTemplate = fs.readFileSync(
@@ -482,14 +481,12 @@ export class TasksService {
               this.logger.error(err)
             } else {
               athlete.nftAnimation = data["Location"]
-              this.logger.debug(`NFT ANIMATION URL: ${data["Location"]}`)
+              await Athlete.save(athlete)
             }
           })
         }
       })
     }
-
-    await Athlete.save(athletes, { chunk: 20 })
 
     this.logger.debug("Generate Athlete NFL Assets: FINISHED")
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
