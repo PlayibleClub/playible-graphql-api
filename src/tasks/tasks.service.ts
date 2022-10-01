@@ -376,7 +376,7 @@ export class TasksService {
     this.logger.debug(`NFL Athletes Data: ${athletesCount ? "DID NOT SYNC" : "SYNCED SUCCESSFULLY"}`)
   }
 
-  // @Timeout(1)
+  @Timeout(1)
   async generateAthleteNflAssets() {
     this.logger.debug("Generate Athlete NFL Assets: STARTED")
 
@@ -393,6 +393,15 @@ export class TasksService {
       var result: any = convert.xml2js(svgTemplate, options)
 
       try {
+        if (athlete.firstName.length > 11) {
+          result.svg.g[5].text[2]["_attributes"]["style"] =
+            "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700"
+        }
+        if (athlete.lastName.length > 11) {
+          result.svg.g[5].text[3]["_attributes"]["style"] =
+            "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700"
+        }
+
         result.svg.g[5].text[2]["_text"] = athlete.firstName.toUpperCase()
         result.svg.g[5].text[3]["_text"] = athlete.lastName.toUpperCase()
         result.svg.g[5].text[1]["_text"] = athlete.position.toUpperCase()
@@ -440,6 +449,15 @@ export class TasksService {
           var result: any = convert.xml2js(svgAnimationTemplate, options)
 
           try {
+            if (athlete.firstName.length > 11) {
+              result.svg.g[5].text[2].tspan["_attributes"]["font-size"] = "50"
+              result.svg.g[5].text[3].tspan["_attributes"]["font-size"] = "50"
+            }
+            if (athlete.lastName.length > 11) {
+              result.svg.g[5].text[4].tspan["_attributes"]["font-size"] = "50"
+              result.svg.g[5].text[5].tspan["_attributes"]["font-size"] = "50"
+            }
+
             result.svg.g[5].text[0].tspan["_cdata"] = ""
             result.svg.g[5].text[1].tspan["_cdata"] = ""
             result.svg.g[5].text[2].tspan["_cdata"] = athlete.firstName.toUpperCase()
@@ -516,7 +534,7 @@ export class TasksService {
           const updateStats: AthleteStat[] = []
 
           for (let athleteStat of data) {
-            const apiId: any = athleteStat["PlayerID"]
+            const apiId: number = athleteStat["PlayerID"]
             const curStat = await AthleteStat.findOne({
               where: { athlete: { apiId }, season: season.toString() },
               relations: {
