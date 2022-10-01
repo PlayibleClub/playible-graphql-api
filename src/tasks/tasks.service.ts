@@ -376,7 +376,7 @@ export class TasksService {
     this.logger.debug(`NFL Athletes Data: ${athletesCount ? "DID NOT SYNC" : "SYNCED SUCCESSFULLY"}`)
   }
 
-  // @Timeout(1)
+  @Timeout(1)
   async generateAthleteNflAssets() {
     this.logger.debug("Generate Athlete NFL Assets: STARTED")
 
