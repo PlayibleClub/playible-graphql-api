@@ -41,7 +41,7 @@ const main = async () => {
     integrations: [new Sentry.Integrations.Http({ tracing: true }), new Tracing.Integrations.Express({ app })],
     tracesSampleRate: 1.0,
   })
-  const whitelist = ["http://localhost:3000", "https://studio.apollographql.com", "https://dev.app.playible.io/"]
+  const whitelist = ["http://localhost:3000", "https://studio.apollographql.com", "https://dev.app.playible.io"]
   const corsOptions = {
     origin: function (origin: any, callback: any) {
       if (whitelist.indexOf(origin) !== -1) {
