@@ -497,7 +497,7 @@ export class TasksService {
     this.logger.debug("Update NFL Athlete Stats: STARTED")
 
     const timeFrames = await axios.get(
-      `https://api.sportsdata.io/v3/nfl/scores/json/Timeframes/current?key=${process.env.SPORTS_DATA_NFL_KEY}`
+      `${process.env.SPORTS_DATA_URL}nfl/scores/json/Timeframes/current?key=${process.env.SPORTS_DATA_NFL_KEY}`
     )
 
     if (timeFrames.status === 200) {
