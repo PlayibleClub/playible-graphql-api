@@ -490,6 +490,7 @@ export class TasksService {
     await Athlete.save(athletes, { chunk: 20 })
 
     this.logger.debug("Generate Athlete NFL Assets: FINISHED")
+    this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
 
   @Interval(900000) // Runs every 15 mins
