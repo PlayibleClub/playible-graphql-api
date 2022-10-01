@@ -430,6 +430,7 @@ export class TasksService {
           this.logger.error(err)
         } else {
           const nftImage = data["Location"]
+          this.logger.debug(`NFT IMAGE URL: ${nftImage}`)
           athlete.nftImage = nftImage
 
           var svgAnimationTemplate = fs.readFileSync(
@@ -481,6 +482,7 @@ export class TasksService {
               this.logger.error(err)
             } else {
               athlete.nftAnimation = data["Location"]
+              this.logger.debug(`NFT ANIMATION URL: ${data["Location"]}`)
             }
           })
         }
