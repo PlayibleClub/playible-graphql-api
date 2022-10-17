@@ -6,4 +6,5 @@ node_modules
 !.env.example
 
 nfl-images
+nfl-images-promo
 nfl-animations

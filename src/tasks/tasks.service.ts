@@ -510,6 +510,73 @@ export class TasksService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
 
+  @Timeout(1)
+  async generateAthleteNflAssetsPromo() {
+    this.logger.debug("Generate Athlete NFL Assets Promo: STARTED")
+
+    const athletes = await Athlete.find({
+      where: { team: { sport: SportType.NFL } },
+      relations: {
+        team: true,
+      },
+    })
+
+    for (let athlete of athletes) {
+      var svgTemplate = fs.readFileSync(`./src/utils/nfl-svg-teams-promo-templates/${athlete.team.key}.svg`, "utf-8")
+      var options = { compact: true, ignoreComment: true, spaces: 4 }
+      var result: any = convert.xml2js(svgTemplate, options)
+
+      try {
+        if (athlete.firstName.length > 11) {
+          result.svg.g[5].text[1]["_attributes"]["style"] = "fill:#fff; font-family:Arimo-Bold, Arimo; font-size:50px;"
+        }
+        if (athlete.lastName.length > 11) {
+          result.svg.g[5].text[2]["_attributes"]["style"] = "fill:#fff; font-family:Arimo-Bold, Arimo; font-size:50px;"
+        }
+
+        result.svg.g[5]["text"][1]["tspan"]["_text"] = athlete.firstName.toUpperCase()
+        result.svg.g[5]["text"][2]["tspan"]["_text"] = athlete.lastName.toUpperCase()
+        result.svg.g[5]["text"][0]["tspan"]["_text"] = athlete.position.toUpperCase()
+      } catch (e) {
+        console.log(`FAILED AT ATHLETE ID: ${athlete.apiId} and TEAM KEY: ${athlete.team.key}`)
+      }
+
+      result = convert.js2xml(result, options)
+      // fs.writeFileSync(
+      //   `./nfl-images-promo/${athlete.apiId}-${athlete.firstName.toLowerCase()}-${athlete.lastName.toLowerCase()}.svg`,
+      //   result
+      // )
+
+      var buffer = Buffer.from(result, "utf8")
+      const s3 = new S3({
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+      })
+      const filename = `${athlete.apiId}-${athlete.firstName.toLowerCase()}-${athlete.lastName.toLowerCase()}.svg`
+      const s3_location = "media/athlete/nfl/promo_images/"
+      const fileContent = buffer
+      const params: any = {
+        Bucket: process.env.AWS_BUCKET_NAME,
+        Key: `${s3_location}${filename}`,
+        Body: fileContent,
+        ContentType: "image/svg+xml",
+        CacheControl: "no-cache",
+      }
+
+      s3.upload(params, async (err: any, data: any) => {
+        if (err) {
+          this.logger.error(err)
+        } else {
+          athlete.nftImagePromo = data["Location"]
+          await Athlete.save(athlete)
+        }
+      })
+    }
+
+    this.logger.debug("Generate Athlete NFL Assets Promo: FINISHED")
+    this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
+  }
+
   @Interval(900000) // Runs every 15 mins
   async updateNflAthleteStats() {
     this.logger.debug("Update NFL Athlete Stats: STARTED")
