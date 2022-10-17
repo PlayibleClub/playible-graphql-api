@@ -34,6 +34,37 @@ class UserAthleteResponse {
   athlete: Athlete
 }
 
+const chunkify = (a: any[], n: number, balanced: boolean) => {
+  if (n < 2) return [a]
+
+  var len = a.length,
+    out = [],
+    i = 0,
+    size
+
+  if (len % n === 0) {
+    size = Math.floor(len / n)
+    while (i < len) {
+      out.push(a.slice(i, (i += size)))
+    }
+  } else if (balanced) {
+    while (i < len) {
+      size = Math.ceil((len - i) / n--)
+      out.push(a.slice(i, (i += size)))
+    }
+  } else {
+    n--
+    size = Math.floor(len / n)
+    if (len % size === 0) size--
+    while (i < size * n) {
+      out.push(a.slice(i, (i += size)))
+    }
+    out.push(a.slice(size * n))
+  }
+
+  return out
+}
+
 @Resolver()
 export class AthleteResolver {
   @Query(() => Athlete)
@@ -48,8 +79,20 @@ export class AthleteResolver {
   }
 
   @Query(() => [Athlete])
+  async getAthleteByIds(@Arg("ids", () => [Number]) ids: number[]): Promise<Athlete[]> {
+    return await Athlete.find({
+      where: { id: In(ids) },
+      relations: {
+        stats: true,
+        team: true,
+      },
+    })
+  }
+
+  @Query(() => [Athlete])
   async getAthletes(
-    @Arg("args", { nullable: true }) { sort, filter, pagination }: GetAthletesArgs
+    @Arg("args", { nullable: true })
+    { sort, filter, pagination }: GetAthletesArgs
   ): Promise<Athlete[]> {
     let args: any = {}
     let order: any = {
@@ -79,7 +122,10 @@ export class AthleteResolver {
     let athletes = await Athlete.find({
       ...args,
       where: filter?.sport
-        ? { team: { sport: filter?.sport }, stats: { fantasyScore: MoreThanOrEqual(0) } }
+        ? {
+            team: { sport: filter?.sport },
+            stats: { fantasyScore: MoreThanOrEqual(0) },
+          }
         : { stats: { fantasyScore: MoreThanOrEqual(0) } },
       relations: {
         stats: true,
@@ -120,12 +166,17 @@ export class AthleteResolver {
       changeMethods: [],
     })
 
-    const res: any = await contract.nft_tokens_for_owner({ account_id: accountId })
+    const res: any = await contract.nft_tokens_for_owner({
+      account_id: accountId,
+    })
     const ids = res.map((token: any) => {
       const idTrait = JSON.parse(token.metadata.extra).find((trait: any) => trait.trait_type === "athlete_id")
       return { tokenId: token.token_id, id: parseInt(idTrait.value) }
     })
-    const athletes = await Athlete.find({ where: { id: In(ids.map((id: any) => id.id)) }, relations: { team: true } })
+    const athletes = await Athlete.find({
+      where: { id: In(ids.map((id: any) => id.id)) },
+      relations: { team: true },
+    })
 
     return athletes.map((athlete) => {
       return {
@@ -164,7 +215,7 @@ export class AthleteResolver {
       changeMethods: ["execute_add_athletes"],
     })
 
-    const athlete_tokens = (
+    const athleteTokens = (
       await Athlete.find({ where: { apiId: In(athleteIds) }, order: { id: "ASC" }, relations: { team: true } })
     ).map((athlete) => {
       return {
@@ -177,8 +228,12 @@ export class AthleteResolver {
       }
     })
 
-    await contract.execute_add_athletes({ pack_type: "starter", athlete_tokens }, "300000000000000")
+    const chunkifiedAthleteTokens = chunkify(athleteTokens, 10, false)
 
-    return athlete_tokens.length
+    for (const _athletesTokens of chunkifiedAthleteTokens) {
+      await contract.execute_add_athletes({ pack_type: "starter", athlete_tokens: _athletesTokens }, "300000000000000")
+    }
+
+    return athleteTokens.length
   }
 }

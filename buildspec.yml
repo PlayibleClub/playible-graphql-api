@@ -9,6 +9,3 @@ phases:
     commands:
       - yarn install
       - yarn build
-  post_build:
-    commands:
-      - aws s3 sync build/ "s3://${BUCKET_NAME}" --acl=public-read --delete --metadata Content-Encoding=gzip

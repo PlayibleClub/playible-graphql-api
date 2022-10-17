@@ -41,7 +41,12 @@ const main = async () => {
     integrations: [new Sentry.Integrations.Http({ tracing: true }), new Tracing.Integrations.Express({ app })],
     tracesSampleRate: 1.0,
   })
-  const whitelist = ["http://localhost:3000", "https://studio.apollographql.com"]
+  const whitelist = [
+    "http://localhost:3000",
+    "https://studio.apollographql.com",
+    "https://dev.app.playible.io",
+    "https://app.playible.io",
+  ]
   const corsOptions = {
     origin: function (origin: any, callback: any) {
       if (whitelist.indexOf(origin) !== -1) {
@@ -126,7 +131,7 @@ const main = async () => {
 
   app.use(Sentry.Handlers.errorHandler())
 
-  app.listen(80, () => {
+  app.listen(process.env.PORT || 80, () => {
     console.log("server started at localhost:80")
   })
 
