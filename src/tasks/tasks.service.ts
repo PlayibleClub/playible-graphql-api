@@ -13,7 +13,7 @@ import { GameTeam } from "../entities/GameTeam"
 import { Team } from "../entities/Team"
 
 import { ATHLETE_MLB_BASE_ANIMATION, ATHLETE_MLB_BASE_IMG, ATHLETE_MLB_IMG } from "../utils/svgTemplates"
-import { SportType } from "../utils/types"
+import { AthleteStatType, SportType } from "../utils/types"
 
 @Injectable()
 export class TasksService {
@@ -577,8 +577,9 @@ export class TasksService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
 
-  @Interval(900000) // Runs every 15 mins
-  async updateNflAthleteStats() {
+  // @Interval(900000) // Runs every 15 mins
+  @Timeout(1)
+  async updateNflAthleteStatsPerSeason() {
     this.logger.debug("Update NFL Athlete Stats: STARTED")
 
     const timeFrames = await axios.get(
@@ -602,8 +603,100 @@ export class TasksService {
 
           for (let athleteStat of data) {
             const apiId: number = athleteStat["PlayerID"]
+            const numberOfGames: number =
+              athleteStat["ScoringDetails"].length === 0 ? 1 : athleteStat["ScoringDetails"].length
             const curStat = await AthleteStat.findOne({
-              where: { athlete: { apiId }, season: season.toString() },
+              where: { athlete: { apiId }, season: season.toString(), type: AthleteStatType.SEASON },
+              relations: {
+                athlete: true,
+              },
+            })
+
+            if (curStat) {
+              // Update stats here
+              curStat.fantasyScore = athleteStat["FantasyPointsDraftKings"] / numberOfGames
+              curStat.completion = athleteStat["PassingCompletionPercentage"]
+              curStat.carries = athleteStat["RushingAttempts"] / numberOfGames
+              curStat.passingYards = athleteStat["PassingYards"] / numberOfGames
+              curStat.rushingYards = athleteStat["RushingYards"] / numberOfGames
+              curStat.receivingYards = athleteStat["ReceivingYards"] / numberOfGames
+              curStat.interceptions = athleteStat["PassingInterceptions"] / numberOfGames
+              curStat.passingTouchdowns = athleteStat["PassingTouchdowns"] / numberOfGames
+              curStat.rushingTouchdowns = athleteStat["RushingTouchdowns"] / numberOfGames
+              curStat.receivingTouchdowns = athleteStat["ReceivingTouchdowns"] / numberOfGames
+              curStat.targets = athleteStat["ReceivingTargets"] / numberOfGames
+              curStat.receptions = athleteStat["Receptions"] / numberOfGames
+              updateStats.push(curStat)
+            } else {
+              const curAthlete = await Athlete.findOne({
+                where: { apiId },
+              })
+
+              if (curAthlete) {
+                newStats.push(
+                  AthleteStat.create({
+                    athlete: curAthlete,
+                    season: season.toString(),
+                    type: AthleteStatType.SEASON,
+                    position: athleteStat["Position"],
+                    fantasyScore: athleteStat["FantasyPointsDraftKings"] / numberOfGames,
+                    completion: athleteStat["PassingCompletionPercentage"],
+                    carries: athleteStat["RushingAttempts"] / numberOfGames,
+                    passingYards: athleteStat["PassingYards"] / numberOfGames,
+                    rushingYards: athleteStat["RushingYards"] / numberOfGames,
+                    receivingYards: athleteStat["ReceivingYards"] / numberOfGames,
+                    passingTouchdowns: athleteStat["PassingTouchdowns"] / numberOfGames,
+                    interceptions: athleteStat["PassingInterceptions"] / numberOfGames,
+                    rushingTouchdowns: athleteStat["RushingTouchdowns"] / numberOfGames,
+                    receivingTouchdowns: athleteStat["ReceivingTouchdowns"] / numberOfGames,
+                    targets: athleteStat["ReceivingTargets"] / numberOfGames,
+                    receptions: athleteStat["Receptions"] / numberOfGames,
+                  })
+                )
+              }
+            }
+          }
+
+          await AthleteStat.save([...newStats, ...updateStats], { chunk: 20 })
+
+          this.logger.debug("Update NFL Athlete Stats: FINISHED")
+        } else {
+          this.logger.error("NFL Athlete Stats Data: SPORTS DATA ERROR")
+        }
+      }
+    } else {
+      this.logger.error("NFL Timeframes Data: SPORTS DATA ERROR")
+    }
+  }
+
+  @Interval(300000) // Runs every 5 mins
+  async updateNflAthleteStatsPerWeek() {
+    this.logger.debug("Update NFL Athlete Stats Per Week: STARTED")
+
+    const timeFrames = await axios.get(
+      `${process.env.SPORTS_DATA_URL}nfl/scores/json/Timeframes/current?key=${process.env.SPORTS_DATA_NFL_KEY}`
+    )
+
+    if (timeFrames.status === 200) {
+      const timeFrame = timeFrames.data[0]
+
+      if (timeFrame) {
+        // const season = new Date().getFullYear() - 1
+        const season = timeFrame.ApiSeason
+        const week = timeFrame.ApiWeek ? timeFrame.ApiWeek : "1"
+
+        const { data, status } = await axios.get(
+          `${process.env.SPORTS_DATA_URL}nfl/stats/json/PlayerGameStatsByWeek/${season}/${week}?key=${process.env.SPORTS_DATA_NFL_KEY}`
+        )
+
+        if (status === 200) {
+          const newStats: AthleteStat[] = []
+          const updateStats: AthleteStat[] = []
+
+          for (let athleteStat of data) {
+            const apiId: number = athleteStat["PlayerID"]
+            const curStat = await AthleteStat.findOne({
+              where: { athlete: { apiId }, season: season, week: week, type: AthleteStatType.WEEKLY },
               relations: {
                 athlete: true,
               },
@@ -633,7 +726,9 @@ export class TasksService {
                 newStats.push(
                   AthleteStat.create({
                     athlete: curAthlete,
-                    season: season.toString(),
+                    season: season,
+                    week: week,
+                    type: AthleteStatType.WEEKLY,
                     position: athleteStat["Position"],
                     fantasyScore: athleteStat["FantasyPointsDraftKings"],
                     completion: athleteStat["PassingCompletionPercentage"],
@@ -655,7 +750,7 @@ export class TasksService {
 
           await AthleteStat.save([...newStats, ...updateStats], { chunk: 20 })
 
-          this.logger.debug("Update NFL Athlete Stats: FINISHED")
+          this.logger.debug("Update NFL Athlete Stats Per Week: FINISHED")
         } else {
           this.logger.error("NFL Athlete Stats Data: SPORTS DATA ERROR")
         }

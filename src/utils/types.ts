@@ -6,6 +6,11 @@ export enum SportType {
   NFL = "nfl",
 }
 
+export enum AthleteStatType {
+  WEEKLY = "weekly",
+  SEASON = "season",
+}
+
 export enum GameTab {
   NEW = "new",
   ACTIVE = "active",

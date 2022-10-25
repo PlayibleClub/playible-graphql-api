@@ -1,3 +1,4 @@
+import { AthleteStatType } from "../utils/types"
 import { Field, ID, ObjectType } from "type-graphql"
 import { BaseEntity, Column, Entity, ManyToOne, PrimaryGeneratedColumn, Relation } from "typeorm"
 import { Athlete } from "./Athlete"
@@ -16,6 +17,18 @@ export class AthleteStat extends BaseEntity {
   @Field(() => String)
   @Column({ type: "varchar", length: 155 })
   season!: string
+
+  @Field(() => String, { nullable: true })
+  @Column({ type: "varchar", length: 155, nullable: true })
+  week?: string
+
+  @Field(() => String)
+  @Column({
+    type: "enum",
+    enum: AthleteStatType,
+    default: AthleteStatType.WEEKLY,
+  })
+  type: AthleteStatType = AthleteStatType.WEEKLY
 
   @Field(() => String)
   @Column({ type: "varchar", length: 155 })
