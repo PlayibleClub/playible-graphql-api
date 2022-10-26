@@ -602,8 +602,7 @@ export class TasksService {
 
           for (let athleteStat of data) {
             const apiId: number = athleteStat["PlayerID"]
-            const numberOfGames: number =
-              athleteStat["ScoringDetails"].length === 0 ? 1 : athleteStat["ScoringDetails"].length
+            const numberOfGames: number = athleteStat["Played"] > 0 ? athleteStat["Played"] : 1
             const curStat = await AthleteStat.findOne({
               where: { athlete: { apiId }, season: season.toString(), type: AthleteStatType.SEASON },
               relations: {
