@@ -613,7 +613,7 @@ export class TasksService {
             if (curStat) {
               // Update stats here
               curStat.fantasyScore = athleteStat["FantasyPointsDraftKings"] / numberOfGames
-              curStat.completion = athleteStat["PassingCompletionPercentage"]
+              curStat.completion = athleteStat["PassingCompletionPercentage"] / numberOfGames
               curStat.carries = athleteStat["RushingAttempts"] / numberOfGames
               curStat.passingYards = athleteStat["PassingYards"] / numberOfGames
               curStat.rushingYards = athleteStat["RushingYards"] / numberOfGames
@@ -638,7 +638,7 @@ export class TasksService {
                     type: AthleteStatType.SEASON,
                     position: athleteStat["Position"],
                     fantasyScore: athleteStat["FantasyPointsDraftKings"] / numberOfGames,
-                    completion: athleteStat["PassingCompletionPercentage"],
+                    completion: athleteStat["PassingCompletionPercentage"] / numberOfGames,
                     carries: athleteStat["RushingAttempts"] / numberOfGames,
                     passingYards: athleteStat["PassingYards"] / numberOfGames,
                     rushingYards: athleteStat["RushingYards"] / numberOfGames,
