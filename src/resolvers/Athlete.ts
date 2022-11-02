@@ -72,7 +72,7 @@ export class AthleteResolver {
     return await Athlete.findOneOrFail({
       where: { id },
       relations: {
-        stats: true,
+        stats: { opponent: true },
         team: true,
       },
     })
