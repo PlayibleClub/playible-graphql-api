@@ -23,7 +23,7 @@ export class AthleteStat extends BaseEntity {
   @Column({ type: "varchar", length: 155, nullable: true })
   week?: string
 
-  @Field(() => Team)
+  @Field(() => Team, { nullable: true })
   @ManyToOne(() => Team, (team) => team.statOpponents)
   opponent!: Relation<Team> | null
 
