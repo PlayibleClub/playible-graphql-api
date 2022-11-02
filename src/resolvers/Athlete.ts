@@ -128,7 +128,7 @@ export class AthleteResolver {
           }
         : { stats: { fantasyScore: MoreThanOrEqual(0), ...(filter?.statType && { type: filter?.statType }) } },
       relations: {
-        stats: true,
+        stats: { opponent: true },
         team: true,
       },
       order: order,
