@@ -2,6 +2,7 @@ import { SportType } from "../utils/types"
 import { Field, ID, ObjectType } from "type-graphql"
 import { BaseEntity, Column, Entity, OneToMany, PrimaryGeneratedColumn, Relation } from "typeorm"
 import { Athlete } from "./Athlete"
+import { AthleteStat } from "./AthleteStat"
 
 @ObjectType()
 @Entity()
@@ -47,4 +48,10 @@ export class Team extends BaseEntity {
     cascade: true,
   })
   athletes!: Relation<Athlete>[]
+
+  @Field(() => [AthleteStat])
+  @OneToMany(() => AthleteStat, (athleteStat) => athleteStat.opponent, {
+    cascade: true,
+  })
+  statOpponents!: Relation<AthleteStat>[]
 }

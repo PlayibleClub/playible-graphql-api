@@ -2,6 +2,7 @@ import { AthleteStatType } from "../utils/types"
 import { Field, ID, ObjectType } from "type-graphql"
 import { BaseEntity, Column, Entity, ManyToOne, PrimaryGeneratedColumn, Relation } from "typeorm"
 import { Athlete } from "./Athlete"
+import { Team } from "./Team"
 
 @ObjectType()
 @Entity()
@@ -21,6 +22,14 @@ export class AthleteStat extends BaseEntity {
   @Field(() => String, { nullable: true })
   @Column({ type: "varchar", length: 155, nullable: true })
   week?: string
+
+  @Field(() => Team)
+  @ManyToOne(() => Team, (team) => team.statOpponents)
+  opponent!: Relation<Team> | null
+
+  @Field(() => Date, { nullable: true })
+  @Column({ type: "timestamptz", nullable: true })
+  gameDate?: Date
 
   @Field(() => String)
   @Column({
