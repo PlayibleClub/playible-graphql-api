@@ -72,7 +72,7 @@ export class AthleteResolver {
     return await Athlete.findOneOrFail({
       where: { id },
       relations: {
-        stats: true,
+        stats: { opponent: true },
         team: true,
       },
     })
@@ -124,11 +124,11 @@ export class AthleteResolver {
       where: filter?.sport
         ? {
             team: { sport: filter?.sport },
-            stats: { fantasyScore: MoreThanOrEqual(0) },
+            stats: { fantasyScore: MoreThanOrEqual(0), ...(filter?.statType && { type: filter?.statType }) },
           }
-        : { stats: { fantasyScore: MoreThanOrEqual(0) } },
+        : { stats: { fantasyScore: MoreThanOrEqual(0), ...(filter?.statType && { type: filter?.statType }) } },
       relations: {
-        stats: true,
+        stats: { opponent: true },
         team: true,
       },
       order: order,
@@ -221,6 +221,7 @@ export class AthleteResolver {
       return {
         athlete_id: athlete.id.toString(),
         token_uri: athlete.nftImage,
+        promo_token_uri: athlete.nftImagePromo,
         symbol: athlete.apiId.toString(),
         name: `${athlete.firstName} ${athlete.lastName}`,
         team: athlete.team.key,

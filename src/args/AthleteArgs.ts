@@ -1,10 +1,12 @@
 import { Field, InputType } from "type-graphql"
-import { LimitOffset, SportType } from "../utils/types"
+import { AthleteStatType, LimitOffset, SportType } from "../utils/types"
 
 @InputType()
 export class GetAthletesFilter {
   @Field({ nullable: true })
   sport?: SportType
+  @Field({ nullable: true })
+  statType?: AthleteStatType
 }
 
 export enum AthleteSortOptions {
