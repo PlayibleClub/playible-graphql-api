@@ -175,7 +175,7 @@ export class AthleteResolver {
     })
     const athletes = await Athlete.find({
       where: { id: In(ids.map((id: any) => id.id)) },
-      relations: { team: true },
+      relations: { team: true, stats: { opponent: true } },
     })
 
     return athletes.map((athlete) => {
