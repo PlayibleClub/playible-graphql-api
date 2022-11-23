@@ -769,7 +769,7 @@ export class TasksService {
     }
   }
 
-  // @Timeout(1)
+  @Timeout(1)
   async updateNflAthleteStatsAllWeeks() {
     this.logger.debug("Update NFL Athlete Stats All Weeks: STARTED")
 
