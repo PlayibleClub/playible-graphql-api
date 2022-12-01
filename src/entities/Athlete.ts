@@ -57,6 +57,10 @@ export class Athlete extends BaseEntity {
 
   @Field(() => String, { nullable: true })
   @Column({ type: "text", nullable: true })
+  nftImageLocked?: string
+
+  @Field(() => String, { nullable: true })
+  @Column({ type: "text", nullable: true })
   nftAnimation?: string
 
   @Field(() => [GameTeamAthlete])
