@@ -510,7 +510,7 @@ export class TasksService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
 
-  // @Timeout(1)
+  @Timeout(1)
   async generateAthleteNflAssetsPromo() {
     this.logger.debug("Generate Athlete NFL Assets Promo: STARTED")
 
@@ -620,7 +620,7 @@ export class TasksService {
         secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
       })
       const filename = `${athlete.apiId}-${athlete.firstName.toLowerCase()}-${athlete.lastName.toLowerCase()}.svg`
-      const s3_location = "media/athlete/nfl/promo_images/"
+      const s3_location = "media/athlete/nfl/locked_images/"
       const fileContent = buffer
       const params: any = {
         Bucket: process.env.AWS_BUCKET_NAME,
