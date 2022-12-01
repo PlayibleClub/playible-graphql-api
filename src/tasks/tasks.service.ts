@@ -634,7 +634,7 @@ export class TasksService {
         if (err) {
           this.logger.error(err)
         } else {
-          athlete.nftImagePromo = data["Location"]
+          athlete.nftImageLocked = data["Location"]
           await Athlete.save(athlete)
         }
       })
