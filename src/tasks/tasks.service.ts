@@ -609,10 +609,10 @@ export class TasksService {
       }
 
       result = convert.js2xml(result, options)
-      fs.writeFileSync(
-        `./nfl-images-locked/${athlete.apiId}-${athlete.firstName.toLowerCase()}-${athlete.lastName.toLowerCase()}.svg`,
-        result
-      )
+      // fs.writeFileSync(
+      //   `./nfl-images-locked/${athlete.apiId}-${athlete.firstName.toLowerCase()}-${athlete.lastName.toLowerCase()}.svg`,
+      //   result
+      // )
 
       var buffer = Buffer.from(result, "utf8")
       const s3 = new S3({
