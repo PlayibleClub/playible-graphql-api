@@ -376,6 +376,78 @@ export class TasksService {
     this.logger.debug(`NFL Athletes Data: ${athletesCount ? "DID NOT SYNC" : "SYNCED SUCCESSFULLY"}`)
   }
 
+  @Timeout(1)
+  async syncNbaData() {
+    const teamsCount = await Team.count({
+      where: { sport: SportType.NBA },
+    })
+
+    if (teamsCount === 0) {
+      const { data, status } = await axios.get(
+        `${process.env.SPORTS_DATA_URL}nba/scores/json/AllTeams?key=${process.env.SPORTS_DATA_NBA_KEY}`
+      )
+
+      if (status === 200) {
+        for (let team of data) {
+          try {
+            await Team.create({
+              apiId: team["GlobalTeamID"],
+              name: team["Name"],
+              key: team["Key"],
+              location: team["City"],
+              sport: SportType.NBA,
+              primaryColor: `#${team["PrimaryColor"]}`,
+              secondaryColor: `#${team["SecondaryColor"]}`,
+            }).save()
+          } catch (e) {
+            this.logger.error(e)
+          }
+        }
+      } else {
+        this.logger.error("NBA Teams Data: SPORTS DATA ERROR")
+      }
+    }
+
+    this.logger.debug(`NBA Teams Data: ${teamsCount ? "DID NOT SYNC" : "SYNCED SUCCESSFULLY"}`)
+
+    const athletesCount = await Athlete.count({
+      where: { team: { sport: SportType.NBA } },
+    })
+
+    if (athletesCount === 0) {
+      const { data, status } = await axios.get(
+        `${process.env.SPORTS_DATA_URL}nba/scores/json/Players?key=${process.env.SPORTS_DATA_NBA_KEY}`
+      )
+
+      if (status === 200) {
+        for (let athlete of data) {
+          try {
+            const team = await Team.findOne({
+              where: { apiId: athlete["GlobalTeamID"] },
+            })
+
+            if (team) {
+              await Athlete.create({
+                apiId: athlete["PlayerID"],
+                firstName: athlete["FirstName"],
+                lastName: athlete["LastName"],
+                position: athlete["Position"],
+                jersey: athlete["Jersey"],
+                team,
+                isActive: athlete["Status"] === "Active",
+                isInjured: athlete["InjuryStatus"] !== null,
+              }).save()
+            }
+          } catch (e) {
+            this.logger.error(e)
+          }
+        }
+      }
+    }
+
+    this.logger.debug(`NBA Athletes Data: ${athletesCount ? "DID NOT SYNC" : "SYNCED SUCCESSFULLY"}`)
+  }
+
   // @Timeout(1)
   async generateAthleteNflAssets() {
     this.logger.debug("Generate Athlete NFL Assets: STARTED")
@@ -577,7 +649,7 @@ export class TasksService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
 
-  @Timeout(1)
+  // @Timeout(1)
   async generateAthleteNflAssetsLocked() {
     this.logger.debug("Generate Athlete NFL Assets Locked: STARTED")
 
