@@ -220,8 +220,8 @@ export class AthleteResolver {
     ).map((athlete) => {
       return {
         athlete_id: athlete.id.toString(),
-        token_uri: athlete.nftImageLocked,
-        promo_token_uri: athlete.nftImagePromo,
+        soulbound_token_uri: athlete.nftImageLocked,
+        single_use_token_uri: athlete.nftImagePromo,
         symbol: athlete.apiId.toString(),
         name: `${athlete.firstName} ${athlete.lastName}`,
         team: athlete.team.key,
