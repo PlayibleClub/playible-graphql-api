@@ -124,7 +124,10 @@ export class AthleteResolver {
       where: filter?.sport
         ? {
             team: { sport: filter?.sport },
-            stats: { fantasyScore: MoreThanOrEqual(0), ...(filter?.statType && { type: filter?.statType }) },
+            stats: {
+              ...(sort === AthleteSortOptions.SCORE && { fantasyScore: MoreThanOrEqual(0) }),
+              ...(filter?.statType && { type: filter?.statType }),
+            },
           }
         : { stats: { fantasyScore: MoreThanOrEqual(0), ...(filter?.statType && { type: filter?.statType }) } },
       relations: {
