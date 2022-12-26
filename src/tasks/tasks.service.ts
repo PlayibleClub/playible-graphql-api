@@ -582,6 +582,146 @@ export class TasksService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
 
+  @Timeout(1)
+  async generateAthleteNbaAssets() {
+    this.logger.debug("Generate Athlete NBA Assets: STARTED")
+
+    const athletes = await Athlete.find({
+      where: { team: { sport: SportType.NBA } },
+      relations: {
+        team: true,
+      },
+    })
+
+    for (let athlete of athletes) {
+      var svgTemplate = fs.readFileSync(`./src/utils/nba-svg-teams-templates/${athlete.team.key}.svg`, "utf-8")
+      var options = { compact: true, ignoreComment: true, spaces: 4 }
+      var result: any = convert.xml2js(svgTemplate, options)
+
+      try {
+        if (athlete.firstName.length > 11) {
+          result.svg.g[6].text[1]["_attributes"]["style"] =
+            "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700"
+        }
+        if (athlete.lastName.length > 11) {
+          result.svg.g[6].text[2]["_attributes"]["style"] =
+            "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700"
+        }
+
+        result.svg.g[6]["text"][1]["tspan"]["_text"] = athlete.firstName.toUpperCase()
+        result.svg.g[6]["text"][2]["tspan"]["_text"] = athlete.lastName.toUpperCase()
+        result.svg.g[6]["text"][0]["tspan"]["_text"] = athlete.position.toUpperCase()
+      } catch (e) {
+        console.log(`FAILED AT ATHLETE ID: ${athlete.apiId} and TEAM KEY: ${athlete.team.key}`)
+      }
+
+      result = convert.js2xml(result, options)
+      // fs.writeFileSync(
+      //   `./nba-images/${athlete.apiId}-${athlete.firstName.toLowerCase()}-${athlete.lastName.toLowerCase()}.svg`,
+      //   result
+      // )
+
+      var buffer = Buffer.from(result, "utf8")
+
+      const s3 = new S3({
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+      })
+      const filename = `${athlete.apiId}-${athlete.firstName.toLowerCase()}-${athlete.lastName.toLowerCase()}.svg`
+      const s3_location = "media/athlete/nba/images/"
+      const fileContent = buffer
+      const params: any = {
+        Bucket: process.env.AWS_BUCKET_NAME,
+        Key: `${s3_location}${filename}`,
+        Body: fileContent,
+        ContentType: "image/svg+xml",
+        CacheControl: "no-cache",
+      }
+
+      s3.upload(params, async (err: any, data: any) => {
+        if (err) {
+          this.logger.error(err)
+        } else {
+          athlete.nftImage = data["Location"]
+
+          await Athlete.save(athlete)
+        }
+      })
+    }
+
+    this.logger.debug("Generate Athlete NBA Assets: FINISHED")
+    this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
+  }
+
+  // @Timeout(1)
+  async generateAthleteNbaAssetsPromo() {
+    this.logger.debug("Generate Athlete NBA Assets Promo: STARTED")
+
+    const athletes = await Athlete.find({
+      where: { team: { sport: SportType.NBA } },
+      relations: {
+        team: true,
+      },
+    })
+
+    for (let athlete of athletes) {
+      var svgTemplate = fs.readFileSync(`./src/utils/nba-svg-teams-promo-templates/${athlete.team.key}.svg`, "utf-8")
+      var options = { compact: true, ignoreComment: true, spaces: 4 }
+      var result: any = convert.xml2js(svgTemplate, options)
+
+      try {
+        if (athlete.firstName.length > 11) {
+          result.svg.g[6].text[1]["_attributes"]["style"] =
+            "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700"
+        }
+        if (athlete.lastName.length > 11) {
+          result.svg.g[6].text[2]["_attributes"]["style"] =
+            "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700"
+        }
+
+        result.svg.g[6]["text"][1]["tspan"]["_text"] = athlete.firstName.toUpperCase()
+        result.svg.g[6]["text"][2]["tspan"]["_text"] = athlete.lastName.toUpperCase()
+        result.svg.g[6]["text"][0]["tspan"]["_text"] = athlete.position.toUpperCase()
+      } catch (e) {
+        console.log(`FAILED AT ATHLETE ID: ${athlete.apiId} and TEAM KEY: ${athlete.team.key}`)
+      }
+
+      result = convert.js2xml(result, options)
+      // fs.writeFileSync(
+      //   `./nba-images-promo/${athlete.apiId}-${athlete.firstName.toLowerCase()}-${athlete.lastName.toLowerCase()}.svg`,
+      //   result
+      // )
+
+      var buffer = Buffer.from(result, "utf8")
+      const s3 = new S3({
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+      })
+      const filename = `${athlete.apiId}-${athlete.firstName.toLowerCase()}-${athlete.lastName.toLowerCase()}.svg`
+      const s3_location = "media/athlete/nba/promo_images/"
+      const fileContent = buffer
+      const params: any = {
+        Bucket: process.env.AWS_BUCKET_NAME,
+        Key: `${s3_location}${filename}`,
+        Body: fileContent,
+        ContentType: "image/svg+xml",
+        CacheControl: "no-cache",
+      }
+
+      s3.upload(params, async (err: any, data: any) => {
+        if (err) {
+          this.logger.error(err)
+        } else {
+          athlete.nftImagePromo = data["Location"]
+          await Athlete.save(athlete)
+        }
+      })
+    }
+
+    this.logger.debug("Generate Athlete NBA Assets Promo: FINISHED")
+    this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
+  }
+
   // @Timeout(1)
   async generateAthleteNflAssetsPromo() {
     this.logger.debug("Generate Athlete NFL Assets Promo: STARTED")
