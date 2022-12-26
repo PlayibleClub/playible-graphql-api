@@ -3,7 +3,7 @@ var S3 = require("aws-sdk/clients/s3")
 var fs = require("fs")
 
 // const athlete_img = fs.readFileSync(`./src/utils/nfl-svg-teams-promo-templates/SEA.svg`, "utf-8")
-const athlete_img = fs.readFileSync(`./src/utils/nba-svg-teams-promo-templates/MEM.svg`, "utf-8")
+const athlete_img = fs.readFileSync(`./src/utils/nba-svg-teams-lock-templates/LAL.svg`, "utf-8")
 // const athlete_script = fs.readFileSync(`./src/utils/nfl-svg-teams-animation-scripts/ATL_Animation.svg`, "utf-8")
 
 var options = { compact: true, ignoreComment: true, spaces: 4 }
