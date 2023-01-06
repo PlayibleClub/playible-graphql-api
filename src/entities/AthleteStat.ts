@@ -166,4 +166,82 @@ export class AthleteStat extends BaseEntity {
   @Column({ type: "numeric", default: 0 })
   receptions?: number // Receptions
   // END NFL
+
+  // START NBA
+  @Field(() => Number)
+  @Column({ type: "numeric", default: 0 })
+  points?: number // Points
+
+  @Field(() => Number)
+  @Column({ type: "numeric", default: 0 })
+  rebounds?: number // Rebounds
+
+  @Field(() => Number)
+  @Column({ type: "numeric", default: 0 })
+  offensiveRebounds?: number // OffensiveRebounds
+
+  @Field(() => Number)
+  @Column({ type: "numeric", default: 0 })
+  defensiveRebounds?: number // DefensiveRebounds
+
+  @Field(() => Number)
+  @Column({ type: "numeric", default: 0 })
+  assists?: number // Assists
+
+  @Field(() => Number)
+  @Column({ type: "numeric", default: 0 })
+  steals?: number // Steals
+
+  @Field(() => Number)
+  @Column({ type: "numeric", default: 0 })
+  blockedShots?: number // BlockedShots
+
+  @Field(() => Number)
+  @Column({ type: "numeric", default: 0 })
+  turnovers?: number // Turnovers
+
+  @Field(() => Number)
+  @Column({ type: "numeric", default: 0 })
+  personalFouls?: number // PersonalFouls
+
+  @Field(() => Number)
+  @Column({ type: "numeric", default: 0 })
+  fieldGoalsMade?: number // FieldGoalsMade
+
+  @Field(() => Number)
+  @Column({ type: "numeric", default: 0 })
+  fieldGoalsAttempted?: number // FieldGoalsAttempted
+
+  @Field(() => Number)
+  @Column({ type: "numeric", default: 0 })
+  fieldGoalsPercentage?: number // FieldGoalsPercentage
+
+  @Field(() => Number)
+  @Column({ type: "numeric", default: 0 })
+  threePointersMade?: number // ThreePointersMade
+
+  @Field(() => Number)
+  @Column({ type: "numeric", default: 0 })
+  threePointersAttempted?: number // ThreePointersAttempted
+
+  @Field(() => Number)
+  @Column({ type: "numeric", default: 0 })
+  threePointersPercentage?: number // ThreePointersPercentage
+
+  @Field(() => Number)
+  @Column({ type: "numeric", default: 0 })
+  freeThrowsMade?: number // FreeThrowsMade
+
+  @Field(() => Number)
+  @Column({ type: "numeric", default: 0 })
+  freeThrowsAttempted?: number // FreeThrowsAttempted
+
+  @Field(() => Number)
+  @Column({ type: "numeric", default: 0 })
+  freeThrowsPercentage?: number // FreeThrowsPercentage
+
+  @Field(() => Number)
+  @Column({ type: "numeric", default: 0 })
+  minutes?: number // Minutes
+  // END NBA
 }
