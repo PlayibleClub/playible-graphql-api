@@ -51,6 +51,10 @@ export class AthleteStat extends BaseEntity {
   @Column({ type: "numeric", default: 0 })
   played?: number
 
+  @Field(() => Number)
+  @Column({ type: "numeric", default: 0 })
+  statId?: number
+
   // START MLB
   @Field(() => Number)
   @Column({ type: "numeric", default: 0 })

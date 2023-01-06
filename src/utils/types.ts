@@ -10,6 +10,7 @@ export enum SportType {
 export enum AthleteStatType {
   WEEKLY = "weekly",
   SEASON = "season",
+  DAILY = "daily",
 }
 
 export enum GameTab {

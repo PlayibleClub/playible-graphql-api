@@ -3,8 +3,9 @@ import { Cron, Interval, Timeout } from "@nestjs/schedule"
 import S3 from "aws-sdk/clients/s3"
 import axios from "axios"
 import fs from "fs"
-import { LessThanOrEqual, MoreThanOrEqual } from "typeorm"
+import { LessThanOrEqual, MoreThanOrEqual, Equal } from "typeorm"
 import convert from "xml-js"
+import moment from "moment"
 
 import { Athlete } from "../entities/Athlete"
 import { AthleteStat } from "../entities/AthleteStat"
@@ -1288,111 +1289,214 @@ export class TasksService {
   }
 
   // @Timeout(1)
-  // @Interval(900000) // Runs every 15 mins
+  @Interval(900000) // Runs every 15 mins
   async updateNbaAthleteStatsPerSeason() {
     this.logger.debug("Update NBA Athlete Stats: STARTED")
 
-    const timeFrames = await axios.get(
-      `${process.env.SPORTS_DATA_URL}nba/scores/json/Timeframes/current?key=${process.env.SPORTS_DATA_NFL_KEY}`
+    // const timeFrames = await axios.get(
+    //   `${process.env.SPORTS_DATA_URL}nba/scores/json/Timeframes/current?key=${process.env.SPORTS_DATA_NFL_KEY}`
+    // )
+
+    // if (timeFrames.status === 200) {
+    //   const timeFrame = timeFrames.data[0]
+
+    //   if (timeFrame) {
+    // const season = new Date().getFullYear() - 1
+    // const season = timeFrame.ApiSeason
+    const season = "2022"
+
+    const { data, status } = await axios.get(
+      `${process.env.SPORTS_DATA_URL}nba/stats/json/PlayerSeasonStats/${season}?key=${process.env.SPORTS_DATA_NBA_KEY}`
     )
 
-    if (timeFrames.status === 200) {
-      const timeFrame = timeFrames.data[0]
+    if (status === 200) {
+      const newStats: AthleteStat[] = []
+      const updateStats: AthleteStat[] = []
 
-      if (timeFrame) {
-        // const season = new Date().getFullYear() - 1
-        const season = timeFrame.ApiSeason
+      for (let athleteStat of data) {
+        const apiId: number = athleteStat["PlayerID"]
+        const numberOfGames: number = athleteStat["Games"] > 0 ? athleteStat["Games"] : 1
+        const curStat = await AthleteStat.findOne({
+          where: { athlete: { apiId }, season: season.toString(), type: AthleteStatType.SEASON },
+          relations: {
+            athlete: true,
+          },
+        })
 
-        const { data, status } = await axios.get(
-          `${process.env.SPORTS_DATA_URL}nba/stats/json/PlayerSeasonStats/${season}?key=${process.env.SPORTS_DATA_NBA_KEY}`
-        )
-
-        if (status === 200) {
-          const newStats: AthleteStat[] = []
-          const updateStats: AthleteStat[] = []
-
-          for (let athleteStat of data) {
-            const apiId: number = athleteStat["PlayerID"]
-            const numberOfGames: number = athleteStat["Games"] > 0 ? athleteStat["Games"] : 1
-            const curStat = await AthleteStat.findOne({
-              where: { athlete: { apiId }, season: season.toString(), type: AthleteStatType.SEASON },
-              relations: {
-                athlete: true,
-              },
-            })
-
-            if (curStat) {
-              // Update stats here
-              curStat.fantasyScore = athleteStat["FantasyPointsDraftKings"] / numberOfGames
-              curStat.points = athleteStat["Points"] / numberOfGames
-              curStat.rebounds = athleteStat["Rebounds"] / numberOfGames
-              curStat.offensiveRebounds = athleteStat["OffensiveRebounds"] / numberOfGames
-              curStat.defensiveRebounds = athleteStat["DefensiveRebounds"] / numberOfGames
-              curStat.assists = athleteStat["Assists"] / numberOfGames
-              curStat.steals = athleteStat["Steals"] / numberOfGames
-              curStat.blockedShots = athleteStat["BlockedShots"] / numberOfGames
-              curStat.turnovers = athleteStat["Turnovers"] / numberOfGames
-              curStat.personalFouls = athleteStat["PersonalFouls"] / numberOfGames
-              curStat.fieldGoalsMade = athleteStat["FieldGoalsMade"] / numberOfGames
-              curStat.fieldGoalsAttempted = athleteStat["FieldGoalsAttempted"] / numberOfGames
-              curStat.fieldGoalsPercentage = athleteStat["FieldGoalsPercentage"] / numberOfGames
-              curStat.threePointersMade = athleteStat["ThreePointersMade"] / numberOfGames
-              curStat.threePointersAttempted = athleteStat["ThreePointersAttempted"] / numberOfGames
-              curStat.threePointersPercentage = athleteStat["ThreePointersPercentage"] / numberOfGames
-              curStat.freeThrowsMade = athleteStat["FreeThrowsMade"] / numberOfGames
-              curStat.freeThrowsAttempted = athleteStat["FreeThrowsAttempted"] / numberOfGames
-              curStat.freeThrowsPercentage = athleteStat["FreeThrowsPercentage"] / numberOfGames
-              curStat.minutes = athleteStat["Minutes"] / numberOfGames
-              curStat.played = athleteStat["Games"]
-              updateStats.push(curStat)
-            } else {
-              const curAthlete = await Athlete.findOne({
-                where: { apiId },
-              })
-
-              if (curAthlete) {
-                newStats.push(
-                  AthleteStat.create({
-                    athlete: curAthlete,
-                    season: season.toString(),
-                    type: AthleteStatType.SEASON,
-                    position: athleteStat["Position"],
-                    played: athleteStat["Games"],
-                    fantasyScore: athleteStat["FantasyPointsDraftKings"] / numberOfGames,
-                    points: athleteStat["Points"] / numberOfGames,
-                    rebounds: athleteStat["Rebounds"] / numberOfGames,
-                    offensiveRebounds: athleteStat["OffensiveRebounds"] / numberOfGames,
-                    defensiveRebounds: athleteStat["DefensiveRebounds"] / numberOfGames,
-                    assists: athleteStat["Assists"] / numberOfGames,
-                    steals: athleteStat["Steals"] / numberOfGames,
-                    blockedShots: athleteStat["BlockedShots"] / numberOfGames,
-                    turnovers: athleteStat["Turnovers"] / numberOfGames,
-                    personalFouls: athleteStat["PersonalFouls"] / numberOfGames,
-                    fieldGoalsMade: athleteStat["FieldGoalsMade"] / numberOfGames,
-                    fieldGoalsAttempted: athleteStat["FieldGoalsAttempted"] / numberOfGames,
-                    fieldGoalsPercentage: athleteStat["FieldGoalsPercentage"] / numberOfGames,
-                    threePointersMade: athleteStat["ThreePointersMade"] / numberOfGames,
-                    threePointersAttempted: athleteStat["ThreePointersAttempted"] / numberOfGames,
-                    threePointersPercentage: athleteStat["ThreePointersPercentage"] / numberOfGames,
-                    freeThrowsMade: athleteStat["FreeThrowsMade"] / numberOfGames,
-                    freeThrowsAttempted: athleteStat["FreeThrowsAttempted"] / numberOfGames,
-                    freeThrowsPercentage: athleteStat["FreeThrowsPercentage"] / numberOfGames,
-                    minutes: athleteStat["Minutes"] / numberOfGames,
-                  })
-                )
-              }
-            }
-          }
-
-          await AthleteStat.save([...newStats, ...updateStats], { chunk: 20 })
-
-          this.logger.debug("Update NBA Athlete Stats: FINISHED")
+        if (curStat) {
+          // Update stats here
+          curStat.fantasyScore = athleteStat["FantasyPointsDraftKings"] / numberOfGames
+          curStat.points = athleteStat["Points"] / numberOfGames
+          curStat.rebounds = athleteStat["Rebounds"] / numberOfGames
+          curStat.offensiveRebounds = athleteStat["OffensiveRebounds"] / numberOfGames
+          curStat.defensiveRebounds = athleteStat["DefensiveRebounds"] / numberOfGames
+          curStat.assists = athleteStat["Assists"] / numberOfGames
+          curStat.steals = athleteStat["Steals"] / numberOfGames
+          curStat.blockedShots = athleteStat["BlockedShots"] / numberOfGames
+          curStat.turnovers = athleteStat["Turnovers"] / numberOfGames
+          curStat.personalFouls = athleteStat["PersonalFouls"] / numberOfGames
+          curStat.fieldGoalsMade = athleteStat["FieldGoalsMade"] / numberOfGames
+          curStat.fieldGoalsAttempted = athleteStat["FieldGoalsAttempted"] / numberOfGames
+          curStat.fieldGoalsPercentage = athleteStat["FieldGoalsPercentage"] / numberOfGames
+          curStat.threePointersMade = athleteStat["ThreePointersMade"] / numberOfGames
+          curStat.threePointersAttempted = athleteStat["ThreePointersAttempted"] / numberOfGames
+          curStat.threePointersPercentage = athleteStat["ThreePointersPercentage"] / numberOfGames
+          curStat.freeThrowsMade = athleteStat["FreeThrowsMade"] / numberOfGames
+          curStat.freeThrowsAttempted = athleteStat["FreeThrowsAttempted"] / numberOfGames
+          curStat.freeThrowsPercentage = athleteStat["FreeThrowsPercentage"] / numberOfGames
+          curStat.minutes = athleteStat["Minutes"] / numberOfGames
+          curStat.played = athleteStat["Games"]
+          updateStats.push(curStat)
         } else {
-          this.logger.error("NBA Athlete Stats Data: SPORTS DATA ERROR")
+          const curAthlete = await Athlete.findOne({
+            where: { apiId },
+          })
+
+          if (curAthlete) {
+            newStats.push(
+              AthleteStat.create({
+                athlete: curAthlete,
+                season: season.toString(),
+                type: AthleteStatType.SEASON,
+                position: athleteStat["Position"],
+                played: athleteStat["Games"],
+                fantasyScore: athleteStat["FantasyPointsDraftKings"] / numberOfGames,
+                points: athleteStat["Points"] / numberOfGames,
+                rebounds: athleteStat["Rebounds"] / numberOfGames,
+                offensiveRebounds: athleteStat["OffensiveRebounds"] / numberOfGames,
+                defensiveRebounds: athleteStat["DefensiveRebounds"] / numberOfGames,
+                assists: athleteStat["Assists"] / numberOfGames,
+                steals: athleteStat["Steals"] / numberOfGames,
+                blockedShots: athleteStat["BlockedShots"] / numberOfGames,
+                turnovers: athleteStat["Turnovers"] / numberOfGames,
+                personalFouls: athleteStat["PersonalFouls"] / numberOfGames,
+                fieldGoalsMade: athleteStat["FieldGoalsMade"] / numberOfGames,
+                fieldGoalsAttempted: athleteStat["FieldGoalsAttempted"] / numberOfGames,
+                fieldGoalsPercentage: athleteStat["FieldGoalsPercentage"] / numberOfGames,
+                threePointersMade: athleteStat["ThreePointersMade"] / numberOfGames,
+                threePointersAttempted: athleteStat["ThreePointersAttempted"] / numberOfGames,
+                threePointersPercentage: athleteStat["ThreePointersPercentage"] / numberOfGames,
+                freeThrowsMade: athleteStat["FreeThrowsMade"] / numberOfGames,
+                freeThrowsAttempted: athleteStat["FreeThrowsAttempted"] / numberOfGames,
+                freeThrowsPercentage: athleteStat["FreeThrowsPercentage"] / numberOfGames,
+                minutes: athleteStat["Minutes"] / numberOfGames,
+              })
+            )
+          }
         }
       }
+
+      await AthleteStat.save([...newStats, ...updateStats], { chunk: 20 })
+
+      this.logger.debug("Update NBA Athlete Stats: FINISHED")
     } else {
-      this.logger.error("NBA Timeframes Data: SPORTS DATA ERROR")
+      this.logger.error("NBA Athlete Stats Data: SPORTS DATA ERROR")
+    }
+    //   }
+    // } else {
+    //   this.logger.error("NBA Timeframes Data: SPORTS DATA ERROR")
+    // }
+  }
+
+  // @Timeout(1)
+  @Interval(300000) // Runs every 5 mins
+  async updateNbaAthleteStatsPerDay() {
+    this.logger.debug("Update NBA Athlete Stats Per Day: STARTED")
+
+    const date = moment().subtract(1, "day").toDate()
+    const dateFormat = moment(date).format("YYYY-MMM-DD").toUpperCase()
+
+    this.logger.debug(dateFormat)
+
+    const { data, status } = await axios.get(
+      `${process.env.SPORTS_DATA_URL}nba/stats/json/PlayerGameStatsByDate/${dateFormat}?key=${process.env.SPORTS_DATA_NBA_KEY}`
+    )
+
+    if (status === 200) {
+      const newStats: AthleteStat[] = []
+      const updateStats: AthleteStat[] = []
+
+      for (let athleteStat of data) {
+        const apiId: number = athleteStat["PlayerID"]
+        const curStat = await AthleteStat.findOne({
+          where: {
+            athlete: { apiId },
+            statId: athleteStat["StatID"],
+            type: AthleteStatType.DAILY,
+          },
+          relations: {
+            athlete: true,
+          },
+        })
+
+        if (curStat) {
+          // Update stats here
+          curStat.fantasyScore = athleteStat["FantasyPointsDraftKings"]
+          curStat.points = athleteStat["Points"]
+          curStat.rebounds = athleteStat["Rebounds"]
+          curStat.offensiveRebounds = athleteStat["OffensiveRebounds"]
+          curStat.defensiveRebounds = athleteStat["DefensiveRebounds"]
+          curStat.assists = athleteStat["Assists"]
+          curStat.steals = athleteStat["Steals"]
+          curStat.blockedShots = athleteStat["BlockedShots"]
+          curStat.turnovers = athleteStat["Turnovers"]
+          curStat.personalFouls = athleteStat["PersonalFouls"]
+          curStat.fieldGoalsMade = athleteStat["FieldGoalsMade"]
+          curStat.fieldGoalsAttempted = athleteStat["FieldGoalsAttempted"]
+          curStat.fieldGoalsPercentage = athleteStat["FieldGoalsPercentage"]
+          curStat.threePointersMade = athleteStat["ThreePointersMade"]
+          curStat.threePointersAttempted = athleteStat["ThreePointersAttempted"]
+          curStat.threePointersPercentage = athleteStat["ThreePointersPercentage"]
+          curStat.freeThrowsMade = athleteStat["FreeThrowsMade"]
+          curStat.freeThrowsAttempted = athleteStat["FreeThrowsAttempted"]
+          curStat.freeThrowsPercentage = athleteStat["FreeThrowsPercentage"]
+          curStat.minutes = athleteStat["Minutes"]
+          curStat.played = athleteStat["Games"]
+          updateStats.push(curStat)
+        } else {
+          const curAthlete = await Athlete.findOne({
+            where: { apiId },
+          })
+
+          if (curAthlete) {
+            newStats.push(
+              AthleteStat.create({
+                athlete: curAthlete,
+                season: date.getFullYear().toString(),
+                gameDate: date,
+                statId: athleteStat["StatID"],
+                type: AthleteStatType.DAILY,
+                position: athleteStat["Position"],
+                played: athleteStat["Games"],
+                fantasyScore: athleteStat["FantasyPointsDraftKings"],
+                points: athleteStat["Points"],
+                rebounds: athleteStat["Rebounds"],
+                offensiveRebounds: athleteStat["OffensiveRebounds"],
+                defensiveRebounds: athleteStat["DefensiveRebounds"],
+                assists: athleteStat["Assists"],
+                steals: athleteStat["Steals"],
+                blockedShots: athleteStat["BlockedShots"],
+                turnovers: athleteStat["Turnovers"],
+                personalFouls: athleteStat["PersonalFouls"],
+                fieldGoalsMade: athleteStat["FieldGoalsMade"],
+                fieldGoalsAttempted: athleteStat["FieldGoalsAttempted"],
+                fieldGoalsPercentage: athleteStat["FieldGoalsPercentage"],
+                threePointersMade: athleteStat["ThreePointersMade"],
+                threePointersAttempted: athleteStat["ThreePointersAttempted"],
+                threePointersPercentage: athleteStat["ThreePointersPercentage"],
+                freeThrowsMade: athleteStat["FreeThrowsMade"],
+                freeThrowsAttempted: athleteStat["FreeThrowsAttempted"],
+                freeThrowsPercentage: athleteStat["FreeThrowsPercentage"],
+                minutes: athleteStat["Minutes"],
+              })
+            )
+          }
+        }
+      }
+
+      await AthleteStat.save([...newStats, ...updateStats], { chunk: 20 })
+
+      this.logger.debug("Update NBA Athlete Stats Per Day: FINISHED")
     }
   }
 }
