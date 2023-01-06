@@ -653,7 +653,7 @@ export class TasksService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
 
-  @Timeout(1)
+  // @Timeout(1)
   async generateAthleteNbaAssetsPromo() {
     this.logger.debug("Generate Athlete NBA Assets Promo: STARTED")
 
@@ -856,7 +856,7 @@ export class TasksService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
 
-  @Timeout(1)
+  // @Timeout(1)
   async generateAthleteNbaAssetsLocked() {
     this.logger.debug("Generate Athlete NBA Assets Locked: STARTED")
 
