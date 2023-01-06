@@ -6,7 +6,7 @@ import { setup } from "../near-api"
 
 import { Athlete } from "../entities/Athlete"
 import { In, MoreThanOrEqual } from "typeorm"
-import { NFL_ATHLETE_IDS } from "./../utils/athlete-ids"
+import { NFL_ATHLETE_IDS, NBA_ATHLETE_IDS, NBA_ATHLETE_PROMO_IDS } from "./../utils/athlete-ids"
 
 @ObjectType()
 class Distribution {
@@ -124,7 +124,10 @@ export class AthleteResolver {
       where: filter?.sport
         ? {
             team: { sport: filter?.sport },
-            stats: { fantasyScore: MoreThanOrEqual(0), ...(filter?.statType && { type: filter?.statType }) },
+            stats: {
+              ...(sort === AthleteSortOptions.SCORE && { fantasyScore: MoreThanOrEqual(0) }),
+              ...(filter?.statType && { type: filter?.statType }),
+            },
           }
         : { stats: { fantasyScore: MoreThanOrEqual(0), ...(filter?.statType && { type: filter?.statType }) } },
       relations: {
@@ -188,7 +191,10 @@ export class AthleteResolver {
 
   @Authorized("ADMIN")
   @Mutation(() => Number)
-  async addStarterAthletesToOpenPackContract(@Arg("sportType") sportType: SportType): Promise<Number> {
+  async addStarterAthletesToOpenPackContract(
+    @Arg("sportType") sportType: SportType,
+    @Arg("isPromo") isPromo: boolean = false
+  ): Promise<Number> {
     let contractId
     let athleteIds: number[] = []
 
@@ -199,6 +205,11 @@ export class AthleteResolver {
         break
       case SportType.NBA:
         contractId = process.env.OPENPACK_NBA_ACCOUNT_ID
+        athleteIds = NBA_ATHLETE_IDS
+        break
+      case SportType.NBA_PROMO:
+        contractId = process.env.OPENPACK_NBA_PROMO_ACCOUNT_ID
+        athleteIds = NBA_ATHLETE_PROMO_IDS
         break
       case SportType.MLB:
         contractId = process.env.OPENPACK_MLB_ACCOUNT_ID
@@ -218,14 +229,25 @@ export class AthleteResolver {
     const athleteTokens = (
       await Athlete.find({ where: { apiId: In(athleteIds) }, order: { id: "ASC" }, relations: { team: true } })
     ).map((athlete) => {
-      return {
-        athlete_id: athlete.id.toString(),
-        soulbound_token_uri: athlete.nftImageLocked,
-        single_use_token_uri: athlete.nftImagePromo,
-        symbol: athlete.apiId.toString(),
-        name: `${athlete.firstName} ${athlete.lastName}`,
-        team: athlete.team.key,
-        position: athlete.position,
+      if (isPromo) {
+        return {
+          athlete_id: athlete.id.toString(),
+          soulbound_token_uri: athlete.nftImageLocked,
+          single_use_token_uri: athlete.nftImagePromo,
+          symbol: athlete.apiId.toString(),
+          name: `${athlete.firstName} ${athlete.lastName}`,
+          team: athlete.team.key,
+          position: athlete.position,
+        }
+      } else {
+        return {
+          athlete_id: athlete.id.toString(),
+          token_uri: athlete.nftImage,
+          symbol: athlete.apiId.toString(),
+          name: `${athlete.firstName} ${athlete.lastName}`,
+          team: athlete.team.key,
+          position: athlete.position,
+        }
       }
     })
 
