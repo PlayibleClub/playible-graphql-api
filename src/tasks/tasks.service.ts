@@ -1458,11 +1458,16 @@ export class TasksService {
             where: { apiId },
           })
 
+          const opponent = await Team.findOne({
+            where: { key: athleteStat["Opponent"] },
+          })
+
           if (curAthlete) {
             newStats.push(
               AthleteStat.create({
                 athlete: curAthlete,
                 season: date.getFullYear().toString(),
+                opponent: opponent,
                 gameDate: date,
                 statId: athleteStat["StatID"],
                 type: AthleteStatType.DAILY,
