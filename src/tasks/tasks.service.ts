@@ -1430,8 +1430,13 @@ export class TasksService {
         })
 
         if (curStat) {
+          const opponent = await Team.findOne({
+            where: { key: athleteStat["Opponent"] },
+          })
+
           // Update stats here
           curStat.fantasyScore = athleteStat["FantasyPointsDraftKings"]
+          curStat.opponent = opponent
           curStat.points = athleteStat["Points"]
           curStat.rebounds = athleteStat["Rebounds"]
           curStat.offensiveRebounds = athleteStat["OffensiveRebounds"]
