@@ -1152,6 +1152,10 @@ export class TasksService {
                 },
               })
 
+              const opponent = await Team.findOne({
+                where: { apiId: athleteStat["GlobalOpponentID"] },
+              })
+
               if (curStat) {
                 // Update stats here
                 curStat.fantasyScore = athleteStat["FantasyPointsDraftKings"]
@@ -1167,14 +1171,11 @@ export class TasksService {
                 curStat.targets = athleteStat["ReceivingTargets"]
                 curStat.receptions = athleteStat["Receptions"]
                 curStat.played = athleteStat["Played"]
+                curStat.opponent = opponent
                 updateStats.push(curStat)
               } else {
                 const curAthlete = await Athlete.findOne({
                   where: { apiId },
-                })
-
-                const opponent = await Team.findOne({
-                  where: { key: athleteStat["Opponent"] },
                 })
 
                 if (curAthlete) {
@@ -1429,11 +1430,11 @@ export class TasksService {
           },
         })
 
-        if (curStat) {
-          const opponent = await Team.findOne({
-            where: { key: athleteStat["Opponent"] },
-          })
+        const opponent = await Team.findOne({
+          where: { apiId: athleteStat["GlobalOpponentID"] },
+        })
 
+        if (curStat) {
           // Update stats here
           curStat.fantasyScore = athleteStat["FantasyPointsDraftKings"]
           curStat.opponent = opponent
@@ -1461,10 +1462,6 @@ export class TasksService {
         } else {
           const curAthlete = await Athlete.findOne({
             where: { apiId },
-          })
-
-          const opponent = await Team.findOne({
-            where: { key: athleteStat["Opponent"] },
           })
 
           if (curAthlete) {
