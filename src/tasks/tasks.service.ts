@@ -1416,7 +1416,7 @@ export class TasksService {
     if (status === 200) {
       const newStats: AthleteStat[] = []
       const updateStats: AthleteStat[] = []
-      å
+
       for (let athleteStat of data) {
         const apiId: number = athleteStat["PlayerID"]
         const curStat = await AthleteStat.findOne({
