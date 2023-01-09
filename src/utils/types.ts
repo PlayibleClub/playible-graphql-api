@@ -3,12 +3,14 @@ import { InputType, Field } from "type-graphql"
 export enum SportType {
   MLB = "mlb",
   NBA = "nba",
+  NBA_PROMO = "nba-promo",
   NFL = "nfl",
 }
 
 export enum AthleteStatType {
   WEEKLY = "weekly",
   SEASON = "season",
+  DAILY = "daily",
 }
 
 export enum GameTab {
