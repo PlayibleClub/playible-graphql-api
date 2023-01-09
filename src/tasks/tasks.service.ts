@@ -1411,7 +1411,7 @@ export class TasksService {
 
       if (timeFrame) {
         const season = timeFrame.ApiSeason
-        const date = moment().subtract(3, "day").toDate()
+        const date = moment().subtract(4, "day").toDate()
         const dateFormat = moment(date).format("YYYY-MMM-DD").toUpperCase()
 
         this.logger.debug(dateFormat)
