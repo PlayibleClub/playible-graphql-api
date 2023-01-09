@@ -1397,7 +1397,7 @@ export class TasksService {
     }
   }
 
-  @Timeout(1)
+  // @Timeout(1)
   @Interval(300000) // Runs every 5 mins
   async updateNbaAthleteStatsPerDay() {
     this.logger.debug("Update NBA Athlete Stats Per Day: STARTED")
@@ -1411,7 +1411,7 @@ export class TasksService {
 
       if (timeFrame) {
         const season = timeFrame.ApiSeason
-        const date = moment().subtract(4, "day").toDate()
+        const date = moment().subtract(1, "day").toDate()
         const dateFormat = moment(date).format("YYYY-MMM-DD").toUpperCase()
 
         this.logger.debug(dateFormat)
