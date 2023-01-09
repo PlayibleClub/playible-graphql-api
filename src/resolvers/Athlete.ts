@@ -68,14 +68,32 @@ const chunkify = (a: any[], n: number, balanced: boolean) => {
 @Resolver()
 export class AthleteResolver {
   @Query(() => Athlete)
-  async getAthleteById(@Arg("id") id: number): Promise<Athlete> {
-    return await Athlete.findOneOrFail({
+  async getAthleteById(
+    @Arg("id") id: number,
+    @Arg("from", { nullable: true }) from?: Date,
+    @Arg("to", { nullable: true }) to?: Date
+  ): Promise<Athlete> {
+    const athlete = await Athlete.findOneOrFail({
       where: { id },
       relations: {
         stats: { opponent: true },
         team: true,
       },
     })
+
+    if (from) {
+      athlete.stats = athlete.stats.filter(
+        (stat) => stat.gameDate && stat.gameDate.toISOString().split("T")[0] >= from.toISOString().split("T")[0]
+      )
+    }
+
+    if (to) {
+      athlete.stats = athlete.stats.filter(
+        (stat) => stat.gameDate && stat.gameDate.toISOString().split("T")[0] <= to.toISOString().split("T")[0]
+      )
+    }
+
+    return athlete
   }
 
   @Query(() => [Athlete])
