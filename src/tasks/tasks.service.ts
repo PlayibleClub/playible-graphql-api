@@ -654,6 +654,83 @@ export class TasksService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
 
+  @Timeout(1)
+  async generateAthleteNbaAssetsAnimation() {
+    this.logger.debug("Generate Athlete NBA Assets Animation: STARTED")
+
+    const athletes = await Athlete.find({
+      where: { team: { sport: SportType.NBA } },
+      relations: {
+        team: true,
+      },
+    })
+
+    for (let athlete of athletes) {
+      var svgAnimationTemplate = fs.readFileSync(
+        `./src/utils/nba-svg-teams-animation-templates/${athlete.team.key}.svg`,
+        "utf-8"
+      )
+      var options = { compact: true, ignoreComment: true, spaces: 4 }
+      var result: any = convert.xml2js(svgAnimationTemplate, options)
+
+      try {
+        if (athlete.firstName.length > 11) {
+          result.svg.g[4].text[2].tspan["_attributes"]["font-size"] = "50"
+          result.svg.g[4].text[3].tspan["_attributes"]["font-size"] = "50"
+        }
+        if (athlete.lastName.length > 11) {
+          result.svg.g[4].text[4].tspan["_attributes"]["font-size"] = "50"
+          result.svg.g[4].text[5].tspan["_attributes"]["font-size"] = "50"
+        }
+
+        result.svg.g[4].text[0].tspan["_text"] = athlete.position.toUpperCase()
+        result.svg.g[4].text[1].tspan["_text"] = athlete.position.toUpperCase()
+        result.svg.g[4].text[2].tspan["_text"] = athlete.firstName.toUpperCase()
+        result.svg.g[4].text[3].tspan["_text"] = athlete.firstName.toUpperCase()
+        result.svg.g[4].text[4].tspan["_text"] = athlete.lastName.toUpperCase()
+        result.svg.g[4].text[5].tspan["_text"] = athlete.lastName.toUpperCase()
+        result = convert.js2xml(result, options)
+      } catch (e) {
+        console.log(`FAILED AT ATHLETE ID: ${athlete.apiId} and TEAM KEY: ${athlete.team.key}`)
+        console.log(e)
+      }
+
+      // fs.writeFileSync(
+      //   `./nfl-animations/${athlete["PlayerID"]}-${athlete["FirstName"].toLowerCase()}-${athlete[
+      //     "LastName"
+      //   ].toLowerCase()}.svg`,
+      //   result
+      // )
+      var buffer = Buffer.from(result, "utf8")
+      const s3 = new S3({
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+      })
+      const filename = `${athlete.apiId}-${athlete.firstName.toLowerCase()}-${athlete.lastName.toLowerCase()}.svg`
+      const s3_location = "media/athlete/nba/animations/"
+      const fileContent = buffer
+      const params: any = {
+        Bucket: process.env.AWS_BUCKET_NAME,
+        Key: `${s3_location}${filename}`,
+        Body: fileContent,
+        ContentType: "image/svg+xml",
+        CacheControl: "no-cache",
+      }
+
+      s3.upload(params, async (err: any, data: any) => {
+        if (err) {
+          this.logger.error(err)
+        } else {
+          athlete.nftAnimation = data["Location"]
+          await Athlete.save(athlete)
+        }
+      })
+    }
+
+    this.logger.debug("Generate Athlete NBA Assets Animations: FINISHED")
+    this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
+  }
+
   // @Timeout(1)
   async generateAthleteNbaAssetsPromo() {
     this.logger.debug("Generate Athlete NBA Assets Promo: STARTED")
