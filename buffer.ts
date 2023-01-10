@@ -3,8 +3,8 @@ var S3 = require("aws-sdk/clients/s3")
 var fs = require("fs")
 
 // const athlete_img = fs.readFileSync(`./src/utils/nfl-svg-teams-promo-templates/SEA.svg`, "utf-8")
-const athlete_img = fs.readFileSync(`./src/utils/nba-svg-teams-lock-templates/LAL.svg`, "utf-8")
-// const athlete_script = fs.readFileSync(`./src/utils/nfl-svg-teams-animation-scripts/ATL_Animation.svg`, "utf-8")
+// const athlete_img = fs.readFileSync(`./src/utils/nba-svg-teams-lock-templates/LAL.svg`, "utf-8")
+const athlete_img = fs.readFileSync(`./src/utils/nba-svg-teams-animation-templates/ATL.svg`, "utf-8")
 
 var options = { compact: true, ignoreComment: true, spaces: 4 }
 var result = convert.xml2js(athlete_img, options)
@@ -42,7 +42,13 @@ var result = convert.xml2js(athlete_img, options)
 // console.log(result.svg.g[6].text[1]["_attributes"]["style"])
 
 // ATHLETE IMAGE NBA PROMO START
-console.log(result.svg.g[6]["text"][0]["tspan"]["_text"])
-console.log(result.svg.g[6]["text"][1]["tspan"]["_text"])
-console.log(result.svg.g[6]["text"][2]["tspan"]["_text"])
-console.log(result.svg.g[6].text[1]["_attributes"]["style"])
+// console.log(result.svg.g[6]["text"][0]["tspan"]["_text"])
+// console.log(result.svg.g[6]["text"][1]["tspan"]["_text"])
+// console.log(result.svg.g[6]["text"][2]["tspan"]["_text"])
+// console.log(result.svg.g[6].text[1]["_attributes"]["style"])
+
+console.log(result.svg.g[4].text[0].tspan["_text"])
+console.log(result.svg.g[4].text[1].tspan["_text"])
+console.log(result.svg.g[4].text[2].tspan["_text"])
+console.log(result.svg.g[4].text[3].tspan["_text"])
+console.log(result.svg.g[4].text[4].tspan["_attributes"]["font-size"])

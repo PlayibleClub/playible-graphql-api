@@ -1,5 +1,8 @@
 <svg id="ea957VnKYbT1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 702.49 941.9" shape-rendering="geometricPrecision" text-rendering="geometricPrecision">
   <defs>
+    <style type="text/css">
+      @import url(https://fonts.googleapis.com/css2?family=Arimo:ital,wght@0,700;1,700);
+    </style>
     <linearGradient id="ea957VnKYbT4-fill" x1="0.07" y1="465.82" x2="702.56" y2="465.82" spreadMethod="pad" gradientUnits="userSpaceOnUse" gradientTransform="translate(0 0)">
       <stop id="ea957VnKYbT4-fill-0" offset="0%" stop-color="#591426" />
       <stop id="ea957VnKYbT4-fill-1" offset="64%" stop-color="#981b32" />
@@ -694,35 +697,35 @@
     </mask>
   </g>
   <g transform="translate(1.667808-1.6865)">
-    <text id="ea957VnKYbT448" dx="0" dy="0" font-family="&quot;ea957VnKYbT1:::Arimo&quot;" font-size="55" font-weight="700" transform="matrix(.98 0-.17 0.98 24.67483 564.04)" opacity="0" filter="url(#ea957VnKYbT448-filter)" fill="#fff">
-      <tspan font-family="&quot;ea957VnKYbT1:::Arimo&quot;" font-size="55" font-weight="700" font-style="normal" transform="matrix(.98 0-.17 0.98 107.59 564.04)" fill="#fff">
+    <text id="ea957VnKYbT448" dx="0" dy="0" font-family="Arimo" font-size="55" font-weight="700" transform="matrix(.98 0-.17 0.98 24.67483 564.04)" opacity="0" filter="url(#ea957VnKYbT448-filter)" fill="#fff">
+      <tspan font-family="Arimo" font-size="55" font-weight="700" font-style="normal" transform="matrix(.98 0-.17 0.98 107.59 564.04)" fill="#fff">
         PG
       </tspan>
     </text>
-    <text id="ea957VnKYbT450" dx="0" dy="0" font-family="&quot;ea957VnKYbT1:::Arimo&quot;" font-size="55" font-weight="700" transform="matrix(.98 0-.17 0.98 24.67483 564.04)" opacity="0" fill="#fff">
-      <tspan font-family="&quot;ea957VnKYbT1:::Arimo&quot;" font-size="55" font-weight="700" font-style="normal" transform="matrix(.98 0-.17 0.98 107.59 564.04)" fill="#fff">
+    <text id="ea957VnKYbT450" dx="0" dy="0" font-family="Arimo" font-size="55" font-weight="700" transform="matrix(.98 0-.17 0.98 24.67483 564.04)" opacity="0" fill="#fff">
+      <tspan font-family="Arimo" font-size="55" font-weight="700" font-style="normal" transform="matrix(.98 0-.17 0.98 107.59 564.04)" fill="#fff">
         PG
       </tspan>
     </text>
     <path id="ea957VnKYbT452" d="M377.54,504.76h-266.48l2.61-10.29l267.1-.09q-1.62,5.19-3.23,10.38Z" transform="translate(-.07-.16)" opacity="0" filter="url(#ea957VnKYbT452-filter)" fill="#fff" />
     <path id="ea957VnKYbT453" d="M377.54,504.76h-266.48l2.61-10.29l267.1-.09q-1.62,5.19-3.23,10.38Z" transform="translate(-.07-.16)" opacity="0" fill="#fff" />
-    <text id="ea957VnKYbT454" dx="0" dy="0" font-family="&quot;ea957VnKYbT1:::Arimo&quot;" font-size="65" font-weight="700" transform="translate(-308.6744 383.09)" opacity="0" filter="url(#ea957VnKYbT454-filter)" fill="#fff">
-      <tspan font-family="&quot;ea957VnKYbT1:::Arimo&quot;" font-size="65" font-weight="700" font-style="normal" transform="translate(107.16 383.09)" fill="#fff">
+    <text id="ea957VnKYbT454" dx="0" dy="0" font-family="Arimo" font-size="65" font-weight="700" transform="translate(-308.6744 383.09)" opacity="0" filter="url(#ea957VnKYbT454-filter)" fill="#fff">
+      <tspan font-family="Arimo" font-size="65" font-weight="700" font-style="normal" transform="translate(107.16 383.09)" fill="#fff">
         STEPHEN
       </tspan>
     </text>
-    <text id="ea957VnKYbT456" dx="0" dy="0" font-family="&quot;ea957VnKYbT1:::Arimo&quot;" font-size="65" font-weight="700" transform="translate(-308.6744 383.09)" opacity="0" fill="#fff">
-      <tspan font-family="&quot;ea957VnKYbT1:::Arimo&quot;" font-size="65" font-weight="700" font-style="normal" transform="translate(107.16 383.09)" fill="#fff">
+    <text id="ea957VnKYbT456" dx="0" dy="0" font-family="Arimo" font-size="65" font-weight="700" transform="translate(-308.6744 383.09)" opacity="0" fill="#fff">
+      <tspan font-family="Arimo" font-size="65" font-weight="700" font-style="normal" transform="translate(107.16 383.09)" fill="#fff">
         STEPHEN
       </tspan>
     </text>
-    <text id="ea957VnKYbT458" dx="0" dy="0" font-family="&quot;ea957VnKYbT1:::Arimo&quot;" font-size="65" font-weight="700" transform="translate(-230.364768 446.14)" opacity="0" fill="#fff">
-      <tspan font-family="&quot;ea957VnKYbT1:::Arimo&quot;" font-size="65" font-weight="700" font-style="normal" transform="translate(108.26 446.14)" fill="#fff">
+    <text id="ea957VnKYbT458" dx="0" dy="0" font-family="Arimo" font-size="65" font-weight="700" transform="translate(-230.364768 446.14)" opacity="0" fill="#fff">
+      <tspan font-family="Arimo" font-size="65" font-weight="700" font-style="normal" transform="translate(108.26 446.14)" fill="#fff">
         CURRY
       </tspan>
     </text>
-    <text id="ea957VnKYbT460" dx="0" dy="0" font-family="&quot;ea957VnKYbT1:::Arimo&quot;" font-size="65" font-weight="700" transform="translate(-230.364768 446.14)" opacity="0" filter="url(#ea957VnKYbT460-filter)" fill="#fff">
-      <tspan font-family="&quot;ea957VnKYbT1:::Arimo&quot;" font-size="65" font-weight="700" font-style="normal" transform="translate(108.26 446.14)" fill="#fff">
+    <text id="ea957VnKYbT460" dx="0" dy="0" font-family="Arimo" font-size="65" font-weight="700" transform="translate(-230.364768 446.14)" opacity="0" filter="url(#ea957VnKYbT460-filter)" fill="#fff">
+      <tspan font-family="Arimo" font-size="65" font-weight="700" font-style="normal" transform="translate(108.26 446.14)" fill="#fff">
         CURRY
       </tspan>
     </text>
