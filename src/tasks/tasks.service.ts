@@ -61,9 +61,7 @@ export class TasksService {
     })
 
     if (teamsCount === 0) {
-      const { data, status } = await axios.get(
-        `${process.env.SPORTS_DATA_URL}mlb/scores/json/teams?key=${process.env.SPORTS_DATA_MLB_KEY}`
-      )
+      const { data, status } = await axios.get(`${process.env.SPORTS_DATA_URL}mlb/scores/json/teams?key=${process.env.SPORTS_DATA_MLB_KEY}`)
 
       if (status === 200) {
         for (let team of data) {
@@ -93,9 +91,7 @@ export class TasksService {
     })
 
     if (athletesCount === 0) {
-      const { data, status } = await axios.get(
-        `${process.env.SPORTS_DATA_URL}mlb/scores/json/Players?key=${process.env.SPORTS_DATA_MLB_KEY}`
-      )
+      const { data, status } = await axios.get(`${process.env.SPORTS_DATA_URL}mlb/scores/json/Players?key=${process.env.SPORTS_DATA_MLB_KEY}`)
 
       if (status === 200) {
         for (let athlete of data) {
@@ -147,9 +143,7 @@ export class TasksService {
                 result["svg"]["g"][4]["g"][3]["g"]["text"][1]["tspan"]["_cdata"] = athlete["LastName"].toUpperCase()
                 result["svg"]["g"][1]["g"][2]["g"]["path"]["_attributes"]["fill"] = team.primaryColor
                 result["svg"]["g"][1]["g"][0]["g"]["path"]["_attributes"]["fill"] = team.secondaryColor
-                result["svg"]["g"][4]["g"][2]["g"]["text"]["tspan"]["_cdata"] = athlete["Jersey"]
-                  ? athlete["Jersey"].toString()
-                  : "00"
+                result["svg"]["g"][4]["g"][2]["g"]["text"]["tspan"]["_cdata"] = athlete["Jersey"] ? athlete["Jersey"].toString() : "00"
                 result["svg"]["g"][4]["g"][0]["g"]["g"]["text"]["tspan"]["_cdata"] = athlete["Position"].toUpperCase()
 
                 const animation = convert.js2xml(result, options)
@@ -210,9 +204,7 @@ export class TasksService {
     })
 
     if (teamsCount === 0) {
-      const { data, status } = await axios.get(
-        `${process.env.SPORTS_DATA_URL}nfl/scores/json/Teams?key=${process.env.SPORTS_DATA_NFL_KEY}`
-      )
+      const { data, status } = await axios.get(`${process.env.SPORTS_DATA_URL}nfl/scores/json/Teams?key=${process.env.SPORTS_DATA_NFL_KEY}`)
 
       if (status === 200) {
         for (let team of data) {
@@ -242,9 +234,7 @@ export class TasksService {
     })
 
     if (athletesCount === 0) {
-      const { data, status } = await axios.get(
-        `${process.env.SPORTS_DATA_URL}nfl/scores/json/Players?key=${process.env.SPORTS_DATA_NFL_KEY}`
-      )
+      const { data, status } = await axios.get(`${process.env.SPORTS_DATA_URL}nfl/scores/json/Players?key=${process.env.SPORTS_DATA_NFL_KEY}`)
 
       if (status === 200) {
         for (let athlete of data) {
@@ -279,9 +269,7 @@ export class TasksService {
                 accessKeyId: process.env.AWS_ACCESS_KEY_ID,
                 secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
               })
-              const filename = `${athlete["PlayerID"]}-${athlete["FirstName"].toLowerCase()}-${athlete[
-                "LastName"
-              ].toLowerCase()}.svg`
+              const filename = `${athlete["PlayerID"]}-${athlete["FirstName"].toLowerCase()}-${athlete["LastName"].toLowerCase()}.svg`
               const s3_location = "media/athlete/nfl/images/"
               const fileContent = buffer
               const params: any = {
@@ -298,10 +286,7 @@ export class TasksService {
                 } else {
                   const nftImage = data["Location"]
 
-                  var svgAnimationTemplate = fs.readFileSync(
-                    `./src/utils/nfl-svg-teams-animation-templates/${team.key}.svg`,
-                    "utf-8"
-                  )
+                  var svgAnimationTemplate = fs.readFileSync(`./src/utils/nfl-svg-teams-animation-templates/${team.key}.svg`, "utf-8")
                   var options = { compact: true, ignoreComment: true, spaces: 4 }
                   var result: any = convert.xml2js(svgAnimationTemplate, options)
 
@@ -331,9 +316,7 @@ export class TasksService {
                     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
                     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
                   })
-                  const filename = `${athlete["PlayerID"]}-${athlete["FirstName"].toLowerCase()}-${athlete[
-                    "LastName"
-                  ].toLowerCase()}.svg`
+                  const filename = `${athlete["PlayerID"]}-${athlete["FirstName"].toLowerCase()}-${athlete["LastName"].toLowerCase()}.svg`
                   const s3_location = "media/athlete/nfl/animations/"
                   const fileContent = buffer
                   const params: any = {
@@ -384,9 +367,7 @@ export class TasksService {
     })
 
     if (teamsCount === 0) {
-      const { data, status } = await axios.get(
-        `${process.env.SPORTS_DATA_URL}nba/scores/json/AllTeams?key=${process.env.SPORTS_DATA_NBA_KEY}`
-      )
+      const { data, status } = await axios.get(`${process.env.SPORTS_DATA_URL}nba/scores/json/AllTeams?key=${process.env.SPORTS_DATA_NBA_KEY}`)
 
       if (status === 200) {
         for (let team of data) {
@@ -416,9 +397,7 @@ export class TasksService {
     })
 
     if (athletesCount === 0) {
-      const { data, status } = await axios.get(
-        `${process.env.SPORTS_DATA_URL}nba/scores/json/Players?key=${process.env.SPORTS_DATA_NBA_KEY}`
-      )
+      const { data, status } = await axios.get(`${process.env.SPORTS_DATA_URL}nba/scores/json/Players?key=${process.env.SPORTS_DATA_NBA_KEY}`)
 
       if (status === 200) {
         for (let athlete of data) {
@@ -467,12 +446,10 @@ export class TasksService {
 
       try {
         if (athlete.firstName.length > 11) {
-          result.svg.g[5].text[2]["_attributes"]["style"] =
-            "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700"
+          result.svg.g[5].text[2]["_attributes"]["style"] = "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700"
         }
         if (athlete.lastName.length > 11) {
-          result.svg.g[5].text[3]["_attributes"]["style"] =
-            "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700"
+          result.svg.g[5].text[3]["_attributes"]["style"] = "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700"
         }
 
         result.svg.g[5].text[2]["_text"] = athlete.firstName.toUpperCase()
@@ -514,10 +491,7 @@ export class TasksService {
           const nftImage = data["Location"]
           athlete.nftImage = nftImage
 
-          var svgAnimationTemplate = fs.readFileSync(
-            `./src/utils/nfl-svg-teams-animation-templates/${athlete.team.key}.svg`,
-            "utf-8"
-          )
+          var svgAnimationTemplate = fs.readFileSync(`./src/utils/nfl-svg-teams-animation-templates/${athlete.team.key}.svg`, "utf-8")
           var options = { compact: true, ignoreComment: true, spaces: 4 }
           var result: any = convert.xml2js(svgAnimationTemplate, options)
 
@@ -601,12 +575,10 @@ export class TasksService {
 
       try {
         if (athlete.firstName.length > 11) {
-          result.svg.g[6].text[1]["_attributes"]["style"] =
-            "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700"
+          result.svg.g[6].text[1]["_attributes"]["style"] = "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700"
         }
         if (athlete.lastName.length > 11) {
-          result.svg.g[6].text[2]["_attributes"]["style"] =
-            "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700"
+          result.svg.g[6].text[2]["_attributes"]["style"] = "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700"
         }
 
         result.svg.g[6]["text"][1]["tspan"]["_text"] = athlete.firstName.toUpperCase()
@@ -666,10 +638,7 @@ export class TasksService {
     })
 
     for (let athlete of athletes) {
-      var svgAnimationTemplate = fs.readFileSync(
-        `./src/utils/nba-svg-teams-animation-templates/${athlete.team.key}.svg`,
-        "utf-8"
-      )
+      var svgAnimationTemplate = fs.readFileSync(`./src/utils/nba-svg-teams-animation-templates/${athlete.team.key}.svg`, "utf-8")
       var options = { compact: true, ignoreComment: true, spaces: 4 }
       var result: any = convert.xml2js(svgAnimationTemplate, options)
 
@@ -749,12 +718,10 @@ export class TasksService {
 
       try {
         if (athlete.firstName.length > 11) {
-          result.svg.g[6].text[1]["_attributes"]["style"] =
-            "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700"
+          result.svg.g[6].text[1]["_attributes"]["style"] = "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700"
         }
         if (athlete.lastName.length > 11) {
-          result.svg.g[6].text[2]["_attributes"]["style"] =
-            "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700"
+          result.svg.g[6].text[2]["_attributes"]["style"] = "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700"
         }
 
         result.svg.g[6]["text"][1]["tspan"]["_text"] = athlete.firstName.toUpperCase()
@@ -934,7 +901,7 @@ export class TasksService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
 
-  @Timeout(1)
+  // @Timeout(1)
   async generateAthleteNbaAssetsLocked() {
     this.logger.debug("Generate Athlete NBA Assets Locked: STARTED")
 
@@ -952,12 +919,10 @@ export class TasksService {
 
       try {
         if (athlete.firstName.length > 11) {
-          result.svg.g[6].text[1]["_attributes"]["style"] =
-            "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700"
+          result.svg.g[6].text[1]["_attributes"]["style"] = "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700"
         }
         if (athlete.lastName.length > 11) {
-          result.svg.g[6].text[2]["_attributes"]["style"] =
-            "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700"
+          result.svg.g[6].text[2]["_attributes"]["style"] = "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700"
         }
 
         result.svg.g[6]["text"][1]["tspan"]["_text"] = athlete.firstName.toUpperCase()
@@ -1008,9 +973,7 @@ export class TasksService {
   async updateNflAthleteStatsPerSeason() {
     this.logger.debug("Update NFL Athlete Stats: STARTED")
 
-    const timeFrames = await axios.get(
-      `${process.env.SPORTS_DATA_URL}nfl/scores/json/Timeframes/current?key=${process.env.SPORTS_DATA_NFL_KEY}`
-    )
+    const timeFrames = await axios.get(`${process.env.SPORTS_DATA_URL}nfl/scores/json/Timeframes/current?key=${process.env.SPORTS_DATA_NFL_KEY}`)
 
     if (timeFrames.status === 200) {
       const timeFrame = timeFrames.data[0]
@@ -1100,9 +1063,7 @@ export class TasksService {
   async updateNflAthleteStatsPerWeek() {
     this.logger.debug("Update NFL Athlete Stats Per Week: STARTED")
 
-    const timeFrames = await axios.get(
-      `${process.env.SPORTS_DATA_URL}nfl/scores/json/Timeframes/current?key=${process.env.SPORTS_DATA_NFL_KEY}`
-    )
+    const timeFrames = await axios.get(`${process.env.SPORTS_DATA_URL}nfl/scores/json/Timeframes/current?key=${process.env.SPORTS_DATA_NFL_KEY}`)
 
     if (timeFrames.status === 200) {
       const timeFrame = timeFrames.data[0]
@@ -1199,9 +1160,7 @@ export class TasksService {
   async updateNflAthleteStatsAllWeeks() {
     this.logger.debug("Update NFL Athlete Stats All Weeks: STARTED")
 
-    const timeFrames = await axios.get(
-      `${process.env.SPORTS_DATA_URL}nfl/scores/json/Timeframes/current?key=${process.env.SPORTS_DATA_NFL_KEY}`
-    )
+    const timeFrames = await axios.get(`${process.env.SPORTS_DATA_URL}nfl/scores/json/Timeframes/current?key=${process.env.SPORTS_DATA_NFL_KEY}`)
 
     if (timeFrames.status === 200) {
       const timeFrame = timeFrames.data[0]
@@ -1306,9 +1265,7 @@ export class TasksService {
   async updateNflTeamScores() {
     this.logger.debug("Update NFL Team Scores: STARTED")
 
-    const timeFrames = await axios.get(
-      `https://api.sportsdata.io/v3/nfl/scores/json/Timeframes/current?key=${process.env.SPORTS_DATA_NFL_KEY}`
-    )
+    const timeFrames = await axios.get(`https://api.sportsdata.io/v3/nfl/scores/json/Timeframes/current?key=${process.env.SPORTS_DATA_NFL_KEY}`)
 
     if (timeFrames.status === 200) {
       const timeFrame = timeFrames.data[0]
@@ -1371,9 +1328,7 @@ export class TasksService {
   async updateNbaAthleteStatsPerSeason() {
     this.logger.debug("Update NBA Athlete Stats: STARTED")
 
-    const timeFrames = await axios.get(
-      `${process.env.SPORTS_DATA_URL}nba/scores/json/CurrentSeason?key=${process.env.SPORTS_DATA_NBA_KEY}`
-    )
+    const timeFrames = await axios.get(`${process.env.SPORTS_DATA_URL}nba/scores/json/CurrentSeason?key=${process.env.SPORTS_DATA_NBA_KEY}`)
 
     if (timeFrames.status === 200) {
       const timeFrame = timeFrames.data
@@ -1479,9 +1434,7 @@ export class TasksService {
   async updateNbaAthleteStatsPerDay() {
     this.logger.debug("Update NBA Athlete Stats Per Day: STARTED")
 
-    const timeFrames = await axios.get(
-      `${process.env.SPORTS_DATA_URL}nba/scores/json/CurrentSeason?key=${process.env.SPORTS_DATA_NBA_KEY}`
-    )
+    const timeFrames = await axios.get(`${process.env.SPORTS_DATA_URL}nba/scores/json/CurrentSeason?key=${process.env.SPORTS_DATA_NBA_KEY}`)
 
     if (timeFrames.status === 200) {
       const timeFrame = timeFrames.data
