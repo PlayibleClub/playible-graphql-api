@@ -1156,7 +1156,7 @@ export class TasksService {
     }
   }
 
-  // @Timeout(1)
+  @Timeout(1)
   async updateNflAthleteStatsAllWeeks() {
     this.logger.debug("Update NFL Athlete Stats All Weeks: STARTED")
 
@@ -1167,8 +1167,10 @@ export class TasksService {
 
       if (timeFrame) {
         // const season = new Date().getFullYear() - 1
-        const season = timeFrame.ApiSeason
-        const week = timeFrame.ApiWeek ? timeFrame.ApiWeek : "1"
+        // const season = timeFrame.ApiSeason
+        // const week = timeFrame.ApiWeek ? timeFrame.ApiWeek : "1"
+        const season = "2022PLAY"
+        const week = "18"
 
         for (let curWeek = 1; curWeek <= Number(week); curWeek++) {
           const { data, status } = await axios.get(
