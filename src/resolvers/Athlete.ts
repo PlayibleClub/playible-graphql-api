@@ -1,10 +1,13 @@
-import { SportType } from "./../utils/types"
+import { AthleteStatType, SportType } from "./../utils/types"
 import { Contract } from "near-api-js"
 import { Arg, Authorized, Field, Mutation, ObjectType, Query, Resolver } from "type-graphql"
 import { AthleteSortOptions, GetAthletesArgs } from "../args/AthleteArgs"
 import { setup } from "../near-api"
+import axios from "axios"
 
 import { Athlete } from "../entities/Athlete"
+import { AthleteStat } from "../entities/AthleteStat"
+
 import { In, MoreThanOrEqual } from "typeorm"
 import { NFL_ATHLETE_IDS, NBA_ATHLETE_IDS, NBA_ATHLETE_PROMO_IDS } from "./../utils/athlete-ids"
 
@@ -82,15 +85,11 @@ export class AthleteResolver {
     })
 
     if (from) {
-      athlete.stats = athlete.stats.filter(
-        (stat) => stat.gameDate && stat.gameDate.toISOString().split("T")[0] >= from.toISOString().split("T")[0]
-      )
+      athlete.stats = athlete.stats.filter((stat) => stat.gameDate && stat.gameDate.toISOString().split("T")[0] >= from.toISOString().split("T")[0])
     }
 
     if (to) {
-      athlete.stats = athlete.stats.filter(
-        (stat) => stat.gameDate && stat.gameDate.toISOString().split("T")[0] <= to.toISOString().split("T")[0]
-      )
+      athlete.stats = athlete.stats.filter((stat) => stat.gameDate && stat.gameDate.toISOString().split("T")[0] <= to.toISOString().split("T")[0])
     }
 
     return athlete
@@ -159,10 +158,7 @@ export class AthleteResolver {
   }
 
   @Query(() => [UserAthleteResponse])
-  async getUserAthletePortfolio(
-    @Arg("accountId") accountId: string,
-    @Arg("sportType") sportType: SportType
-  ): Promise<UserAthleteResponse[]> {
+  async getUserAthletePortfolio(@Arg("accountId") accountId: string, @Arg("sportType") sportType: SportType): Promise<UserAthleteResponse[]> {
     const nearApi = await setup()
     const account = await nearApi.account(process.env.NEAR_MAIN_ACCOUNT_ID || "")
     let contractId
@@ -209,10 +205,7 @@ export class AthleteResolver {
 
   @Authorized("ADMIN")
   @Mutation(() => Number)
-  async addStarterAthletesToOpenPackContract(
-    @Arg("sportType") sportType: SportType,
-    @Arg("isPromo") isPromo: boolean = false
-  ): Promise<Number> {
+  async addStarterAthletesToOpenPackContract(@Arg("sportType") sportType: SportType, @Arg("isPromo") isPromo: boolean = false): Promise<Number> {
     let contractId
     let athleteIds: number[] = []
 
@@ -244,30 +237,30 @@ export class AthleteResolver {
       changeMethods: ["execute_add_athletes"],
     })
 
-    const athleteTokens = (
-      await Athlete.find({ where: { apiId: In(athleteIds) }, order: { id: "ASC" }, relations: { team: true } })
-    ).map((athlete) => {
-      if (isPromo) {
-        return {
-          athlete_id: athlete.id.toString(),
-          soulbound_token_uri: athlete.nftImageLocked,
-          single_use_token_uri: athlete.nftImagePromo,
-          symbol: athlete.apiId.toString(),
-          name: `${athlete.firstName} ${athlete.lastName}`,
-          team: athlete.team.key,
-          position: athlete.position,
-        }
-      } else {
-        return {
-          athlete_id: athlete.id.toString(),
-          token_uri: athlete.nftImage,
-          symbol: athlete.apiId.toString(),
-          name: `${athlete.firstName} ${athlete.lastName}`,
-          team: athlete.team.key,
-          position: athlete.position,
+    const athleteTokens = (await Athlete.find({ where: { apiId: In(athleteIds) }, order: { id: "ASC" }, relations: { team: true } })).map(
+      (athlete) => {
+        if (isPromo) {
+          return {
+            athlete_id: athlete.id.toString(),
+            soulbound_token_uri: athlete.nftImageLocked,
+            single_use_token_uri: athlete.nftImagePromo,
+            symbol: athlete.apiId.toString(),
+            name: `${athlete.firstName} ${athlete.lastName}`,
+            team: athlete.team.key,
+            position: athlete.position,
+          }
+        } else {
+          return {
+            athlete_id: athlete.id.toString(),
+            token_uri: athlete.nftImage,
+            symbol: athlete.apiId.toString(),
+            name: `${athlete.firstName} ${athlete.lastName}`,
+            team: athlete.team.key,
+            position: athlete.position,
+          }
         }
       }
-    })
+    )
 
     const chunkifiedAthleteTokens = chunkify(athleteTokens, 10, false)
 
@@ -276,5 +269,81 @@ export class AthleteResolver {
     }
 
     return athleteTokens.length
+  }
+
+  @Authorized("ADMIN")
+  @Mutation(() => String)
+  async updateNflAthleteStatsSeason(@Arg("season") season: string): Promise<String> {
+    const { data, status } = await axios.get(
+      `${process.env.SPORTS_DATA_URL}nfl/stats/json/PlayerSeasonStats/${season}?key=${process.env.SPORTS_DATA_NFL_KEY}`
+    )
+
+    if (status === 200) {
+      const newStats: AthleteStat[] = []
+      const updateStats: AthleteStat[] = []
+
+      for (let athleteStat of data) {
+        const apiId: number = athleteStat["PlayerID"]
+        const numberOfGames: number = athleteStat["Played"] > 0 ? athleteStat["Played"] : 1
+        const curStat = await AthleteStat.findOne({
+          where: { athlete: { apiId }, season: season.toString(), type: AthleteStatType.SEASON },
+          relations: {
+            athlete: true,
+          },
+        })
+
+        if (curStat) {
+          // Update stats here
+          curStat.fantasyScore = athleteStat["FantasyPointsDraftKings"] / numberOfGames
+          curStat.completion = athleteStat["PassingCompletionPercentage"] / numberOfGames
+          curStat.carries = athleteStat["RushingAttempts"] / numberOfGames
+          curStat.passingYards = athleteStat["PassingYards"] / numberOfGames
+          curStat.rushingYards = athleteStat["RushingYards"] / numberOfGames
+          curStat.receivingYards = athleteStat["ReceivingYards"] / numberOfGames
+          curStat.interceptions = athleteStat["PassingInterceptions"] / numberOfGames
+          curStat.passingTouchdowns = athleteStat["PassingTouchdowns"] / numberOfGames
+          curStat.rushingTouchdowns = athleteStat["RushingTouchdowns"] / numberOfGames
+          curStat.receivingTouchdowns = athleteStat["ReceivingTouchdowns"] / numberOfGames
+          curStat.targets = athleteStat["ReceivingTargets"] / numberOfGames
+          curStat.receptions = athleteStat["Receptions"] / numberOfGames
+          curStat.played = athleteStat["Played"]
+          updateStats.push(curStat)
+        } else {
+          const curAthlete = await Athlete.findOne({
+            where: { apiId },
+          })
+
+          if (curAthlete) {
+            newStats.push(
+              AthleteStat.create({
+                athlete: curAthlete,
+                season: season.toString(),
+                type: AthleteStatType.SEASON,
+                position: athleteStat["Position"],
+                played: athleteStat["Played"],
+                fantasyScore: athleteStat["FantasyPointsDraftKings"] / numberOfGames,
+                completion: athleteStat["PassingCompletionPercentage"] / numberOfGames,
+                carries: athleteStat["RushingAttempts"] / numberOfGames,
+                passingYards: athleteStat["PassingYards"] / numberOfGames,
+                rushingYards: athleteStat["RushingYards"] / numberOfGames,
+                receivingYards: athleteStat["ReceivingYards"] / numberOfGames,
+                passingTouchdowns: athleteStat["PassingTouchdowns"] / numberOfGames,
+                interceptions: athleteStat["PassingInterceptions"] / numberOfGames,
+                rushingTouchdowns: athleteStat["RushingTouchdowns"] / numberOfGames,
+                receivingTouchdowns: athleteStat["ReceivingTouchdowns"] / numberOfGames,
+                targets: athleteStat["ReceivingTargets"] / numberOfGames,
+                receptions: athleteStat["Receptions"] / numberOfGames,
+              })
+            )
+          }
+        }
+      }
+
+      await AthleteStat.save([...newStats, ...updateStats], { chunk: 20 })
+
+      return `New Stats Added: ${newStats.length} | Stats Updated: ${updateStats.length}`
+    }
+
+    return "No stats added or updated"
   }
 }
