@@ -43,10 +43,10 @@ export class Athlete extends BaseEntity {
   @Column({ type: "boolean", default: true })
   isActive: boolean = true
 
-  @Field(() => Boolean, { defaultValue: false })
-  @Column({ type: "boolean", default: false })
-  isInjured: boolean = false
-
+  @Field(() => String, { nullable: true })
+  @Column({ type: "text", nullable: true })
+  isInjured?: string
+ 
   @Field(() => String, { nullable: true })
   @Column({ type: "text", nullable: true })
   nftImage?: string
