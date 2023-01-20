@@ -1183,6 +1183,34 @@ export class TasksService {
       this.logger.error("NFL Athlete Injury Data: SPORTS DATA ERROR")
     }
   }
+  @Interval(3600000) //runs every 1 hour
+  async updateNbaAthleteInjuryStatus(){
+    this.logger.debug("Update NBA Athlete Injury Status: STARTED")
+
+    const {data, status} = await axios.get(`${process.env.SPORTS_DATA_URL}nba/scores/json/Players?key=${process.env.SPORTS_DATA_NBA_KEY}`)
+
+    if (status === 200){
+      const updateAthlete: Athlete[] = []
+      for (let athlete of data){
+        const apiId: number = athlete["PlayerID"]
+        const curAthlete = await Athlete.findOne({
+          where: { apiId: apiId },
+        })
+
+        if (curAthlete){
+          curAthlete.isInjured = athlete["InjuryStatus"]
+          updateAthlete.push(curAthlete)
+        } 
+
+        await Athlete.save(updateAthlete, {chunk: 20})
+
+        
+      }
+      this.logger.debug("Update NBA Injury Status: FINISHED")
+    } else{
+      this.logger.error("NBA Athlete Injury Data: SPORTS DATA ERROR")
+    }
+  }
   @Timeout(1)
   async updateNflAthleteStatsAllWeeks() {
     this.logger.debug("Update NFL Athlete Stats All Weeks: STARTED")
