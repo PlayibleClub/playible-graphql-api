@@ -12,6 +12,7 @@ import { AthleteStat } from "../entities/AthleteStat"
 import { Game } from "../entities/Game"
 import { GameTeam } from "../entities/GameTeam"
 import { Team } from "../entities/Team"
+import { Timeframe } from "../entities/Timeframe"
 
 import { ATHLETE_MLB_BASE_ANIMATION, ATHLETE_MLB_BASE_IMG, ATHLETE_MLB_IMG } from "../utils/svgTemplates"
 import { AthleteStatType, SportType } from "../utils/types"
@@ -197,7 +198,7 @@ export class TasksService {
     this.logger.debug(`MLB Athletes Data: ${athletesCount ? "DID NOT SYNC" : "SYNCED SUCCESSFULLY"}`)
   }
 
-  @Timeout(1)
+  //@Timeout(1)
   async syncNflData() {
     const teamsCount = await Team.count({
       where: { sport: SportType.NFL },
@@ -360,7 +361,7 @@ export class TasksService {
     this.logger.debug(`NFL Athletes Data: ${athletesCount ? "DID NOT SYNC" : "SYNCED SUCCESSFULLY"}`)
   }
 
-  @Timeout(1)
+  //@Timeout(1)
   async syncNbaData() {
     const teamsCount = await Team.count({
       where: { sport: SportType.NBA },
@@ -969,7 +970,7 @@ export class TasksService {
   }
 
   // @Timeout(1)
-  @Interval(900000) // Runs every 15 mins
+  //@Interval(900000) // Runs every 15 mins
   async updateNflAthleteStatsPerSeason() {
     this.logger.debug("Update NFL Athlete Stats: STARTED")
 
@@ -1059,7 +1060,7 @@ export class TasksService {
     }
   }
 
-  @Interval(300000) // Runs every 5 mins
+  //@Interval(300000) // Runs every 5 mins
   async updateNflAthleteStatsPerWeek() {
     this.logger.debug("Update NFL Athlete Stats Per Week: STARTED")
 
@@ -1155,7 +1156,7 @@ export class TasksService {
       this.logger.error("NFL Timeframes Data: SPORTS DATA ERROR")
     }
   }
-  @Interval(3600000) //runs every 1 hour
+  //@Interval(3600000) //runs every 1 hour
   async updateNflAthleteInjuryStatus(){
     this.logger.debug("Update NFL Athlete Injury Status: STARTED")
 
@@ -1183,7 +1184,7 @@ export class TasksService {
       this.logger.error("NFL Athlete Injury Data: SPORTS DATA ERROR")
     }
   }
-  @Interval(3600000) //runs every 1 hour
+  //@Interval(3600000) //runs every 1 hour
   async updateNbaAthleteInjuryStatus(){
     this.logger.debug("Update NBA Athlete Injury Status: STARTED")
 
@@ -1211,7 +1212,7 @@ export class TasksService {
       this.logger.error("NBA Athlete Injury Data: SPORTS DATA ERROR")
     }
   }
-  @Timeout(1)
+  //@Timeout(1)
   async updateNflAthleteStatsAllWeeks() {
     this.logger.debug("Update NFL Athlete Stats All Weeks: STARTED")
 
@@ -1315,10 +1316,10 @@ export class TasksService {
     this.logger.debug("Update NFL Athlete Stats All Weeks: FINISHED")
   }
 
-  @Cron("55 11 * * *", {
-    name: "updateNflTeamScores",
-    timeZone: "Asia/Manila",
-  })
+  // @Cron("55 11 * * *", {
+  //   name: "updateNflTeamScores",
+  //   timeZone: "Asia/Manila",
+  // })
   async updateNflTeamScores() {
     this.logger.debug("Update NFL Team Scores: STARTED")
 
@@ -1381,7 +1382,7 @@ export class TasksService {
   }
 
   // @Timeout(1)
-  @Interval(900000) // Runs every 15 mins
+  //@Interval(900000) // Runs every 15 mins
   async updateNbaAthleteStatsPerSeason() {
     this.logger.debug("Update NBA Athlete Stats: STARTED")
 
@@ -1487,7 +1488,7 @@ export class TasksService {
   }
 
   // @Timeout(1)
-  @Interval(300000) // Runs every 5 mins
+  //@Interval(300000) // Runs every 5 mins
   async updateNbaAthleteStatsPerDay() {
     this.logger.debug("Update NBA Athlete Stats Per Day: STARTED")
 
@@ -1601,6 +1602,51 @@ export class TasksService {
       }
     } else {
       this.logger.error("NBA Timeframes Data: SPORTS DATA ERROR")
+    }
+  }
+  
+  @Timeout(1)
+  async updateNflTimeframe (){
+
+    this.logger.debug("Update NFL Timeframe: STARTED")
+
+    const { data, status } = await axios.get(`${process.env.SPORTS_DATA_URL}nfl/scores/json/Timeframes/recent?key=${process.env.SPORTS_DATA_NFL_KEY}`)
+
+    if(status === 200){
+      const newTimeframe: Timeframe[] = []
+      const updateTimeframe : Timeframe[] = []
+
+      for (let timeframe of data){
+        const apiSeason: string = timeframe["ApiSeason"]
+        const apiWeek: string = timeframe["ApiWeek"]
+        const currTimeframe = await Timeframe.findOne({
+          where : {
+            apiSeason: apiSeason,
+            apiWeek: apiWeek,
+          }
+        })
+
+        if(currTimeframe){
+          currTimeframe.apiWeek = timeframe["ApiWeek"]
+          currTimeframe.startDate = timeframe["StartDate"]
+          currTimeframe.endDate = timeframe["EndDate"]
+          updateTimeframe.push(currTimeframe)
+        } else{
+          newTimeframe.push(
+            Timeframe.create({
+              apiSeason: timeframe["ApiSeason"],
+              apiWeek: timeframe["ApiWeek"],
+              sport: SportType.NFL,
+              startDate: timeframe["StartDate"],
+              endDate: timeframe["EndDate"],
+            })
+          )
+        }
+      }
+      await Timeframe.save([...newTimeframe, ...updateTimeframe], { chunk: 20})
+      this.logger.debug("Update NFL Timeframe: FINISHED")
+    } else{
+      this.logger.error("Update NFL Timeframe: SPORTS DATA ERROR")
     }
   }
 }
