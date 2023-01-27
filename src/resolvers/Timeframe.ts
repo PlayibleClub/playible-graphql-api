@@ -5,12 +5,12 @@ import { SportType } from '../utils/types'
 @Resolver()
 export class TimeframeResolver {
 
-  @Query(() => Timeframe)
-  async getNflCurrentSeason(
+  @Query(() => [Timeframe])
+  async getNflSeason(
     @Arg("startDate") startDate: Date
-  ): Promise<Timeframe> {
+  ): Promise<Timeframe[]> {
 
-    return await Timeframe.findOneOrFail({
+    return await Timeframe.find({
       where: {
         startDate: LessThanOrEqual(startDate),
         endDate: MoreThanOrEqual(startDate),
