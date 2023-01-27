@@ -1,19 +1,19 @@
 import { Arg, Authorized, Field, Mutation, ObjectType, Query, Resolver } from 'type-graphql'
 import { Timeframe } from '../entities/Timeframe'
-import { MoreThan, LessThan, Between } from "typeorm" 
+import { MoreThan, LessThan, Between, LessThanOrEqual, MoreThanOrEqual } from "typeorm" 
 import { SportType } from '../utils/types'
 @Resolver()
 export class TimeframeResolver {
 
-  @Query(() => [Timeframe])
-  async getTimeframeByDate(
-    @Arg("startDate") startDate: Date,
-    @Arg("endDate") endDate: Date,
-  ): Promise<Timeframe[]> {
+  @Query(() => Timeframe)
+  async getNflCurrentSeason(
+    @Arg("startDate") startDate: Date
+  ): Promise<Timeframe> {
 
-    return await Timeframe.find({
+    return await Timeframe.findOneOrFail({
       where: {
-        startDate: Between(startDate, endDate)
+        startDate: LessThanOrEqual(startDate),
+        endDate: MoreThanOrEqual(startDate),
       }
     })
     
