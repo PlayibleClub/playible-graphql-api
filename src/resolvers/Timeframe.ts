@@ -14,6 +14,7 @@ export class TimeframeResolver {
       where: {
         startDate: LessThanOrEqual(startDate),
         endDate: MoreThanOrEqual(startDate),
+        sport: SportType.NFL,
       }
     })
     
