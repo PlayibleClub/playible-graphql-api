@@ -1606,7 +1606,56 @@ export class TasksService {
   }
   
   @Timeout(1)
-  //@Interval(300000)
+  async getInitialNflTimeframe (){
+
+    this.logger.debug("Get Initial NFL Timeframe: STARTED")
+
+    const { data, status } = await axios.get(`${process.env.SPORTS_DATA_URL}nfl/scores/json/Timeframes/recent?key=${process.env.SPORTS_DATA_NFL_KEY}`)
+
+    if(status === 200){
+      const newTimeframe: Timeframe[] = []
+      const updateTimeframe : Timeframe[] = []
+
+      for (let timeframe of data){
+        const apiSeason: string = timeframe["ApiSeason"]
+        const apiWeek: string = timeframe["ApiWeek"]
+        const apiName: string = timeframe["Name"]
+        const currTimeframe = await Timeframe.findOne({
+          where : {
+            apiSeason: apiSeason,
+            apiWeek: apiWeek,
+            apiName: apiName,
+          }
+        })
+
+        if(currTimeframe){
+          currTimeframe.apiName = timeframe["Name"]
+          currTimeframe.apiWeek = timeframe["ApiWeek"]
+          currTimeframe.apiSeason = timeframe["ApiSeason"]
+          currTimeframe.startDate = timeframe["StartDate"]
+          currTimeframe.endDate = timeframe["EndDate"]
+          updateTimeframe.push(currTimeframe)
+        } else{
+          newTimeframe.push(
+            Timeframe.create({
+              apiName: timeframe["Name"],
+              apiWeek: timeframe["ApiWeek"],
+              apiSeason: timeframe["ApiSeason"],
+              sport: SportType.NFL,
+              startDate: timeframe["StartDate"],
+              endDate: timeframe["EndDate"],
+            })
+          )
+        }
+      }
+      await Timeframe.save([...newTimeframe, ...updateTimeframe], { chunk: 20})
+      this.logger.debug("Get Initial NFL Timeframe: FINISHED")
+    } else{
+      this.logger.error("Get Initial NFL Timeframe: SPORTS DATA ERROR")
+    }
+  }
+
+  @Interval(259200000) //Runs every 3 days
   async updateNflTimeframe (){
 
     this.logger.debug("Update NFL Timeframe: STARTED")
@@ -1656,8 +1705,8 @@ export class TasksService {
     }
   }
 
-  @Timeout(1)
-  //@Interval(300000)
+  //@Timeout(1)
+  @Interval(3600000) //Runs every 1 hour
   async updateNbaCurrentSeason () {
     
     this.logger.debug("Update NBA Current Season: STARTED")
