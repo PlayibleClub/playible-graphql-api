@@ -19,7 +19,7 @@ import { AppDataSource } from "./utils/db"
 import { AthleteResolver } from "./resolvers/Athlete"
 import { GameResolver } from "./resolvers/Game"
 import { UserResolver } from "./resolvers/User"
-
+import { TeamResolver} from "./resolvers/Team"
 import { AdminWallet } from "./entities/AdminWallet"
 
 export type IContext = {
@@ -109,7 +109,7 @@ const main = async () => {
   // APOLLO
   const apolloServer = new ApolloServer({
     schema: await buildSchema({
-      resolvers: [GameResolver, UserResolver, AthleteResolver],
+      resolvers: [GameResolver, UserResolver, AthleteResolver, TeamResolver],
       validate: false,
       authChecker,
     }),
