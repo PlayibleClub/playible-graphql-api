@@ -19,6 +19,7 @@ import { AppDataSource } from "./utils/db"
 import { AthleteResolver } from "./resolvers/Athlete"
 import { GameResolver } from "./resolvers/Game"
 import { UserResolver } from "./resolvers/User"
+import { TeamResolver} from "./resolvers/Team"
 import { TimeframeResolver } from "./resolvers/Timeframe"
 import { AdminWallet } from "./entities/AdminWallet"
 
@@ -109,7 +110,7 @@ const main = async () => {
   // APOLLO
   const apolloServer = new ApolloServer({
     schema: await buildSchema({
-      resolvers: [GameResolver, UserResolver, AthleteResolver, TimeframeResolver],
+      resolvers: [GameResolver, UserResolver, AthleteResolver, TeamResolver, TimeframeResolver],
       validate: false,
       authChecker,
     }),
