@@ -14,6 +14,9 @@ export class TeamResolver {
       where: {
         sport: sport,
         location: Not("Team"),
+      },
+      order:{
+        key: "ASC",
       }
     })
   }
