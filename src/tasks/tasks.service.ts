@@ -12,6 +12,7 @@ import { AthleteStat } from "../entities/AthleteStat"
 import { Game } from "../entities/Game"
 import { GameTeam } from "../entities/GameTeam"
 import { Team } from "../entities/Team"
+import { Timeframe } from "../entities/Timeframe"
 
 import { ATHLETE_MLB_BASE_ANIMATION, ATHLETE_MLB_BASE_IMG, ATHLETE_MLB_IMG } from "../utils/svgTemplates"
 import { AthleteStatType, SportType } from "../utils/types"
@@ -1486,7 +1487,7 @@ export class TasksService {
     }
   }
 
-  // @Timeout(1)
+   //@Timeout(1)
   @Interval(300000) // Runs every 5 mins
   async updateNbaAthleteStatsPerDay() {
     this.logger.debug("Update NBA Athlete Stats Per Day: STARTED")
@@ -1602,5 +1603,150 @@ export class TasksService {
     } else {
       this.logger.error("NBA Timeframes Data: SPORTS DATA ERROR")
     }
+  }
+  
+  @Timeout(1)
+  async getInitialNflTimeframe (){
+
+    this.logger.debug("Get Initial NFL Timeframe: STARTED")
+
+    const { data, status } = await axios.get(`${process.env.SPORTS_DATA_URL}nfl/scores/json/Timeframes/recent?key=${process.env.SPORTS_DATA_NFL_KEY}`)
+
+    if(status === 200){
+      const newTimeframe: Timeframe[] = []
+      const updateTimeframe : Timeframe[] = []
+
+      for (let timeframe of data){
+        const apiSeason: string = timeframe["ApiSeason"]
+        const apiWeek: string = timeframe["ApiWeek"]
+        const apiName: string = timeframe["Name"]
+        const currTimeframe = await Timeframe.findOne({
+          where : {
+            apiSeason: apiSeason,
+            apiWeek: apiWeek,
+            apiName: apiName,
+          }
+        })
+
+        if(currTimeframe){
+          currTimeframe.apiName = timeframe["Name"]
+          currTimeframe.apiWeek = timeframe["ApiWeek"]
+          currTimeframe.apiSeason = timeframe["ApiSeason"]
+          currTimeframe.startDate = timeframe["StartDate"]
+          currTimeframe.endDate = timeframe["EndDate"]
+          updateTimeframe.push(currTimeframe)
+        } else{
+          newTimeframe.push(
+            Timeframe.create({
+              apiName: timeframe["Name"],
+              apiWeek: timeframe["ApiWeek"],
+              apiSeason: timeframe["ApiSeason"],
+              sport: SportType.NFL,
+              startDate: timeframe["StartDate"],
+              endDate: timeframe["EndDate"],
+            })
+          )
+        }
+      }
+      await Timeframe.save([...newTimeframe, ...updateTimeframe], { chunk: 20})
+      this.logger.debug("Get Initial NFL Timeframe: FINISHED")
+    } else{
+      this.logger.error("Get Initial NFL Timeframe: SPORTS DATA ERROR")
+    }
+  }
+
+  @Interval(259200000) //Runs every 3 days
+  async updateNflTimeframe (){
+
+    this.logger.debug("Update NFL Timeframe: STARTED")
+
+    const { data, status } = await axios.get(`${process.env.SPORTS_DATA_URL}nfl/scores/json/Timeframes/recent?key=${process.env.SPORTS_DATA_NFL_KEY}`)
+
+    if(status === 200){
+      const newTimeframe: Timeframe[] = []
+      const updateTimeframe : Timeframe[] = []
+
+      for (let timeframe of data){
+        const apiSeason: string = timeframe["ApiSeason"]
+        const apiWeek: string = timeframe["ApiWeek"]
+        const apiName: string = timeframe["Name"]
+        const currTimeframe = await Timeframe.findOne({
+          where : {
+            apiSeason: apiSeason,
+            apiWeek: apiWeek,
+            apiName: apiName,
+          }
+        })
+
+        if(currTimeframe){
+          currTimeframe.apiName = timeframe["Name"]
+          currTimeframe.apiWeek = timeframe["ApiWeek"]
+          currTimeframe.apiSeason = timeframe["ApiSeason"]
+          currTimeframe.startDate = timeframe["StartDate"]
+          currTimeframe.endDate = timeframe["EndDate"]
+          updateTimeframe.push(currTimeframe)
+        } else{
+          newTimeframe.push(
+            Timeframe.create({
+              apiName: timeframe["Name"],
+              apiWeek: timeframe["ApiWeek"],
+              apiSeason: timeframe["ApiSeason"],
+              sport: SportType.NFL,
+              startDate: timeframe["StartDate"],
+              endDate: timeframe["EndDate"],
+            })
+          )
+        }
+      }
+      await Timeframe.save([...newTimeframe, ...updateTimeframe], { chunk: 20})
+      this.logger.debug("Update NFL Timeframe: FINISHED")
+    } else{
+      this.logger.error("Update NFL Timeframe: SPORTS DATA ERROR")
+    }
+  }
+
+  //@Timeout(1)
+  @Interval(3600000) //Runs every 1 hour
+  async updateNbaCurrentSeason () {
+    
+    this.logger.debug("Update NBA Current Season: STARTED")
+
+    const { data, status } = await axios.get(`${process.env.SPORTS_DATA_URL}nba/scores/json/CurrentSeason?key=${process.env.SPORTS_DATA_NBA_KEY}`)
+
+    if(status === 200){
+      const newSeason: Timeframe[] = []
+      const updateSeason: Timeframe[] = []
+
+      const season = data
+      const currSeason = await Timeframe.findOne({
+        where: {
+          sport: SportType.NBA
+        }
+      })
+
+      if(currSeason){
+        currSeason.apiName = season["Description"]
+        currSeason.apiSeason = season["ApiSeason"]
+        currSeason.startDate = season["RegularSeasonStartDate"]
+        currSeason.endDate = season["PostSeasonStartDate"]
+        updateSeason.push(currSeason)
+      } else{
+        newSeason.push(
+          Timeframe.create({
+            apiName: season["Description"],
+            apiSeason: season["ApiSeason"],
+            startDate: season["RegularSeasonStartDate"],
+            endDate: season["PostSeasonStartDate"],
+            sport: SportType.NBA,
+          })
+        )
+      }
+      
+      await Timeframe.save([...newSeason, ...updateSeason], {chunk: 20})
+      this.logger.debug("Update NBA Current Season: FINISHED")
+    } else{
+      this.logger.debug("Update NBA Current Season: SPORTS DATA ERROR")
+    }
+    
   }
 }
