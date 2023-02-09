@@ -16,6 +16,10 @@ export class Athlete extends BaseEntity {
   apiId!: number
 
   @Field(() => String)
+  @Column({ type: "varchar", length: 155})
+  playerKey!: string //for cricket
+
+  @Field(() => String)
   @Column({ type: "varchar", length: 155 })
   firstName!: string
 
