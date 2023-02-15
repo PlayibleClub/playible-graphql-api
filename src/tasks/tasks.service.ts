@@ -199,6 +199,72 @@ export class TasksService {
   }
 
   @Timeout(1)
+  async syncMlbData2(){
+    const teamCount = await Team.count({
+      where: { sport: SportType.MLB},
+    })
+
+    if (teamCount === 0){ //init mlb teams
+      const {data, status} = await axios.get(`${process.env.SPORTS_DATA_URL}mlb/scores/json/teams?key=${process.env.SPORTS_DATA_MLB_KEY}`)
+
+      if (status === 200) {
+        for (let team of data){
+          try {
+            await Team.create({
+              apiId: team["GlobalTeamID"],
+              name: team["Name"],
+              key: team["Key"],
+              location: team["City"],
+              sport: SportType.MLB,
+              primaryColor: `#${team["PrimaryColor"]}`,
+              secondaryColor: `#${team["SecondaryColor"]}`,
+            }).save()
+          } catch(err){
+            this.logger.error(err)
+          }
+        }
+      } else{
+        this.logger.error("MLB Teams Data: SPORTS DATA ERROR")
+      }
+    }
+    this.logger.debug(`MLB Teams: ${teamCount ? "ALREADY EXISTS" : "SYNCED"}`)
+
+    const athleteCount = await Athlete.count({
+      where: { team: { sport: SportType.MLB } },
+    })
+
+    if (athleteCount === 0){
+      const {data, status} = await axios.get(`${process.env.SPORTS_DATA_URL}mlb/scores/json/Players?key=${process.env.SPORTS_DATA_MLB_KEY}`)
+      if (status === 200){
+        for (let athlete of data){
+          try {
+            const team = await Team.findOne({
+              where: {apiId: athlete["GlobalTeamId"]},
+            })
+
+            if(team){
+              await Athlete.create({
+                apiId: athlete["PlayerID"],
+                firstName: athlete["FirstName"],
+                lastName: athlete["LastName"],
+                position: athlete["Position"],
+                jersey: athlete["Jersey"],
+                team,
+                isActive: athlete["Status"] === "Active",
+                isInjured: athlete["InjuryStatus"],
+              }).save()
+            }
+          } catch(err){
+            this.logger.error(err)
+          }
+        }
+      } else[
+        this.logger.error("MLB Athlete: SPORTS DATA ERROR")
+      ]
+    }
+    this.logger.debug(`MLB Athlete: ${athleteCount ? 'ALREADY EXISTS' : 'SYNCED'}`)
+  }
+  //@Timeout(1)
   async syncNflData() {
     const teamsCount = await Team.count({
       where: { sport: SportType.NFL },
@@ -361,7 +427,7 @@ export class TasksService {
     this.logger.debug(`NFL Athletes Data: ${athletesCount ? "DID NOT SYNC" : "SYNCED SUCCESSFULLY"}`)
   }
 
-  @Timeout(1)
+  //@Timeout(1)
   async syncNbaData() {
     const teamsCount = await Team.count({
       where: { sport: SportType.NBA },
@@ -970,7 +1036,7 @@ export class TasksService {
   }
 
   // @Timeout(1)
-  @Interval(900000) // Runs every 15 mins
+  //@Interval(900000) // Runs every 15 mins
   async updateNflAthleteStatsPerSeason() {
     this.logger.debug("Update NFL Athlete Stats: STARTED")
 
@@ -1060,7 +1126,7 @@ export class TasksService {
     }
   }
 
-  @Interval(300000) // Runs every 5 mins
+  //@Interval(300000) // Runs every 5 mins
   async updateNflAthleteStatsPerWeek() {
     this.logger.debug("Update NFL Athlete Stats Per Week: STARTED")
 
@@ -1156,7 +1222,7 @@ export class TasksService {
       this.logger.error("NFL Timeframes Data: SPORTS DATA ERROR")
     }
   }
-  @Interval(3600000) //runs every 1 hour
+  //@Interval(3600000) //runs every 1 hour
   async updateNflAthleteInjuryStatus(){
     this.logger.debug("Update NFL Athlete Injury Status: STARTED")
 
@@ -1184,7 +1250,7 @@ export class TasksService {
       this.logger.error("NFL Athlete Injury Data: SPORTS DATA ERROR")
     }
   }
-  @Interval(3600000) //runs every 1 hour
+  //@Interval(3600000) //runs every 1 hour
   async updateNbaAthleteInjuryStatus(){
     this.logger.debug("Update NBA Athlete Injury Status: STARTED")
 
@@ -1212,7 +1278,7 @@ export class TasksService {
       this.logger.error("NBA Athlete Injury Data: SPORTS DATA ERROR")
     }
   }
-  @Timeout(1)
+  //@Timeout(1)
   async updateNflAthleteStatsAllWeeks() {
     this.logger.debug("Update NFL Athlete Stats All Weeks: STARTED")
 
@@ -1316,10 +1382,10 @@ export class TasksService {
     this.logger.debug("Update NFL Athlete Stats All Weeks: FINISHED")
   }
 
-  @Cron("55 11 * * *", {
-    name: "updateNflTeamScores",
-    timeZone: "Asia/Manila",
-  })
+  // @Cron("55 11 * * *", {
+  //   name: "updateNflTeamScores",
+  //   timeZone: "Asia/Manila",
+  // })
   async updateNflTeamScores() {
     this.logger.debug("Update NFL Team Scores: STARTED")
 
@@ -1382,7 +1448,7 @@ export class TasksService {
   }
 
   // @Timeout(1)
-  @Interval(900000) // Runs every 15 mins
+  //@Interval(900000) // Runs every 15 mins
   async updateNbaAthleteStatsPerSeason() {
     this.logger.debug("Update NBA Athlete Stats: STARTED")
 
@@ -1488,7 +1554,7 @@ export class TasksService {
   }
 
    //@Timeout(1)
-  @Interval(300000) // Runs every 5 mins
+  //@Interval(300000) // Runs every 5 mins
   async updateNbaAthleteStatsPerDay() {
     this.logger.debug("Update NBA Athlete Stats Per Day: STARTED")
 
@@ -1605,7 +1671,7 @@ export class TasksService {
     }
   }
   
-  @Timeout(1)
+  //@Timeout(1)
   async getInitialNflTimeframe (){
 
     this.logger.debug("Get Initial NFL Timeframe: STARTED")
@@ -1655,7 +1721,7 @@ export class TasksService {
     }
   }
 
-  @Interval(259200000) //Runs every 3 days
+  //@Interval(259200000) //Runs every 3 days
   async updateNflTimeframe (){
 
     this.logger.debug("Update NFL Timeframe: STARTED")
@@ -1706,7 +1772,7 @@ export class TasksService {
   }
 
   //@Timeout(1)
-  @Interval(3600000) //Runs every 1 hour
+  //@Interval(3600000) //Runs every 1 hour
   async updateNbaCurrentSeason () {
     
     this.logger.debug("Update NBA Current Season: STARTED")
