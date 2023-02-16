@@ -15,18 +15,18 @@ export class Timeframe extends BaseEntity {
   @Field(() => Int, { nullable: false})
   @Column("integer", { nullable: false})
   seasonType!: number
-  
+
   @Field(() => String, {nullable: false})
   @Column({type: "varchar", length: 50, nullable: false})
   apiName!: string
 
   @Field(() => String, {nullable: true})
   @Column({ type: "varchar", length: 10, nullable: true})
-  apiSeason!: string
+  apiSeason?: string
 
   @Field(() => String, { nullable: true})
   @Column({ type: "varchar", length: 10, nullable: true})
-  apiWeek!: string
+  apiWeek?: string
 
   @Field(() => String)
   @Column({
