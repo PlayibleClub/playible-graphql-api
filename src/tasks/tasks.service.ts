@@ -14,6 +14,7 @@ import { GameTeam } from "../entities/GameTeam"
 import { Team } from "../entities/Team"
 import { Timeframe } from "../entities/Timeframe"
 
+import { getSeasonType } from "../helpers/Timeframe"
 import { ATHLETE_MLB_BASE_ANIMATION, ATHLETE_MLB_BASE_IMG, ATHLETE_MLB_IMG } from "../utils/svgTemplates"
 import { AthleteStatType, SportType } from "../utils/types"
 
@@ -1726,14 +1727,19 @@ export class TasksService {
 
       if(currSeason){
         currSeason.apiName = season["Description"]
+        currSeason.season = season["Season"]
+        currSeason.seasonType = getSeasonType(season["SeasonType"])
         currSeason.apiSeason = season["ApiSeason"]
         currSeason.startDate = season["RegularSeasonStartDate"]
         currSeason.endDate = season["PostSeasonStartDate"]
         updateSeason.push(currSeason)
       } else{
+        
         newSeason.push(
           Timeframe.create({
             apiName: season["Description"],
+            season: season["Season"],
+            seasonType: getSeasonType(season["SeasonType"]),
             apiSeason: season["ApiSeason"],
             startDate: season["RegularSeasonStartDate"],
             endDate: season["PostSeasonStartDate"],
