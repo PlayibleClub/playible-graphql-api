@@ -1767,7 +1767,6 @@ export class TasksService {
     })
 
     if(currSeason){
-
       const currSchedules = await Schedule.findOne({
         where: { seasonType: Not(currSeason.seasonType) }
       })
@@ -1793,6 +1792,8 @@ export class TasksService {
             currSchedule.season = schedule["Season"]
             currSchedule.seasonType = schedule["SeasonType"]
             currSchedule.status = schedule["Status"]
+            currSchedule.awayTeam = schedule["AwayTeam"]
+            currSchedule.homeTeam = schedule["HomeTeam"]
             currSchedule.isClosed = schedule["IsClosed"]
             currSchedule.dateTime = schedule["DateTime"]
             currSchedule.dateTimeUTC = schedule["DateTimeUTC"]
@@ -1804,6 +1805,8 @@ export class TasksService {
                 season: schedule["Season"],
                 seasonType: schedule["SeasonType"],
                 status: schedule["Status"],
+                awayTeam: schedule["AwayTeam"],
+                homeTeam: schedule["HomeTeam"],
                 isClosed: schedule["IsClosed"],
                 dateTime: schedule["DateTime"],
                 dateTimeUTC: schedule["DateTimeUTC"],

@@ -23,7 +23,15 @@ export class Schedule extends BaseEntity {
 
   @Field(() => String, { nullable: true})
   @Column({type: "varchar", length: 20, nullable: true})
-  status!: string
+  status?: string
+
+  @Field(() => String, { nullable: false})
+  @Column({type: "varchar", length: 10, nullable: false})
+  awayTeam!: string
+
+  @Field(() => String, { nullable: false})
+  @Column({type: "varchar", length: 10, nullable: false})
+  homeTeam!: string
 
   @Field(() => Boolean, { defaultValue: false})
   @Column({ type: "boolean", default: false, nullable: false})
