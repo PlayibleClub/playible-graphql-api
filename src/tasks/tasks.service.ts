@@ -3,7 +3,7 @@ import { Cron, Interval, Timeout } from "@nestjs/schedule"
 import S3 from "aws-sdk/clients/s3"
 import axios from "axios"
 import fs from "fs"
-import { LessThanOrEqual, MoreThanOrEqual, Equal } from "typeorm"
+import { LessThanOrEqual, MoreThanOrEqual, Equal, Not } from "typeorm"
 import convert from "xml-js"
 import moment from "moment"
 
@@ -13,10 +13,12 @@ import { Game } from "../entities/Game"
 import { GameTeam } from "../entities/GameTeam"
 import { Team } from "../entities/Team"
 import { Timeframe } from "../entities/Timeframe"
+import { Schedule } from "../entities/Schedule"
 
 import { getSeasonType } from "../helpers/Timeframe"
 import { ATHLETE_MLB_BASE_ANIMATION, ATHLETE_MLB_BASE_IMG, ATHLETE_MLB_IMG } from "../utils/svgTemplates"
 import { AthleteStatType, SportType } from "../utils/types"
+import e from "express"
 
 @Injectable()
 export class TasksService {
@@ -1752,6 +1754,67 @@ export class TasksService {
       this.logger.debug("Update NBA Current Season: FINISHED")
     } else{
       this.logger.debug("Update NBA Current Season: SPORTS DATA ERROR")
+    }
+    
+  }
+  
+  @Timeout(1)
+  async updateNbaSchedules(){
+    this.logger.debug("UPDATE NBA Schedules: STARTED")
+
+    const currSeason = await Timeframe.findOne({
+      where: {sport: SportType.NBA}
+    })
+
+    if(currSeason){
+
+      const currSchedules = await Schedule.findOne({
+        where: { seasonType: Not(currSeason.seasonType) }
+      })
+
+      if(currSchedules){
+        await Schedule.delete({ seasonType: Not(currSeason.seasonType)})
+      }
+
+      const { data, status } = await axios.get(`${process.env.SPORTS_DATA_URL}nba/scores/json/Games/${currSeason.apiSeason}?key=${process.env.SPORTS_DATA_NBA_KEY}`)
+
+      if (status === 200){
+        const newSchedule: Schedule[] = []
+        const updateSchedule: Schedule[] = []
+
+        for(let schedule of data) {
+          const gameId: number = schedule["GameID"]
+
+          const currSchedule = await Schedule.findOne({
+            where: { gameId: gameId }
+          })
+
+          if(currSchedule){
+            currSchedule.season = schedule["Season"]
+            currSchedule.seasonType = schedule["SeasonType"]
+            currSchedule.status = schedule["Status"]
+            currSchedule.isClosed = schedule["IsClosed"]
+            currSchedule.dateTime = schedule["DateTime"]
+            currSchedule.dateTimeUTC = schedule["DateTimeUTC"]
+            updateSchedule.push(currSchedule)
+          } else{
+            newSchedule.push(
+              Schedule.create({
+                gameId: schedule["GameID"],
+                season: schedule["Season"],
+                seasonType: schedule["SeasonType"],
+                status: schedule["Status"],
+                isClosed: schedule["IsClosed"],
+                dateTime: schedule["DateTime"],
+                dateTimeUTC: schedule["DateTimeUTC"],
+              })
+            )
+          }
+        }
+        await Schedule.save([...newSchedule, ...updateSchedule], {chunk: 20})
+      }
+    } else{
+      this.logger.error("Update NBA Schedules: ERROR CURRENT SEASON NOT FOUND")
     }
     
   }
