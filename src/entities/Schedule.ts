@@ -45,5 +45,11 @@ export class Schedule extends BaseEntity {
   @Column({ type: "timestamptz", nullable: true})
   dateTimeUTC?: Date
 
-
+  @Field(() => String)
+  @Column({
+    type: "enum",
+    enum: SportType,
+    default: SportType.MLB,
+  })
+  sport: SportType = SportType.MLB
 }
