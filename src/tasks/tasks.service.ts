@@ -1712,7 +1712,7 @@ export class TasksService {
     }
   }
 
-  //@Timeout(1)
+  @Timeout(1)
   //@Interval(3600000) //Runs every 1 hour
   async updateNbaCurrentSeason () {
     
@@ -1771,12 +1771,17 @@ export class TasksService {
     })
 
     if(currSeason){
-      const currSchedules = await Schedule.findOne({
-        where: { seasonType: Not(currSeason.seasonType), sport: SportType.NBA}
+      const currSchedules = await Schedule.find({
+        where: [
+          {season: Not(currSeason.season), sport: SportType.NBA},
+          {seasonType: Not(currSeason.seasonType), sport:SportType.NBA},
+        ]
       })
 
-      if(currSchedules){
-        await Schedule.delete({ seasonType: Not(currSeason.seasonType), sport: SportType.NBA})
+      if(currSchedules.length > 0){
+        this.logger.debug("Update NBA Schedules: START DELETE PREVIOUS SEASON")
+        await Schedule.remove(currSchedules)
+        this.logger.debug("Update NBA Schedules: DELETED PREVIOUS SEASON SCHEDULE")
       }
 
       const { data, status } = await axios.get(`${process.env.SPORTS_DATA_URL}nba/scores/json/Games/${currSeason.apiSeason}?key=${process.env.SPORTS_DATA_NBA_KEY}`)
@@ -1821,6 +1826,7 @@ export class TasksService {
         }
         await Schedule.save([...newSchedule, ...updateSchedule], {chunk: 20})
       }
+      this.logger.debug("Update NBA Schedules: FINISHED")
     } else{
       this.logger.error("Update NBA Schedules: ERROR CURRENT SEASON NOT FOUND")
     }
