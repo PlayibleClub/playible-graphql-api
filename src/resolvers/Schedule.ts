@@ -16,12 +16,12 @@ export class ScheduleResolver {
     return await Schedule.find({
       where:[
         {
-          dateTime: MoreThanOrEqual(startDate) && LessThanOrEqual(endDate),
+          dateTime: Between(startDate, endDate),
           sport: SportType.NBA,
           homeTeam: team
         },
         {
-          dateTime: MoreThanOrEqual(startDate) && LessThanOrEqual(endDate),
+          dateTime: Between(startDate, endDate),
           sport: SportType.NBA,
           awayTeam: team
         }
