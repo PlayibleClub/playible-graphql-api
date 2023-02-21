@@ -1687,6 +1687,8 @@ export class TasksService {
 
         if(currTimeframe){
           currTimeframe.apiName = timeframe["Name"]
+          currTimeframe.season = timeframe["Season"]
+          currTimeframe.seasonType = timeframe["SeasonType"]
           currTimeframe.apiWeek = timeframe["ApiWeek"]
           currTimeframe.apiSeason = timeframe["ApiSeason"]
           currTimeframe.startDate = timeframe["StartDate"]
@@ -1696,6 +1698,8 @@ export class TasksService {
           newTimeframe.push(
             Timeframe.create({
               apiName: timeframe["Name"],
+              season: timeframe["Season"],
+              seasonType: timeframe["SeasonType"],
               apiWeek: timeframe["ApiWeek"],
               apiSeason: timeframe["ApiSeason"],
               sport: SportType.NFL,
