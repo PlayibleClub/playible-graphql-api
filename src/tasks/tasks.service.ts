@@ -3,7 +3,7 @@ import { Cron, Interval, Timeout } from "@nestjs/schedule"
 import S3 from "aws-sdk/clients/s3"
 import axios from "axios"
 import fs from "fs"
-import { LessThanOrEqual, MoreThanOrEqual, Equal } from "typeorm"
+import { LessThanOrEqual, MoreThanOrEqual, Equal, Not } from "typeorm"
 import convert from "xml-js"
 import moment from "moment"
 
@@ -13,9 +13,12 @@ import { Game } from "../entities/Game"
 import { GameTeam } from "../entities/GameTeam"
 import { Team } from "../entities/Team"
 import { Timeframe } from "../entities/Timeframe"
+import { Schedule } from "../entities/Schedule"
 
+import { getSeasonType } from "../helpers/Timeframe"
 import { ATHLETE_MLB_BASE_ANIMATION, ATHLETE_MLB_BASE_IMG, ATHLETE_MLB_IMG } from "../utils/svgTemplates"
 import { AthleteStatType, SportType } from "../utils/types"
+import e from "express"
 
 @Injectable()
 export class TasksService {
@@ -1696,6 +1699,8 @@ export class TasksService {
 
         if(currTimeframe){
           currTimeframe.apiName = timeframe["Name"]
+          currTimeframe.season = timeframe["Season"]
+          currTimeframe.seasonType = timeframe["SeasonType"]
           currTimeframe.apiWeek = timeframe["ApiWeek"]
           currTimeframe.apiSeason = timeframe["ApiSeason"]
           currTimeframe.startDate = timeframe["StartDate"]
@@ -1705,6 +1710,8 @@ export class TasksService {
           newTimeframe.push(
             Timeframe.create({
               apiName: timeframe["Name"],
+              season: timeframe["Season"],
+              seasonType: timeframe["SeasonType"],
               apiWeek: timeframe["ApiWeek"],
               apiSeason: timeframe["ApiSeason"],
               sport: SportType.NFL,
@@ -1746,6 +1753,8 @@ export class TasksService {
 
         if(currTimeframe){
           currTimeframe.apiName = timeframe["Name"]
+          currTimeframe.season = timeframe["Season"]
+          currTimeframe.seasonType = timeframe["SeasonType"]
           currTimeframe.apiWeek = timeframe["ApiWeek"]
           currTimeframe.apiSeason = timeframe["ApiSeason"]
           currTimeframe.startDate = timeframe["StartDate"]
@@ -1755,6 +1764,8 @@ export class TasksService {
           newTimeframe.push(
             Timeframe.create({
               apiName: timeframe["Name"],
+              season: timeframe["Season"],
+              seasonType: timeframe["SeasonType"],
               apiWeek: timeframe["ApiWeek"],
               apiSeason: timeframe["ApiSeason"],
               sport: SportType.NFL,
@@ -1792,14 +1803,19 @@ export class TasksService {
 
       if(currSeason){
         currSeason.apiName = season["Description"]
+        currSeason.season = season["Season"]
+        currSeason.seasonType = getSeasonType(season["SeasonType"])
         currSeason.apiSeason = season["ApiSeason"]
         currSeason.startDate = season["RegularSeasonStartDate"]
         currSeason.endDate = season["PostSeasonStartDate"]
         updateSeason.push(currSeason)
       } else{
+        
         newSeason.push(
           Timeframe.create({
             apiName: season["Description"],
+            season: season["Season"],
+            seasonType: getSeasonType(season["SeasonType"]),
             apiSeason: season["ApiSeason"],
             startDate: season["RegularSeasonStartDate"],
             endDate: season["PostSeasonStartDate"],
@@ -1812,6 +1828,78 @@ export class TasksService {
       this.logger.debug("Update NBA Current Season: FINISHED")
     } else{
       this.logger.debug("Update NBA Current Season: SPORTS DATA ERROR")
+    }
+    
+  }
+  
+  //@Timeout(1)
+  @Interval(4200000) // Runs every 1 hour 10 minutes
+  async updateNbaSchedules(){
+    this.logger.debug("UPDATE NBA Schedules: STARTED")
+
+    const currSeason = await Timeframe.findOne({
+      where: {sport: SportType.NBA}
+    })
+
+    if(currSeason){
+      const currSchedules = await Schedule.find({
+        where: [
+          {season: Not(currSeason.season), sport: SportType.NBA},
+          {seasonType: Not(currSeason.seasonType), sport:SportType.NBA},
+        ]
+      })
+
+      if(currSchedules.length > 0){
+        this.logger.debug("Update NBA Schedules: START DELETE PREVIOUS SEASON")
+        await Schedule.remove(currSchedules)
+        this.logger.debug("Update NBA Schedules: DELETED PREVIOUS SEASON SCHEDULE")
+      }
+
+      const { data, status } = await axios.get(`${process.env.SPORTS_DATA_URL}nba/scores/json/Games/${currSeason.apiSeason}?key=${process.env.SPORTS_DATA_NBA_KEY}`)
+
+      if (status === 200){
+        const newSchedule: Schedule[] = []
+        const updateSchedule: Schedule[] = []
+
+        for(let schedule of data) {
+          const gameId: number = schedule["GameID"]
+
+          const currSchedule = await Schedule.findOne({
+            where: { gameId: gameId }
+          })
+
+          if(currSchedule){
+            currSchedule.season = schedule["Season"]
+            currSchedule.seasonType = schedule["SeasonType"]
+            currSchedule.status = schedule["Status"]
+            currSchedule.awayTeam = schedule["AwayTeam"]
+            currSchedule.homeTeam = schedule["HomeTeam"]
+            currSchedule.isClosed = schedule["IsClosed"]
+            currSchedule.dateTime = schedule["DateTime"]
+            currSchedule.dateTimeUTC = schedule["DateTimeUTC"]
+            updateSchedule.push(currSchedule)
+          } else{
+            newSchedule.push(
+              Schedule.create({
+                gameId: schedule["GameID"],
+                season: schedule["Season"],
+                seasonType: schedule["SeasonType"],
+                status: schedule["Status"],
+                awayTeam: schedule["AwayTeam"],
+                homeTeam: schedule["HomeTeam"],
+                isClosed: schedule["IsClosed"],
+                dateTime: schedule["DateTime"],
+                dateTimeUTC: schedule["DateTimeUTC"],
+                sport: SportType.NBA,
+              })
+            )
+          }
+        }
+        await Schedule.save([...newSchedule, ...updateSchedule], {chunk: 20})
+      }
+      this.logger.debug("Update NBA Schedules: FINISHED")
+    } else{
+      this.logger.error("Update NBA Schedules: ERROR CURRENT SEASON NOT FOUND")
     }
     
   }
