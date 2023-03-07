@@ -86,11 +86,11 @@ export class AthleteResolver {
     })
 
     if (from) {
-      athlete.stats = athlete.stats.filter((stat) => stat.gameDate && stat.gameDate.toISOString().split("T")[0] >= from.toISOString().split("T")[0])
+      athlete.stats = athlete.stats.filter((stat) => stat.gameDate && stat.gameDate.toISOString() >= from.toISOString())
     }
 
     if (to) {
-      athlete.stats = athlete.stats.filter((stat) => stat.gameDate && stat.gameDate.toISOString().split("T")[0] <= to.toISOString().split("T")[0])
+      athlete.stats = athlete.stats.filter((stat) => stat.gameDate && stat.gameDate.toISOString() <= to.toISOString())
     }
 
     return athlete
