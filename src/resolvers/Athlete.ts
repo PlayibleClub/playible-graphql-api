@@ -9,9 +9,8 @@ import { Athlete } from "../entities/Athlete"
 import { AthleteStat } from "../entities/AthleteStat"
 import { Team } from "../entities/Team"
 
-import { In, MoreThanOrEqual, LessThanOrEqual} from "typeorm"
+import { In, MoreThanOrEqual } from "typeorm"
 import { NFL_ATHLETE_IDS, NBA_ATHLETE_IDS, NBA_ATHLETE_PROMO_IDS } from "./../utils/athlete-ids"
-import moment from "moment"
 
 @ObjectType()
 class Distribution {
@@ -87,12 +86,11 @@ export class AthleteResolver {
     })
 
     if (from) {
-      //athlete.stats = athlete.stats.filter((stat) => stat.gameDate && stat.gameDate.toISOString() >= from.toISOString())
-      athlete.stats = athlete.stats.filter((stat) => stat.gameDate && moment(stat.gameDate).unix() >= moment(from).unix())
+      athlete.stats = athlete.stats.filter((stat) => stat.gameDate && stat.gameDate.toISOString() >= from.toISOString())
     }
 
     if (to) {
-      athlete.stats = athlete.stats.filter((stat) => stat.gameDate && moment(stat.gameDate).unix() <= moment(to).unix())
+      athlete.stats = athlete.stats.filter((stat) => stat.gameDate && stat.gameDate.toISOString() <= to.toISOString())
     }
 
     return athlete
