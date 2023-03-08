@@ -5,7 +5,7 @@ import axios from "axios"
 import fs from "fs"
 import { LessThanOrEqual, MoreThanOrEqual, Equal, Not } from "typeorm"
 import convert from "xml-js"
-import moment from 'moment-timezone'
+import moment from "moment"
 
 import { Athlete } from "../entities/Athlete"
 import { AthleteStat } from "../entities/AthleteStat"
@@ -201,7 +201,7 @@ export class TasksService {
     this.logger.debug(`MLB Athletes Data: ${athletesCount ? "DID NOT SYNC" : "SYNCED SUCCESSFULLY"}`)
   }
 
-  //@Timeout(1)
+  @Timeout(1)
   async syncNflData() {
     const teamsCount = await Team.count({
       where: { sport: SportType.NFL },
@@ -364,7 +364,7 @@ export class TasksService {
     this.logger.debug(`NFL Athletes Data: ${athletesCount ? "DID NOT SYNC" : "SYNCED SUCCESSFULLY"}`)
   }
 
-  //@Timeout(1)
+  @Timeout(1)
   async syncNbaData() {
     const teamsCount = await Team.count({
       where: { sport: SportType.NBA },
@@ -973,7 +973,7 @@ export class TasksService {
   }
 
   // @Timeout(1)
-  //@Interval(900000) // Runs every 15 mins
+  @Interval(900000) // Runs every 15 mins
   async updateNflAthleteStatsPerSeason() {
     this.logger.debug("Update NFL Athlete Stats: STARTED")
 
@@ -1063,7 +1063,7 @@ export class TasksService {
     }
   }
 
-  //@Interval(300000) // Runs every 5 mins
+  @Interval(300000) // Runs every 5 mins
   async updateNflAthleteStatsPerWeek() {
     this.logger.debug("Update NFL Athlete Stats Per Week: STARTED")
 
@@ -1159,7 +1159,7 @@ export class TasksService {
       this.logger.error("NFL Timeframes Data: SPORTS DATA ERROR")
     }
   }
-  //@Interval(3600000) //runs every 1 hour
+  @Interval(3600000) //runs every 1 hour
   async updateNflAthleteInjuryStatus(){
     this.logger.debug("Update NFL Athlete Injury Status: STARTED")
 
@@ -1187,7 +1187,7 @@ export class TasksService {
       this.logger.error("NFL Athlete Injury Data: SPORTS DATA ERROR")
     }
   }
-  //@Interval(3600000) //runs every 1 hour
+  @Interval(3600000) //runs every 1 hour
   async updateNbaAthleteInjuryStatus(){
     this.logger.debug("Update NBA Athlete Injury Status: STARTED")
 
@@ -1215,7 +1215,7 @@ export class TasksService {
       this.logger.error("NBA Athlete Injury Data: SPORTS DATA ERROR")
     }
   }
-  //@Timeout(1)
+  @Timeout(1)
   async updateNflAthleteStatsAllWeeks() {
     this.logger.debug("Update NFL Athlete Stats All Weeks: STARTED")
 
@@ -1319,10 +1319,10 @@ export class TasksService {
     this.logger.debug("Update NFL Athlete Stats All Weeks: FINISHED")
   }
 
-  // @Cron("55 11 * * *", {
-  //   name: "updateNflTeamScores",
-  //   timeZone: "Asia/Manila",
-  // })
+  @Cron("55 11 * * *", {
+    name: "updateNflTeamScores",
+    timeZone: "Asia/Manila",
+  })
   async updateNflTeamScores() {
     this.logger.debug("Update NFL Team Scores: STARTED")
 
@@ -1385,7 +1385,7 @@ export class TasksService {
   }
 
   // @Timeout(1)
-  //@Interval(900000) // Runs every 15 mins
+  @Interval(900000) // Runs every 15 mins
   async updateNbaAthleteStatsPerSeason() {
     this.logger.debug("Update NBA Athlete Stats: STARTED")
 
@@ -1491,7 +1491,7 @@ export class TasksService {
   }
 
    //@Timeout(1)
-  //@Interval(300000) // Runs every 5 mins
+  @Interval(300000) // Runs every 5 mins
   async updateNbaAthleteStatsPerDay() {
     this.logger.debug("Update NBA Athlete Stats Per Day: STARTED")
 
@@ -1608,7 +1608,7 @@ export class TasksService {
     }
   }
   
-  //@Timeout(1)
+  @Timeout(1)
   async getInitialNflTimeframe (){
 
     this.logger.debug("Get Initial NFL Timeframe: STARTED")
@@ -1662,7 +1662,7 @@ export class TasksService {
     }
   }
 
-  //@Interval(259200000) //Runs every 3 days
+  @Interval(259200000) //Runs every 3 days
   async updateNflTimeframe (){
 
     this.logger.debug("Update NFL Timeframe: STARTED")
@@ -1717,7 +1717,7 @@ export class TasksService {
   }
 
   //@Timeout(1)
-  //@Interval(3600000) //Runs every 1 hour
+  @Interval(3600000) //Runs every 1 hour
   async updateNbaCurrentSeason () {
     
     this.logger.debug("Update NBA Current Season: STARTED")
@@ -1766,8 +1766,8 @@ export class TasksService {
     
   }
   
-  @Timeout(1)
-  //@Interval(600000) // Runs every 1 hour 10 minutes
+  //@Timeout(1)
+  @Interval(4200000) // Runs every 1 hour 10 minutes
   async updateNbaSchedules(){
     this.logger.debug("UPDATE NBA Schedules: STARTED")
 
@@ -1802,9 +1802,6 @@ export class TasksService {
             where: { gameId: gameId }
           })
 
-          this.logger.debug("DateTime from sportsdata: " + schedule["DateTime"])
-          this.logger.debug("DateTime convert: " + moment.tz(schedule["DateTime"], 'EST').utc())
-          this.logger.debug("DateTime newDate convert: " + new Date(moment.tz(schedule["DateTime"], 'EST').utc().toISOString()))
           if(currSchedule){
             currSchedule.season = schedule["Season"]
             currSchedule.seasonType = schedule["SeasonType"]
