@@ -14,6 +14,7 @@ import { AthleteStat } from "../entities/AthleteStat"
 import { AdminWallet } from "../entities/AdminWallet"
 import { Timeframe } from "../entities/Timeframe"
 import { Schedule } from "../entities/Schedule"
+import { CricketAuth } from "../entities/CricketAuth" 
 export const AppDataSource = new DataSource({
   type: "postgres",
   host: process.env.POSTGRES_HOST,
@@ -34,7 +35,8 @@ export const AppDataSource = new DataSource({
     AthleteStat,
     AdminWallet,
     Timeframe,
-    Schedule
+    Schedule,
+    CricketAuth,
   ],
   synchronize: true,
   // logging: true,

@@ -14,7 +14,7 @@ import { GameTeam } from "../entities/GameTeam"
 import { Team } from "../entities/Team"
 import { Timeframe } from "../entities/Timeframe"
 import { Schedule } from "../entities/Schedule"
-
+import { CricketAuth } from "../entities/CricketAuth"
 import { getSeasonType } from "../helpers/Timeframe"
 import { ATHLETE_MLB_BASE_ANIMATION, ATHLETE_MLB_BASE_IMG, ATHLETE_MLB_IMG } from "../utils/svgTemplates"
 import { AthleteStatType, SportType } from "../utils/types"
@@ -201,7 +201,7 @@ export class TasksService {
     this.logger.debug(`MLB Athletes Data: ${athletesCount ? "DID NOT SYNC" : "SYNCED SUCCESSFULLY"}`)
   }
 
-  @Timeout(1)
+  //@Timeout(1)
   async syncMlbData2(){
     const teamCount = await Team.count({
       where: { sport: SportType.MLB},
@@ -1833,7 +1833,7 @@ export class TasksService {
   }
   
   //@Timeout(1)
-  @Interval(4200000) // Runs every 1 hour 10 minutes
+  //@Interval(4200000) // Runs every 1 hour 10 minutes
   async updateNbaSchedules(){
     this.logger.debug("UPDATE NBA Schedules: STARTED")
 
@@ -1903,4 +1903,6 @@ export class TasksService {
     }
     
   }
+
+
 }
