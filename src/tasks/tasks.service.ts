@@ -1609,6 +1609,136 @@ export class TasksService {
   }
   
   //@Timeout(1)
+  async updateNbaAthleteStatsPerDayLoop() {
+    this.logger.debug("Update NBA Athlete Stats Per Day: STARTED")
+
+    const timeFrames = await axios.get(
+      `${process.env.SPORTS_DATA_URL}nba/scores/json/CurrentSeason?key=${process.env.SPORTS_DATA_NBA_KEY}`
+    )
+
+    if (timeFrames.status === 200) {
+      const timeFrame = timeFrames.data
+
+      if (timeFrame) {
+        let timesRun = 0
+        let interval = setInterval(async () => {
+          timesRun += 1
+          this.logger.debug("Times Run:", timesRun)
+          const season = timeFrame.ApiSeason
+          const date = moment().subtract(timesRun, "day").toDate()
+          const dateFormat = moment(date).format("YYYY-MMM-DD").toUpperCase()
+          this.logger.debug(date)
+          this.logger.debug(dateFormat)
+
+          const { data, status } = await axios.get(
+            `${process.env.SPORTS_DATA_URL}nba/stats/json/PlayerGameStatsByDate/${dateFormat}?key=${process.env.SPORTS_DATA_NBA_KEY}`
+          )
+
+          if (status === 200) {
+            const newStats: AthleteStat[] = []
+            const updateStats: AthleteStat[] = []
+
+            for (let athleteStat of data) {
+              const apiId: number = athleteStat["PlayerID"]
+              const curStat = await AthleteStat.findOne({
+                where: { statId: athleteStat["StatID"],
+                },
+                relations: { athlete: true, 
+                },
+              })
+
+              const opponent = await Team.findOne({
+                where: { apiId: athleteStat["GlobalOpponentID"] },
+              })
+              const apiDate = moment.tz(athleteStat["DateTime"], "EST")
+              const utcDate = apiDate.utc().format()
+              if (curStat) {
+                // Update stats here
+                curStat.fantasyScore = athleteStat["FantasyPointsDraftKings"]
+                curStat.opponent = opponent
+                curStat.season = season
+                curStat.points = athleteStat["Points"]
+                curStat.rebounds = athleteStat["Rebounds"]
+                curStat.offensiveRebounds = athleteStat["OffensiveRebounds"]
+                curStat.defensiveRebounds = athleteStat["DefensiveRebounds"]
+                curStat.assists = athleteStat["Assists"]
+                curStat.steals = athleteStat["Steals"]
+                curStat.blockedShots = athleteStat["BlockedShots"]
+                curStat.turnovers = athleteStat["Turnovers"]
+                curStat.personalFouls = athleteStat["PersonalFouls"]
+                curStat.fieldGoalsMade = athleteStat["FieldGoalsMade"]
+                curStat.fieldGoalsAttempted =athleteStat["FieldGoalsAttempted"]
+                curStat.fieldGoalsPercentage = athleteStat["FieldGoalsPercentage"]
+                curStat.threePointersMade = athleteStat["ThreePointersMade"]
+                curStat.threePointersAttempted = athleteStat["ThreePointersAttempted"]
+                curStat.threePointersPercentage = athleteStat["ThreePointersPercentage"]
+                curStat.freeThrowsMade = athleteStat["FreeThrowsMade"]
+                curStat.freeThrowsAttempted = athleteStat["FreeThrowsAttempted"]
+                curStat.freeThrowsPercentage = athleteStat["FreeThrowsPercentage"]
+                curStat.minutes = athleteStat["Minutes"]
+                curStat.played = athleteStat["Games"]
+                curStat.gameDate = athleteStat["DateTime"] !== null ? new Date(utcDate) : athleteStat["DateTime"]
+                updateStats.push(curStat)
+              } else {
+                const curAthlete = await Athlete.findOne({
+                  where: { apiId },
+                })
+
+                if (curAthlete) {
+                  newStats.push(
+                    AthleteStat.create({
+                      athlete: curAthlete,
+                      season: season,
+                      opponent: opponent,
+                      gameDate: athleteStat["DateTime"] !== null ? new Date(utcDate) : athleteStat["DateTime"],
+                      statId: athleteStat["StatID"],
+                      type: AthleteStatType.DAILY,
+                      position: athleteStat["Position"],
+                      played: athleteStat["Games"],
+                      fantasyScore: athleteStat["FantasyPointsDraftKings"],
+                      points: athleteStat["Points"],
+                      rebounds: athleteStat["Rebounds"],
+                      offensiveRebounds: athleteStat["OffensiveRebounds"],
+                      defensiveRebounds: athleteStat["DefensiveRebounds"],
+                      assists: athleteStat["Assists"],
+                      steals: athleteStat["Steals"],
+                      blockedShots: athleteStat["BlockedShots"],
+                      turnovers: athleteStat["Turnovers"],
+                      personalFouls: athleteStat["PersonalFouls"],
+                      fieldGoalsMade: athleteStat["FieldGoalsMade"],
+                      fieldGoalsAttempted: athleteStat["FieldGoalsAttempted"],
+                      fieldGoalsPercentage: athleteStat["FieldGoalsPercentage"],
+                      threePointersMade: athleteStat["ThreePointersMade"],
+                      threePointersAttempted: athleteStat["ThreePointersAttempted"],
+                      threePointersPercentage: athleteStat["ThreePointersPercentage"],
+                      freeThrowsMade: athleteStat["FreeThrowsMade"],
+                      freeThrowsAttempted: athleteStat["FreeThrowsAttempted"],
+                      freeThrowsPercentage: athleteStat["FreeThrowsPercentage"],
+                      minutes: athleteStat["Minutes"],
+                    })
+                  )
+                }
+              }
+            }
+
+            await AthleteStat.save([...newStats, ...updateStats], {
+              chunk: 20,
+            })
+
+            this.logger.debug("Update NBA Athlete Stats Per Day: FINISHED")
+          }
+
+          if (timesRun === 8) {
+            clearInterval(interval)
+          }
+        }, 300000)
+      }
+    } else {
+      this.logger.error("NBA Timeframes Data: SPORTS DATA ERROR")
+    }
+  }
+
+  //@Timeout(1)
   async getInitialNflTimeframe (){
 
     this.logger.debug("Get Initial NFL Timeframe: STARTED")
