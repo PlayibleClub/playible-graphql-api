@@ -1933,15 +1933,10 @@ export class TasksService {
           const currSchedule = await Schedule.findOne({
             where: { gameId: gameId }
           })
-          //this.logger.debug("GAMEID: " + schedule["GameID"])
-          //this.logger.debug("SPORTSDATA datetime: " + schedule["DateTime"])
-          const timeFromAPI = moment.tz(schedule["DateTime"], 'EST')
-          //this.logger.debug("EST CONVERT Time : " + timeFromAPI.format())
+          
+          const timeFromAPI = moment.tz(schedule["DateTime"], 'America/New_York')
           const utcDate = timeFromAPI.utc().format()
-          //this.logger.debug("UTC CONVERT: " + utcDate)
-          // if(schedule["DateTime"] === null){
-          //   this.logger.debug("GAME ID ERROR: " + schedule["GameID"])
-          // }
+         
           if(currSchedule){
             currSchedule.season = schedule["Season"]
             currSchedule.seasonType = schedule["SeasonType"]
