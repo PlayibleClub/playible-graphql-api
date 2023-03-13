@@ -972,7 +972,7 @@ export class TasksService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
 
-  @Timeout(1)
+  // @Timeout(1)
   @Interval(900000) // Runs every 15 mins
   async updateNflAthleteStatsPerSeason() {
     this.logger.debug("Update NFL Athlete Stats: STARTED")
@@ -1933,7 +1933,15 @@ export class TasksService {
           const currSchedule = await Schedule.findOne({
             where: { gameId: gameId }
           })
-
+          //this.logger.debug("GAMEID: " + schedule["GameID"])
+          //this.logger.debug("SPORTSDATA datetime: " + schedule["DateTime"])
+          const timeFromAPI = moment.tz(schedule["DateTime"], 'EST')
+          //this.logger.debug("EST CONVERT Time : " + timeFromAPI.format())
+          const utcDate = timeFromAPI.utc().format()
+          //this.logger.debug("UTC CONVERT: " + utcDate)
+          // if(schedule["DateTime"] === null){
+          //   this.logger.debug("GAME ID ERROR: " + schedule["GameID"])
+          // }
           if(currSchedule){
             currSchedule.season = schedule["Season"]
             currSchedule.seasonType = schedule["SeasonType"]
@@ -1941,7 +1949,7 @@ export class TasksService {
             currSchedule.awayTeam = schedule["AwayTeam"]
             currSchedule.homeTeam = schedule["HomeTeam"]
             currSchedule.isClosed = schedule["IsClosed"]
-            currSchedule.dateTime = schedule["DateTime"]
+            currSchedule.dateTime = schedule["DateTime"] !== null ? new Date(utcDate) : schedule["DateTime"]
             currSchedule.dateTimeUTC = schedule["DateTimeUTC"]
             updateSchedule.push(currSchedule)
           } else{
@@ -1954,7 +1962,7 @@ export class TasksService {
                 awayTeam: schedule["AwayTeam"],
                 homeTeam: schedule["HomeTeam"],
                 isClosed: schedule["IsClosed"],
-                dateTime: schedule["DateTime"],
+                dateTime: schedule["DateTime"] !== null ? new Date(utcDate) : schedule["DateTime"],
                 dateTimeUTC: schedule["DateTimeUTC"],
                 sport: SportType.NBA,
               })
