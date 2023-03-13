@@ -1529,7 +1529,7 @@ export class TasksService {
             const opponent = await Team.findOne({
               where: { apiId: athleteStat["GlobalOpponentID"] },
             })
-            const apiDate = moment.tz(athleteStat["DateTime"], "EST")
+            const apiDate = moment.tz(athleteStat["DateTime"], "America/New_York")
             const utcDate = apiDate.utc().format()
             if (curStat) {
               // Update stats here
@@ -1650,7 +1650,7 @@ export class TasksService {
               const opponent = await Team.findOne({
                 where: { apiId: athleteStat["GlobalOpponentID"] },
               })
-              const apiDate = moment.tz(athleteStat["DateTime"], "EST")
+              const apiDate = moment.tz(athleteStat["DateTime"], "America/New_York")
               const utcDate = apiDate.utc().format()
               if (curStat) {
                 // Update stats here
