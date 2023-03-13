@@ -1491,7 +1491,7 @@ export class TasksService {
   }
 
    //@Timeout(1)
-  //@Interval(300000) // Runs every 5 mins
+  @Interval(300000) // Runs every 5 mins
   async updateNbaAthleteStatsPerDay() {
     this.logger.debug("Update NBA Athlete Stats Per Day: STARTED")
 
@@ -1529,7 +1529,8 @@ export class TasksService {
             const opponent = await Team.findOne({
               where: { apiId: athleteStat["GlobalOpponentID"] },
             })
-
+            const apiDate = moment.tz(athleteStat["DateTime"], "EST")
+            const utcDate = apiDate.utc().format()
             if (curStat) {
               // Update stats here
               curStat.fantasyScore = athleteStat["FantasyPointsDraftKings"]
@@ -1555,6 +1556,7 @@ export class TasksService {
               curStat.freeThrowsPercentage = athleteStat["FreeThrowsPercentage"]
               curStat.minutes = athleteStat["Minutes"]
               curStat.played = athleteStat["Games"]
+              curStat.gameDate = athleteStat["DateTime"] !== null ? new Date(utcDate) : athleteStat["DateTime"]
               updateStats.push(curStat)
             } else {
               const curAthlete = await Athlete.findOne({
@@ -1567,7 +1569,7 @@ export class TasksService {
                     athlete: curAthlete,
                     season: season,
                     opponent: opponent,
-                    gameDate: date,
+                    gameDate: athleteStat["DateTime"] !== null ? new Date(utcDate) : athleteStat["DateTime"],
                     statId: athleteStat["StatID"],
                     type: AthleteStatType.DAILY,
                     position: athleteStat["Position"],
@@ -1610,7 +1612,7 @@ export class TasksService {
   
   //@Timeout(1)
   async updateNbaAthleteStatsPerDayLoop() {
-    this.logger.debug("Update NBA Athlete Stats Per Day: STARTED")
+    this.logger.debug("Update NBA Athlete GameDate Convert: STARTED")
 
     const timeFrames = await axios.get(
       `${process.env.SPORTS_DATA_URL}nba/scores/json/CurrentSeason?key=${process.env.SPORTS_DATA_NBA_KEY}`
@@ -1623,11 +1625,9 @@ export class TasksService {
         let timesRun = 0
         let interval = setInterval(async () => {
           timesRun += 1
-          this.logger.debug("Times Run:", timesRun)
           const season = timeFrame.ApiSeason
           const date = moment().subtract(timesRun, "day").toDate()
           const dateFormat = moment(date).format("YYYY-MMM-DD").toUpperCase()
-          this.logger.debug(date)
           this.logger.debug(dateFormat)
 
           const { data, status } = await axios.get(
@@ -1725,13 +1725,15 @@ export class TasksService {
               chunk: 20,
             })
 
-            this.logger.debug("Update NBA Athlete Stats Per Day: FINISHED")
+            this.logger.debug("Update NBA Athlete GameDate Convert: FINISHED")
+          } else {
+            this.logger.debug("NBA Player Game by Date API: SPORTS DATA ERROR")
           }
 
-          if (timesRun === 8) {
+          if (timesRun === 12) {
             clearInterval(interval)
           }
-        }, 300000)
+        }, 450000)
       }
     } else {
       this.logger.error("NBA Timeframes Data: SPORTS DATA ERROR")
