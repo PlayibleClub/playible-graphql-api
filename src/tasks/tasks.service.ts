@@ -242,7 +242,7 @@ export class TasksService {
         for (let athlete of data){
           try {
             const team = await Team.findOne({
-              where: {apiId: athlete["GlobalTeamId"]},
+              where: {apiId: athlete["GlobalTeamID"]},
             })
 
             if(team){
@@ -1676,7 +1676,7 @@ export class TasksService {
     }
   }
   
-  @Timeout(1)
+  //@Timeout(1)
   async updateNbaAthleteStatsPerDayLoop() {
     this.logger.debug("Update NBA Athlete GameDate Convert: STARTED")
 
@@ -1806,7 +1806,7 @@ export class TasksService {
     }
   }
 
-  @Timeout(1)
+  //@Timeout(1)
   async getInitialNflTimeframe (){
 
     this.logger.debug("Get Initial NFL Timeframe: STARTED")
