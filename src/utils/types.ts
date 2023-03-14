@@ -5,6 +5,7 @@ export enum SportType {
   NBA = "nba",
   NBA_PROMO = "nba-promo",
   NFL = "nfl",
+  CRICKET = "cricket",
 }
 
 export enum AthleteStatType {
