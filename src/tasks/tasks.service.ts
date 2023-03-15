@@ -15,10 +15,14 @@ import { Team } from "../entities/Team"
 import { Timeframe } from "../entities/Timeframe"
 import { Schedule } from "../entities/Schedule"
 import { CricketAuth } from "../entities/CricketAuth"
+import { CricketTournament } from "../entities/CricketTournament"
+import { CricketTeam } from "../entities/CricketTeam"
 import { getSeasonType } from "../helpers/Timeframe"
 import { ATHLETE_MLB_BASE_ANIMATION, ATHLETE_MLB_BASE_IMG, ATHLETE_MLB_IMG } from "../utils/svgTemplates"
 import { AthleteStatType, SportType } from "../utils/types"
 import e from "express"
+
+import cricketTournamentJson from '../utils/json-files/get-tournament-teams-api-results.json'
 
 @Injectable()
 export class TasksService {
@@ -240,30 +244,35 @@ export class TasksService {
       const {data, status} = await axios.get(`${process.env.SPORTS_DATA_URL}mlb/scores/json/Players?key=${process.env.SPORTS_DATA_MLB_KEY}`)
       if (status === 200){
         for (let athlete of data){
-          try {
-            const team = await Team.findOne({
-              where: {apiId: athlete["GlobalTeamID"]},
-            })
-
-            if(team){
-              await Athlete.create({
-                apiId: athlete["PlayerID"],
-                firstName: athlete["FirstName"],
-                lastName: athlete["LastName"],
-                position: athlete["Position"],
-                jersey: athlete["Jersey"],
-                team,
-                isActive: athlete["Status"] === "Active",
-                isInjured: athlete["InjuryStatus"],
-              }).save()
+          if (athlete["Status"] === "Active"){
+            try {
+              const team = await Team.findOne({
+                where: {apiId: athlete["GlobalTeamID"]},
+              })
+  
+              if(team){
+                await Athlete.create({
+                  apiId: athlete["PlayerID"],
+                  firstName: athlete["FirstName"],
+                  lastName: athlete["LastName"],
+                  position: athlete["Position"],
+                  jersey: athlete["Jersey"],
+                  team,
+                  isActive: athlete["Status"] === "Active",
+                  isInjured: athlete["InjuryStatus"],
+                }).save()
+              }
+            } catch(err){
+              this.logger.error(err)
             }
-          } catch(err){
-            this.logger.error(err)
           }
+          
         }
-      } else[
+      } else{
         this.logger.error("MLB Athlete: SPORTS DATA ERROR")
-      ]
+      }
+        
+      
     }
     this.logger.debug(`MLB Athlete: ${athleteCount ? 'ALREADY EXISTS' : 'SYNCED'}`)
   }
@@ -2038,6 +2047,37 @@ export class TasksService {
     }
     
   }
+  @Timeout(1)
+  async getCricketDataFromJson(){
 
+    this.logger.debug("START CRICKET DATA SYNC")
+    const data = cricketTournamentJson.data
+    
+    const tourneyCount = await CricketTournament.count({
+      where: { key: data.tournament.key}
+    })
+    if (tourneyCount === 0){
+      try{
+        await CricketTournament.create({
+          key: data.tournament.key,
+          name: data.tournament.name,
+          start_date: moment.unix(data.tournament.start_date),
+          sport: SportType.CRICKET,
+        }).save()
+      } catch(e){
+        this.logger.error(e)
+      }
+    } 
+    this.logger.debug(`CRICKET TOURNAMENT ${tourneyCount ? 'DID NOT SYNC' : 'SYNCED SUCCESSFULLY'} `)
 
+    const teamCount = await CricketTeam.count({
+      where: {tournaments: {key: data.tournament.key}}
+    })
+    
+    if(teamCount === 0){
+      for (let [key, value] of Object.entries(data.teams)){
+        this.logger.debug(value.name)
+      }
+    }
+  }
 }
