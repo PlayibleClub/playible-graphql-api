@@ -1730,7 +1730,7 @@ export class TasksService {
             this.logger.debug("NBA Player Game by Date API: SPORTS DATA ERROR")
           }
 
-          if (timesRun === 16) {
+          if (timesRun === 3) {
             clearInterval(interval)
           }
         }, 300000)
