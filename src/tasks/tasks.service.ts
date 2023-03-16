@@ -1610,7 +1610,7 @@ export class TasksService {
     }
   }
   
-  //@Timeout(1)
+  @Timeout(1)
   async updateNbaAthleteStatsPerDayLoop() {
     this.logger.debug("Update NBA Athlete GameDate Convert: STARTED")
 
@@ -1730,7 +1730,7 @@ export class TasksService {
             this.logger.debug("NBA Player Game by Date API: SPORTS DATA ERROR")
           }
 
-          if (timesRun === 12) {
+          if (timesRun === 16) {
             clearInterval(interval)
           }
         }, 300000)
