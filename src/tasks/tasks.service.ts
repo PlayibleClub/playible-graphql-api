@@ -17,13 +17,14 @@ import { Schedule } from "../entities/Schedule"
 import { CricketAuth } from "../entities/CricketAuth"
 import { CricketTournament } from "../entities/CricketTournament"
 import { CricketTeam } from "../entities/CricketTeam"
+import { CricketAthlete } from '../entities/CricketAthlete'
 import { getSeasonType } from "../helpers/Timeframe"
 import { ATHLETE_MLB_BASE_ANIMATION, ATHLETE_MLB_BASE_IMG, ATHLETE_MLB_IMG } from "../utils/svgTemplates"
 import { AthleteStatType, SportType } from "../utils/types"
 import e from "express"
 
 import cricketTournamentJson from '../utils/json-files/get-tournament-teams-api-results.json'
-
+import cricketAthletesJson from '../utils/json-files/ipl_all_teams_players.json'
 @Injectable()
 export class TasksService {
   private readonly logger = new Logger(TasksService.name)
@@ -2071,13 +2072,56 @@ export class TasksService {
     this.logger.debug(`CRICKET TOURNAMENT ${tourneyCount ? 'DID NOT SYNC' : 'SYNCED SUCCESSFULLY'} `)
 
     const teamCount = await CricketTeam.count({
-      where: {tournaments: {key: data.tournament.key}}
+      where: {tournament: {key: data.tournament.key}}
     })
     
     if(teamCount === 0){
+      const tourney = await CricketTournament.findOneOrFail({
+        where: {key: data.tournament.key}
+      })
+
       for (let [key, value] of Object.entries(data.teams)){
-        this.logger.debug(value.name)
+        try{
+          await CricketTeam.create({
+            key: value.key,
+            name: value.name,
+            tournament: tourney,
+            sport: SportType.CRICKET,
+          }).save()
+        } catch(err){
+          this.logger.error(err)
+        }
       }
     }
+    this.logger.debug(`Cricket Teams: ${teamCount ? "ALREADY EXISTS" : "SYNCED"}`)
+
+    const athleteList = cricketAthletesJson
+    const athleteCount = await CricketAthlete.count({
+      where: {cricketTeam: {sport: SportType.CRICKET}}
+    })
+
+    if(athleteCount === 0){
+      for (let [key, value] of Object.entries(athleteList)){
+        const team = await CricketTeam.findOneOrFail({
+          where: {key: value.data.team.key}
+        })
+        for(let [key, player] of Object.entries(value.data.tournament_team.players)){
+          try{
+            await CricketAthlete.create({
+              playerKey: player.key,
+              name: player.name,
+              jerseyName: player.jersey_name,
+              gender: player.gender,
+              nationality: player.nationality.name,
+              seasonalRole: player.seasonal_role,
+              cricketTeam: team,
+            }).save()
+          } catch(err){
+            this.logger.error(err)
+          }
+        }
+      }
+    }
+    this.logger.debug(`Cricket Athletes: ${athleteCount ? "ALREADY EXISTS" : 'SYNCED'}`)
   }
 }
