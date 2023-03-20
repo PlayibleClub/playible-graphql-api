@@ -1974,7 +1974,7 @@ export class TasksService {
   }
   
   //@Timeout(1)
-  //@Interval(4200000) // Runs every 1 hour 10 minutes
+  @Interval(4200000) // Runs every 1 hour 10 minutes
   async updateNbaSchedules(){
     this.logger.debug("UPDATE NBA Schedules: STARTED")
 
