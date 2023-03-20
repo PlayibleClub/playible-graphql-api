@@ -1,5 +1,5 @@
 import { Field, Float, ID, Int, ObjectType } from 'type-graphql'
-import { BaseEntity, Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn , Relation } from 'typeorm'
+import { BaseEntity, Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn , Relation } from 'typeorm'
 import { CricketTeam } from './CricketTeam'
 
 @ObjectType()
@@ -11,7 +11,7 @@ export class CricketAthlete extends BaseEntity{
   id!: number
 
   @Field(() => String, { nullable: true})
-  @Column({ type: "varchar", length: 50, nullable: true})
+  @Column({ type: "varchar", length: 50, nullable: true, unique: true})
   playerKey!: string
 
   @Field(()=> String, { nullable: true})
@@ -36,5 +36,6 @@ export class CricketAthlete extends BaseEntity{
 
   @Field(() => CricketTeam)
   @ManyToOne(() => CricketTeam, (cricketTeam) => cricketTeam.athletes)
+  @JoinColumn({referencedColumnName: "key"})
   cricketTeam!: Relation<CricketTeam>
 }
