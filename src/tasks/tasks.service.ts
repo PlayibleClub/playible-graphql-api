@@ -1973,6 +1973,49 @@ export class TasksService {
     }
     
   }
+
+  @Interval(360000)
+  async updateMlbCurrentSeason(){
+    this.logger.debug("Update MLB Current Season: STARTED")
+
+    const { data, status } = await axios.get(`${process.env.SPORTS_DATA_URL}mlb/scores/json/CurrentSeason?key=${process.env.SPORTS_DATA_MLB_KEY}`)
+
+    if (status === 200){
+      const newSeason: Timeframe[] = []
+      const updateSeason: Timeframe[] = []
+
+      const season = data
+      const currSeason = await Timeframe.findOne({
+        where: {
+          sport: SportType.MLB
+        }
+      })
+
+      if(currSeason){
+        currSeason.season = season["Season"]
+        currSeason.seasonType = getSeasonType(season["SeasonType"])
+        currSeason.apiSeason = season["ApiSeason"]
+        currSeason.startDate = season["RegularSeasonStartDate"]
+        currSeason.endDate = season["PostSeasonStartDate"]
+        updateSeason.push(currSeason)
+      } else{
+        newSeason.push(
+          Timeframe.create({
+            season: season["Season"],
+            seasonType: getSeasonType(season["SeasonType"]),
+            apiSeason: season["ApiSeason"],
+            startDate: season["RegularSeasonStartDate"],
+            endDate: season["PostSeasonStartDate"],
+            sport: SportType.MLB,
+          })
+        )
+      }
+      await Timeframe.save([...newSeason, ...updateSeason], {chunk: 20})
+      this.logger.debug("Update MLB Current Season: FINISHED")
+    } else{
+      this.logger.debug("Update MLB Current Season: SPORTS DATA ERROR")
+    }
+  }
   
   //@Timeout(1)
   @Interval(4200000) // Runs every 1 hour 10 minutes
