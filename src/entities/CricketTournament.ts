@@ -11,7 +11,7 @@ export class CricketTournament extends BaseEntity{
   id!: number
   
   @Field(() => String)
-  @Column({ type: "varchar"})
+  @Column({ type: "varchar", unique: true})
   key!: string
 
   @Field(() => String)
@@ -23,9 +23,8 @@ export class CricketTournament extends BaseEntity{
   start_date!: Date
 
   @Field(() => [CricketTeam])
-  @ManyToMany(() => CricketTeam, (cricketTeams) => cricketTeams.tournaments)
-  @JoinTable()
-  cricketTeams!: Relation<CricketTeam>
+  @OneToMany(() => CricketTeam, (cricketTeams) => cricketTeams.tournament)
+  cricketTeams!: Relation<CricketTeam>[]
 
   @Field(() => String)
   @Column({
