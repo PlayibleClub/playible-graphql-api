@@ -18,6 +18,7 @@ import { CricketAuth } from "../entities/CricketAuth"
 import { CricketTournament } from "../entities/CricketTournament"
 import { CricketTeam } from "../entities/CricketTeam"
 import { CricketAthlete } from '../entities/CricketAthlete'
+import { CricketMatch } from '../entities/CricketMatch'
 import { getSeasonType } from "../helpers/Timeframe"
 import { ATHLETE_MLB_BASE_ANIMATION, ATHLETE_MLB_BASE_IMG, ATHLETE_MLB_IMG } from "../utils/svgTemplates"
 import { AthleteStatType, SportType } from "../utils/types"
@@ -25,6 +26,7 @@ import e from "express"
 
 import cricketTournamentJson from '../utils/json-files/get-tournament-teams-api-results.json'
 import cricketAthletesJson from '../utils/json-files/ipl_all_teams_players.json'
+import cricketMatchesJson from '../utils/json-files/ipl_2022_tournament_fixtures_api_result.json'
 @Injectable()
 export class TasksService {
   private readonly logger = new Logger(TasksService.name)
@@ -1566,7 +1568,7 @@ export class TasksService {
     }
   }
 
-  @Timeout(1)
+  //@Timeout(1)
   async updateMlbAthleteStatsPerSeason(){
     this.logger.debug("Update MLB Athlete Stats (Season): STARTED")
 
@@ -2185,7 +2187,6 @@ export class TasksService {
 
     this.logger.debug("START CRICKET DATA SYNC")
     const data = cricketTournamentJson.data
-    
     const tourneyCount = await CricketTournament.count({
       where: { key: data.tournament.key}
     })
@@ -2255,5 +2256,54 @@ export class TasksService {
       }
     }
     this.logger.debug(`Cricket Athletes: ${athleteCount ? "ALREADY EXISTS" : 'SYNCED'}`)
+  }
+
+  @Timeout(1)
+  async getCricketMatches(){
+    //TODO: currently getting from JSON only, change to API request later
+    this.logger.debug("Update Cricket Matches: START")
+    const matches = cricketMatchesJson.data.matches
+
+    const newMatch: CricketMatch[] = []
+    const updateMatch: CricketMatch[] = []
+
+    for(let match of matches){
+      const existingMatch = await CricketMatch.findOne({
+        where: { key: match.key}
+      })
+  
+      if (existingMatch){
+        existingMatch.name = match.name
+        existingMatch.status = match.status
+        existingMatch.start_at = moment.unix(match.start_at).toDate()
+
+        this.logger.debug("unix date: " + moment.unix(match.start_at).toDate())
+        updateMatch.push(existingMatch)
+      } else{
+        const tourney = await CricketTournament.findOne({
+          where: {key: match.tournament.key}
+        })
+        if(tourney){
+          newMatch.push(
+            CricketMatch.create({
+              key: match.key,
+              name: match.name,
+              status: match.status,
+              start_at: moment.unix(match.start_at),
+              tournament: tourney,
+            })
+          )
+        } else{
+          this.logger.error("Update Cricket Match: TOURNAMENT DOES NOT EXIST")
+        }
+        
+      }
+    }
+    await CricketMatch.save([...newMatch, ...updateMatch], { chunk: 20 })
+    this.logger.debug("Update Cricket Match: FINISHED")
+  }
+
+  async updateCricketAthleteStats(){
+    
   }
 }

@@ -18,6 +18,7 @@ import { CricketAuth } from "../entities/CricketAuth"
 import { CricketTournament } from "../entities/CricketTournament" 
 import { CricketTeam } from "../entities/CricketTeam"
 import { CricketAthlete } from '../entities/CricketAthlete'
+import { CricketMatch } from '../entities/CricketMatch'
 export const AppDataSource = new DataSource({
   type: "postgres",
   host: process.env.POSTGRES_HOST,
@@ -42,7 +43,8 @@ export const AppDataSource = new DataSource({
     CricketAuth,
     CricketTournament,
     CricketTeam,
-    CricketAthlete
+    CricketAthlete,
+    CricketMatch
   ],
   synchronize: true,
   // logging: true,
