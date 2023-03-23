@@ -23,7 +23,7 @@ export class CricketTournament extends BaseEntity{
   start_date!: Date
 
   @Field(() => [CricketTeam])
-  @OneToMany(() => CricketTeam, (cricketTeams) => cricketTeams.tournament)
+  @OneToMany(() => CricketTeam, (cricketTeams) => cricketTeams.tournament, {cascade: true})
   cricketTeams!: Relation<CricketTeam>[]
 
   @Field(() => [CricketMatch])
