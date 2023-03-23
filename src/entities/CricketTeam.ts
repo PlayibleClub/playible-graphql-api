@@ -20,7 +20,7 @@ export class CricketTeam extends BaseEntity {
   name!: string
 
   @Field(() => CricketTournament)
-  @ManyToOne(() => CricketTournament, (tournaments) => tournaments.cricketTeams)
+  @ManyToOne(() => CricketTournament, (tournament) => tournament.cricketTeams)
   @JoinColumn({referencedColumnName: "key"})
   tournament!: Relation<CricketTournament>
 

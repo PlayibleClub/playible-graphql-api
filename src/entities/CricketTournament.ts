@@ -2,7 +2,7 @@ import { SportType } from "../utils/types"
 import { Field, Float, ID, Int, ObjectType } from "type-graphql"
 import { BaseEntity, Column, Entity, ManyToOne, OneToMany, ManyToMany, PrimaryGeneratedColumn, Relation, JoinTable } from "typeorm"
 import { CricketTeam } from "./CricketTeam"
-
+import { CricketMatch } from "./CricketMatch"
 @ObjectType()
 @Entity()
 export class CricketTournament extends BaseEntity{
@@ -25,6 +25,10 @@ export class CricketTournament extends BaseEntity{
   @Field(() => [CricketTeam])
   @OneToMany(() => CricketTeam, (cricketTeams) => cricketTeams.tournament)
   cricketTeams!: Relation<CricketTeam>[]
+
+  @Field(() => [CricketMatch])
+  @OneToMany(() => CricketMatch, (cricketMatches) => cricketMatches.tournament)
+  cricketMatches!: Relation<CricketMatch>[]
 
   @Field(() => String)
   @Column({
