@@ -22,6 +22,7 @@ import { UserResolver } from "./resolvers/User"
 import { TeamResolver} from "./resolvers/Team"
 import { TimeframeResolver } from "./resolvers/Timeframe"
 import { ScheduleResolver } from './resolvers/Schedule'
+import { CricketAthleteResolver } from './resolvers/CricketAthlete'
 import { AdminWallet } from "./entities/AdminWallet"
 
 export type IContext = {
@@ -111,7 +112,7 @@ const main = async () => {
   // APOLLO
   const apolloServer = new ApolloServer({
     schema: await buildSchema({
-      resolvers: [GameResolver, UserResolver, AthleteResolver, TeamResolver, TimeframeResolver, ScheduleResolver],
+      resolvers: [GameResolver, UserResolver, AthleteResolver, TeamResolver, TimeframeResolver, ScheduleResolver, CricketAthleteResolver],
       validate: false,
       authChecker,
     }),

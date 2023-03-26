@@ -18,6 +18,7 @@ import { CricketAuth } from "../entities/CricketAuth"
 import { CricketTournament } from "../entities/CricketTournament"
 import { CricketTeam } from "../entities/CricketTeam"
 import { CricketAthlete } from '../entities/CricketAthlete'
+import { CricketAthleteStat } from '../entities/CricketAthleteStat'
 import { CricketMatch } from '../entities/CricketMatch'
 import { getSeasonType } from "../helpers/Timeframe"
 import { ATHLETE_MLB_BASE_ANIMATION, ATHLETE_MLB_BASE_IMG, ATHLETE_MLB_IMG } from "../utils/svgTemplates"
@@ -27,6 +28,7 @@ import e from "express"
 import cricketTournamentJson from '../utils/json-files/get-tournament-teams-api-results.json'
 import cricketAthletesJson from '../utils/json-files/ipl_all_teams_players.json'
 import cricketMatchesJson from '../utils/json-files/ipl_2022_tournament_fixtures_api_result.json'
+import cricketGameOne from '../utils/json-files/ipl_2022_g1_fantasy_score.json'
 @Injectable()
 export class TasksService {
   private readonly logger = new Logger(TasksService.name)
@@ -2258,7 +2260,7 @@ export class TasksService {
     this.logger.debug(`Cricket Athletes: ${athleteCount ? "ALREADY EXISTS" : 'SYNCED'}`)
   }
 
-  @Timeout(1)
+  //@Timeout(1)
   async getCricketMatches(){
     //TODO: currently getting from JSON only, change to API request later
     this.logger.debug("Update Cricket Matches: START")
@@ -2303,7 +2305,62 @@ export class TasksService {
     this.logger.debug("Update Cricket Match: FINISHED")
   }
 
+  @Timeout(1)
   async updateCricketAthleteStats(){
+    //TODO add interval querying to API logic
+    this.logger.debug("Update Cricket Athlete Stat: STARTED")
+    const data = cricketGameOne.data
+    const matchKey = data.match.match_meta.key
+
+    const match = await CricketMatch.findOne({
+      where: { key: matchKey}
+    })
     
+    if(match){
+      const metric = data.metrics
+      const newStats: CricketAthleteStat[] = []
+      const updateStats: CricketAthleteStat[] = []
+
+      for (let athleteStat of data.points){
+
+        const athlete = await CricketAthlete.findOne({
+          where: {playerKey: athleteStat.player_key}
+        })
+
+        if(athlete){
+          let currStat = await CricketAthleteStat.findOne({
+            where: {athlete: {playerKey: athleteStat.player_key}, match: {key: matchKey}}
+          })
+
+          if(currStat){
+            //updating stats, TODO: need to test on API call instead of json
+            const points_breakup = athleteStat.points_breakup.map((x) => (
+              {[metric[x.metric_rule_index].key]: x.points}
+            ))
+            updateStats.push(CricketAthleteStat.create(Object.assign({
+              "id": currStat.id,
+              "athlete": athlete,
+              "fantasyScore": athleteStat.points,
+            }, ...points_breakup)))
+          } else{
+
+            const points_breakup = athleteStat.points_breakup.map((x) => (
+              {[metric[x.metric_rule_index].key]: x.points}
+            ))
+
+            newStats.push(CricketAthleteStat.create(Object.assign({
+              "athlete": athlete,
+              "match": match,
+              "fantasyScore": athleteStat.points
+            }, ...points_breakup)))
+          }
+
+        } else{
+          this.logger.error("Update Cricket Athlete Stat: ERROR ATHLETE DOES NOT EXIST")
+        }
+
+      }
+      await CricketAthleteStat.save([...newStats, ...updateStats], {chunk: 20})
+    }
   }
 }
