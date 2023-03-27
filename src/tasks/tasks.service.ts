@@ -2244,7 +2244,7 @@ export class TasksService {
           const gameId: number = schedule["GameID"]
 
           const currSchedule = await Schedule.findOne({
-            where: { gameId: gameId }
+            where: { gameId: gameId, sport: SportType.NBA }
           })
           
           const timeFromAPI = moment.tz(schedule["DateTime"], 'America/New_York')
@@ -2285,6 +2285,80 @@ export class TasksService {
     }
     
   }
+
+  async updateMlbSchedules(){
+    this.logger.debug("UPDATE MLB Schedules: STARTED")
+
+    const currSeason = await Timeframe.findOne({
+      where: { sport: SportType.MLB}
+    })
+
+    if (currSeason){
+      const currSchedules = await Schedule.find({
+        where: [
+          {season: Not(currSeason.season), sport: SportType.MLB},
+          {seasonType: Not(currSeason.seasonType), sport: SportType.MLB},
+        ]
+      })
+
+      if (currSchedules.length > 0){
+        this.logger.debug("Update MLB Schedules: START DELETE PREVIOUS SEASON SCHEDULE")
+        await Schedule.remove(currSchedules)
+        this.logger.debug("Update MLB Schedules: DELETED PREVIOUS SEASON SCHEDULE")
+      }
+
+      const { data, status } = await axios.get(`${process.env.SPORTS_DATA_URL}mlb/scores/json/Games/${currSeason.apiSeason}?key=${process.env.SPORTS_DATA_MLB_KEY}`)
+
+      if (status === 200){
+        const newSchedule: Schedule[] = []
+        const updateSchedule: Schedule[] = []
+
+        for (let schedule of data){
+          const gameId: number = schedule["GameID"]
+
+          const currSchedule = await Schedule.findOne({
+            where: { gameId: gameId, sport: SportType.MLB }
+          })
+
+          const timeFromAPI = moment.tz(schedule["DateTime"], 'America/New_York')
+          const utcDate = timeFromAPI.utc().format()
+
+          if (currSchedule){
+            currSchedule.season = schedule["Season"]
+            currSchedule.seasonType = schedule["SeasonType"]
+            currSchedule.status = schedule["Status"]
+            currSchedule.awayTeam = schedule["AwayTeam"]
+            currSchedule.homeTeam = schedule["HomeTeam"]
+            currSchedule.isClosed = schedule["IsClosed"]
+            currSchedule.dateTime = schedule["DateTime"] !== null ? new Date(utcDate) : schedule["DateTime"]
+            currSchedule.dateTimeUTC = schedule["DateTimeUTC"]
+            updateSchedule.push(currSchedule)
+          } else{
+            newSchedule.push(
+              Schedule.create({
+                gameId: schedule["GameID"],
+                season: schedule["Season"],
+                seasonType: schedule["SeasonType"],
+                status: schedule["Status"],
+                awayTeam: schedule["AwayTeam"],
+                homeTeam: schedule["HomeTeam"],
+                isClosed: schedule["IsClosed"],
+                dateTime: schedule["DateTime"] !== null ? new Date(utcDate) : schedule["DateTime"],
+                dateTimeUTC: schedule["DateTimeUTC"],
+                sport: SportType.MLB,
+              })
+            )
+          }
+        }
+        await Schedule.save([...newSchedule, ...updateSchedule], { chunk: 20 })
+
+      }
+      this.logger.debug("Update MLB Schedules: FINISHED")
+    } else {
+      this.logger.error("Update MLB Schedules: ERROR CURRENT SEASON NOT FOUND")
+    }
+  }
+
   //@Timeout(1)
   async getCricketDataFromJson(){
 
