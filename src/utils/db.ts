@@ -41,7 +41,6 @@ export const AppDataSource = new DataSource({
     AdminWallet,
     Timeframe,
     Schedule,
-    CricketAuth,
     CricketTournament,
     CricketTeam,
     CricketAthlete,
