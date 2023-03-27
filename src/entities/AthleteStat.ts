@@ -1,6 +1,6 @@
 import { AthleteStatType } from "../utils/types"
 import { Field, ID, ObjectType } from "type-graphql"
-import { BaseEntity, Column, Entity, ManyToOne, PrimaryGeneratedColumn, Relation } from "typeorm"
+import { BaseEntity, Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Relation } from "typeorm"
 import { Athlete } from "./Athlete"
 import { Team } from "./Team"
 
@@ -90,7 +90,7 @@ export class AthleteStat extends BaseEntity {
 
   @Field(() => Number)
   @Column({ type: "numeric", default: 0 })
-  pitchingTotalInningsPitched?: number
+  pitchingTotalInningsPitched?: number //not in sportsdata
 
   @Field(() => Number)
   @Column({ type: "numeric", default: 0 })
@@ -98,19 +98,19 @@ export class AthleteStat extends BaseEntity {
 
   @Field(() => Number)
   @Column({ type: "numeric", default: 0 })
-  pitchingHitsAllowed?: number
+  pitchingHitsAllowed?: number //not in sportsdata
 
   @Field(() => Number)
   @Column({ type: "numeric", default: 0 })
-  pitchingWalksAllowed?: number
+  pitchingWalksAllowed?: number //not in sportsdata
 
   @Field(() => Number)
   @Column({ type: "numeric", default: 0 })
-  pitchingEarnedRunsAllowed?: number
+  pitchingEarnedRunsAllowed?: number // not in sportsdata
 
   @Field(() => Number)
   @Column({ type: "numeric", default: 0 })
-  pitchingHitsByPitchAllowed?: number
+  pitchingHitsByPitchAllowed?: number //not in sportsdata
 
   @Field(() => Number)
   @Column({ type: "numeric", default: 0 })
