@@ -1659,9 +1659,11 @@ export class TasksService {
     }
   }
 
+  //@Timeout(1)
   async updateMlbAthleteStatsPerDay(){
     this.logger.debug("Update MLB Athlete Stats Per Day: STARTED")
     
+    //change this later to same with NBA
     const timeFrame = await Timeframe.findOne({
       where: {
         sport: SportType.MLB
@@ -1725,7 +1727,7 @@ export class TasksService {
                 AthleteStat.create({
                   athlete: curAthlete,
                   season: season?.toString(),
-                  type: AthleteStatType.SEASON,
+                  type: AthleteStatType.DAILY,
                   position: athleteStat["Position"],
                   played: athleteStat["Games"],
                   fantasyScore: athleteStat["FantasyPointsDraftKings"],
@@ -2440,6 +2442,7 @@ export class TasksService {
               "id": currStat.id,
               "athlete": athlete,
               "fantasyScore": athleteStat.points,
+              "type": AthleteStatType.DAILY,
             }, ...points_breakup)))
           } else{
 
@@ -2450,7 +2453,8 @@ export class TasksService {
             newStats.push(CricketAthleteStat.create(Object.assign({
               "athlete": athlete,
               "match": match,
-              "fantasyScore": athleteStat.points
+              "fantasyScore": athleteStat.points,
+              "type": AthleteStatType.DAILY,
             }, ...points_breakup)))
           }
 
@@ -2461,5 +2465,11 @@ export class TasksService {
       }
       await CricketAthleteStat.save([...newStats, ...updateStats], {chunk: 20})
     }
+  }
+
+  async updateCricketAthleteSeasonStats(){
+    this.logger.debug("Update Cricket Athlete Stat (Season): STARTED")
+
+    
   }
 }

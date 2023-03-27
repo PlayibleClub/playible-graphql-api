@@ -21,6 +21,14 @@ export class CricketAthleteStat extends BaseEntity {
   @JoinColumn({referencedColumnName: "key"})
   match!: Relation<CricketMatch>
 
+  @Field(() => String)
+  @Column({
+    type: "enum",
+    enum: AthleteStatType,
+    default: AthleteStatType.DAILY,
+  })
+  type: AthleteStatType = AthleteStatType.DAILY
+  
   @Field(() => Number)
   @Column({ type: "numeric", default: 0})
   fantasyScore?: number
