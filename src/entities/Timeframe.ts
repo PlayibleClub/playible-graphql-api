@@ -16,9 +16,9 @@ export class Timeframe extends BaseEntity {
   @Column("integer", { nullable: false, default: 1})
   seasonType: number = 1
 
-  @Field(() => String, {nullable: false})
-  @Column({type: "varchar", length: 50, nullable: false})
-  apiName!: string
+  @Field(() => String, {nullable: true})
+  @Column({type: "varchar", length: 50, nullable: true})
+  apiName?: string
 
   @Field(() => String, {nullable: true})
   @Column({ type: "varchar", length: 10, nullable: true})
