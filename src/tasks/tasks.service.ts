@@ -23,7 +23,7 @@ import { CricketMatch } from '../entities/CricketMatch'
 import { getSeasonType } from "../helpers/Timeframe"
 import { ATHLETE_MLB_BASE_ANIMATION, ATHLETE_MLB_BASE_IMG, ATHLETE_MLB_IMG } from "../utils/svgTemplates"
 import { AthleteStatType, SportType } from "../utils/types"
-import { CricketTeamInterface } from '../interfaces/Cricket'
+import { CricketTeamInterface, CricketAthleteInterface } from '../interfaces/Cricket'
 import e from "express"
 
 import cricketTournamentJson from '../utils/json-files/get-tournament-teams-api-results.json'
@@ -2417,6 +2417,7 @@ export class TasksService {
       })
 
       if (tourneyCount === 0 ){
+        //start getting tournament data
         const tournament_response = await axios.get(
           `${process.env.ROANUZ_DATA_URL}cricket/${process.env.ROANUZ_PROJECT_KEY}/tournament/${TOURNEY_KEY}/`, {
             headers: {
@@ -2442,6 +2443,7 @@ export class TasksService {
           })
 
           if(teamCount === 0){
+            //start getting team and athlete data
             const tourney = await CricketTournament.findOneOrFail({
               where: {key: tournament.tournament.key}
             })
@@ -2457,7 +2459,37 @@ export class TasksService {
                 this.logger.error(e)
               }
             }
-            
+
+            const athleteCount = await CricketAthlete.count({
+              where: { cricketTeam: {sport: SportType.CRICKET}}
+            })
+
+            if(athleteCount === 0){
+              const teams = await CricketTeam.find({
+                where:{
+                  sport: SportType.CRICKET
+                }
+              })
+              for (let team of teams){
+                const team_response = await axios.get(`${process.env.ROANUZ_DATA_URL}cricket/${process.env.ROANUZ_PROJECT_KEY}/tournament/${tourney.key}/team/${team.key}/`)
+                const athletes = team_response.data.data.tournament_team.players
+
+                for(let [key, value] of Object.entries(athletes as CricketAthleteInterface)){
+                  try{
+                    await CricketAthlete.create({
+                      playerKey: value.key,
+                      name: value.name,
+                      jerseyName: value.jersey_name,
+                      gender: value.gender,
+                      nationality: value.nationality.name,
+                      cricketTeam: team,
+                    }).save()
+                  } catch(e){
+                    this.logger.error(e)
+                  }
+                }
+              }
+            }
           }
         }
       }
