@@ -23,6 +23,7 @@ import { CricketMatch } from '../entities/CricketMatch'
 import { getSeasonType } from "../helpers/Timeframe"
 import { ATHLETE_MLB_BASE_ANIMATION, ATHLETE_MLB_BASE_IMG, ATHLETE_MLB_IMG } from "../utils/svgTemplates"
 import { AthleteStatType, SportType } from "../utils/types"
+import { CricketTeamInterface } from '../interfaces/Cricket'
 import e from "express"
 
 import cricketTournamentJson from '../utils/json-files/get-tournament-teams-api-results.json'
@@ -2052,7 +2053,7 @@ export class TasksService {
     }
   }
 
-  @Timeout(1)
+  //@Timeout(1)
   async getInitialNflTimeframe (){
 
     this.logger.debug("Get Initial NFL Timeframe: STARTED")
@@ -2402,11 +2403,14 @@ export class TasksService {
     }
   }
 
+  @Timeout(1)
   async syncCricketData(){
     this.logger.debug("START CRICKET DATA SYNC")
     const TOURNEY_KEY = 'iplt20_2023' //hardcoded iplt2023 key
 
-    const auth = await axios.get(`${process.env.ROANUZ_DATA_URL}core/${process.env.ROANUZ_PROJECT_KEY}/auth/`)
+    const auth = await axios.post(`${process.env.ROANUZ_DATA_URL}core/${process.env.ROANUZ_PROJECT_KEY}/auth/`, {
+      api_key: process.env.ROANUZ_API_KEY
+    } )
     if(auth.status === 200){
       const tourneyCount = await CricketTournament.count({
         where: { key: TOURNEY_KEY}
@@ -2414,14 +2418,14 @@ export class TasksService {
 
       if (tourneyCount === 0 ){
         const tournament_response = await axios.get(
-          `${process.env.ROANUZ_DATA_URL}${process.env.ROANUZ_PROJECT_KEY}/tournament/${TOURNEY_KEY}`, {
+          `${process.env.ROANUZ_DATA_URL}cricket/${process.env.ROANUZ_PROJECT_KEY}/tournament/${TOURNEY_KEY}/`, {
             headers: {
-              'rs-token': auth.data.token
+              'rs-token': auth.data.data.token
             }
           } 
         )
         if(tournament_response.status === 200){
-          const tournament = tournament_response.data
+          const tournament = tournament_response.data.data
           try{
             await CricketTournament.create({
               key: tournament.tournament.key,
@@ -2441,27 +2445,19 @@ export class TasksService {
             const tourney = await CricketTournament.findOneOrFail({
               where: {key: tournament.tournament.key}
             })
-
-            // for(let [key, value] of Object.entries(tournament.teams)){
-            //   try{
-            //     await CricketTeam.create({
-            //       key: value.key,
-            //       name: value.name,
-            //       tournament: tourney,
-            //       sport: SportType.CRICKET,
-            //     })
-            //   }
-            // }
-            for (let team of tournament.teams){
+            for(let [key, value] of Object.entries(tournament.teams as CricketTeamInterface)){
               try{
                 await CricketTeam.create({
-                  key: team.key,
-                  name: team.name,
+                  key: value.key,
+                  name: value.name,
                   tournament: tourney,
                   sport: SportType.CRICKET,
-                })
+                }).save()
+              } catch(e){
+                this.logger.error(e)
               }
             }
+            
           }
         }
       }
@@ -2470,81 +2466,81 @@ export class TasksService {
     }
   }
   
-  @Timeout(1)
-  async getCricketDataFromJson(){
+  // @Timeout(1)
+  // async getCricketDataFromJson(){
 
-    this.logger.debug("START CRICKET DATA SYNC")
-    const data = cricketTournamentJson.data
-    const tourneyCount = await CricketTournament.count({
-      where: { key: data.tournament.key}
-    })
-    if (tourneyCount === 0){
-      try{
-        await CricketTournament.create({
-          key: data.tournament.key,
-          name: data.tournament.name,
-          start_date: moment.unix(data.tournament.start_date),
-          sport: SportType.CRICKET,
-        }).save()
-      } catch(e){
-        this.logger.error(e)
-      }
-    } 
-    this.logger.debug(`CRICKET TOURNAMENT ${tourneyCount ? 'DID NOT SYNC' : 'SYNCED SUCCESSFULLY'} `)
+  //   this.logger.debug("START CRICKET DATA SYNC")
+  //   const data = cricketTournamentJson.data
+  //   const tourneyCount = await CricketTournament.count({
+  //     where: { key: data.tournament.key}
+  //   })
+  //   if (tourneyCount === 0){
+  //     try{
+  //       await CricketTournament.create({
+  //         key: data.tournament.key,
+  //         name: data.tournament.name,
+  //         start_date: moment.unix(data.tournament.start_date),
+  //         sport: SportType.CRICKET,
+  //       }).save()
+  //     } catch(e){
+  //       this.logger.error(e)
+  //     }
+  //   } 
+  //   this.logger.debug(`CRICKET TOURNAMENT ${tourneyCount ? 'DID NOT SYNC' : 'SYNCED SUCCESSFULLY'} `)
 
-    const teamCount = await CricketTeam.count({
-      where: {tournament: {key: data.tournament.key}}
-    })
+  //   const teamCount = await CricketTeam.count({
+  //     where: {tournament: {key: data.tournament.key}}
+  //   })
     
-    if(teamCount === 0){
-      const tourney = await CricketTournament.findOneOrFail({
-        where: {key: data.tournament.key}
-      })
+  //   if(teamCount === 0){
+  //     const tourney = await CricketTournament.findOneOrFail({
+  //       where: {key: data.tournament.key}
+  //     })
 
-      for (let [key, value] of Object.entries(data.teams)){
-        try{
-          await CricketTeam.create({
-            key: value.key,
-            name: value.name,
-            tournament: tourney,
-            sport: SportType.CRICKET,
-          }).save()
-        } catch(err){
-          this.logger.error(err)
-        }
-      }
-    }
-    this.logger.debug(`Cricket Teams: ${teamCount ? "ALREADY EXISTS" : "SYNCED"}`)
+  //     for (let [key, value] of Object.entries(data.teams)){
+  //       try{
+  //         await CricketTeam.create({
+  //           key: value.key,
+  //           name: value.name,
+  //           tournament: tourney,
+  //           sport: SportType.CRICKET,
+  //         }).save()
+  //       } catch(err){
+  //         this.logger.error(err)
+  //       }
+  //     }
+  //   }
+  //   this.logger.debug(`Cricket Teams: ${teamCount ? "ALREADY EXISTS" : "SYNCED"}`)
 
-    const athleteList = cricketAthletesJson
-    const athleteCount = await CricketAthlete.count({
-      where: {cricketTeam: {sport: SportType.CRICKET}}
-    })
+  //   const athleteList = cricketAthletesJson
+  //   const athleteCount = await CricketAthlete.count({
+  //     where: {cricketTeam: {sport: SportType.CRICKET}}
+  //   })
 
-    if(athleteCount === 0){
-      for (let [key, value] of Object.entries(athleteList)){
-        const team = await CricketTeam.findOneOrFail({
-          where: {key: value.data.team.key}
-        })
-        for(let [key, player] of Object.entries(value.data.tournament_team.players)){
-          try{
-            await CricketAthlete.create({
-              playerKey: player.key,
-              name: player.name,
-              jerseyName: player.jersey_name,
-              gender: player.gender,
-              nationality: player.nationality.name,
-              seasonalRole: player.seasonal_role,
-              cricketTeam: team,
-            }).save()
-          } catch(err){
-            this.logger.error(err)
-          }
-        }
-      }
-    }
-    this.logger.debug(`Cricket Athletes: ${athleteCount ? "ALREADY EXISTS" : 'SYNCED'}`)
-  }
+  //   if(athleteCount === 0){
+  //     for (let [key, value] of Object.entries(athleteList)){
+  //       const team = await CricketTeam.findOneOrFail({
+  //         where: {key: value.data.team.key}
+  //       })
+  //       for(let [key, player] of Object.entries(value.data.tournament_team.players)){
+  //         try{
+  //           await CricketAthlete.create({
+  //             playerKey: player.key,
+  //             name: player.name,
+  //             jerseyName: player.jersey_name,
+  //             gender: player.gender,
+  //             nationality: player.nationality.name,
+  //             seasonalRole: player.seasonal_role,
+  //             cricketTeam: team,
+  //           }).save()
+  //         } catch(err){
+  //           this.logger.error(err)
+  //         }
+  //       }
+  //     }
+  //   }
+  //   this.logger.debug(`Cricket Athletes: ${athleteCount ? "ALREADY EXISTS" : 'SYNCED'}`)
+  // }
 
   // //@Timeout(1)
   // async getCricketMatches(){
@@ -2595,9 +2591,11 @@ export class TasksService {
   // async updateCricketAthleteStats(){
   //   //TODO add interval querying to API logic
   //   this.logger.debug("Update Cricket Athlete Stat: STARTED")
-  //   const data = cricketGameOne.data
-  //   const matchKey = data.match.match_meta.key
+  //   //const data = cricketGameOne.data
+   
 
+  //   const {data, status} = await axios.get(`${process.env.ROANUZ_DATA_URL}${process.env.ROANUZ_PROJECT_KEY}`)
+  //   const matchKey = data.match.match_meta.key
   //   const match = await CricketMatch.findOne({
   //     where: { key: matchKey}
   //   })
@@ -2652,9 +2650,9 @@ export class TasksService {
   //   }
   // }
 
-  async updateCricketAthleteSeasonStats(){
-    this.logger.debug("Update Cricket Athlete Stat (Season): STARTED")
+  // async updateCricketAthleteSeasonStats(){
+  //   this.logger.debug("Update Cricket Athlete Stat (Season): STARTED")
 
     
-  }
+  // }
 }
