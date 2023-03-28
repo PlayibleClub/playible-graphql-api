@@ -1286,10 +1286,35 @@ export class TasksService {
           updateAthlete.push(curAthlete)
         } 
 
-        await Athlete.save(updateAthlete, {chunk: 20})
-
         
       }
+      await Athlete.save(updateAthlete, {chunk: 20}) 
+      this.logger.debug("Update NBA Injury Status: FINISHED")
+    } else{
+      this.logger.error("NBA Athlete Injury Data: SPORTS DATA ERROR")
+    }
+  }
+
+  @Interval(3600000) // runs every 1 hour
+  async updateMlbAthleteInjuryStatus(){
+    this.logger.debug("Update MLB Athlete Injury Status: STARTED")
+
+    const { data, status } = await axios.get(`${process.env.SPORTS_DATA_URL}mlb/scores/json/Players?key=${process.env.SPORTS_DATA_MLB_KEY}`)
+
+    if (status === 200){
+      const updateAthlete: Athlete[] = []
+      for (let athlete of data){
+        const apiId: number = athlete["PlayerID"]
+        const curAthlete = await Athlete.findOne({
+          where: { apiId: apiId},
+        })
+        if (curAthlete){
+          curAthlete.isInjured = athlete["InjuryStatus"]
+          updateAthlete.push(curAthlete)
+        }
+
+      }
+      await Athlete.save(updateAthlete, { chunk: 20})
       this.logger.debug("Update NBA Injury Status: FINISHED")
     } else{
       this.logger.error("NBA Athlete Injury Data: SPORTS DATA ERROR")
@@ -1574,89 +1599,95 @@ export class TasksService {
   async updateMlbAthleteStatsPerSeason(){
     this.logger.debug("Update MLB Athlete Stats (Season): STARTED")
 
-    const timeframe = await Timeframe.findOne({
-      where: {
-        sport: SportType.MLB
-      }
-    })
+    // const timeframe = await Timeframe.findOne({
+    //   where: {
+    //     sport: SportType.MLB
+    //   }
+    // })
+    const timeFrames = await axios.get(`${process.env.SPORTS_DATA_URL}mlb/scores/json/CurrentSeason?key=${process.env.SPORTS_DATA_MLB_KEY}`)
 
-    if(timeframe){
-      const season = timeframe.apiSeason
-      const { data, status } = await axios.get(`${process.env.SPORTS_DATA_URL}mlb/stats/json/PlayerSeasonStats/${season}?key=${process.env.SPORTS_DATA_MLB_KEY}`)
+    if (timeFrames.status === 200){
+      const timeFrame = timeFrames.data
 
-      if (status === 200){
-        const newStats: AthleteStat[] = []
-        const updateStats: AthleteStat[] = []
-
-        for (let athleteStat of data){
-          const apiId: number = athleteStat["PlayerID"]
-          const numberOfGames: number = athleteStat["Games"] > 0 ? athleteStat["Games"] : 1
-          const curStat = await AthleteStat.findOne({
-            where: { athlete: {apiId}, season: season?.toString(), type: AthleteStatType.SEASON},
-            relations: {
-              athlete: true,
-            }
-          })
-
-          if (curStat) {
-            //updating stats
-            curStat.fantasyScore = athleteStat["FantasyPointsDraftKings"] / numberOfGames
-            curStat.singles = athleteStat["Singles"] / numberOfGames
-            curStat.doubles = athleteStat["Doubles"] / numberOfGames
-            curStat.triples = athleteStat["Triples"] / numberOfGames
-            curStat.homeRuns = athleteStat["HomeRuns"] / numberOfGames
-            curStat.runsBattedIn = athleteStat["RunsBattedIn"] / numberOfGames
-            curStat.walks = athleteStat["Walks"] / numberOfGames
-            curStat.hitByPitch = athleteStat["HitByPitch"] / numberOfGames
-            curStat.stolenBases = athleteStat["StolenBases"] / numberOfGames
-            curStat.pitchingStrikeouts = athleteStat["PitchingStrikeouts"] / numberOfGames
-            curStat.pitchingCompleteGames = athleteStat["PitchingCompleteGames"] / numberOfGames
-            curStat.pitchingShutouts = athleteStat["PitchingShutOuts"] / numberOfGames
-            curStat.pitchingNoHitters = athleteStat["PitchingNoHitters"] / numberOfGames
-            curStat.played = athleteStat["Games"]
-            updateStats.push(curStat)
-          } else{
-            const curAthlete = await Athlete.findOne({
-              where: {apiId}
+      if(timeFrame){
+        const season = timeFrame.ApiSeason
+        const { data, status } = await axios.get(`${process.env.SPORTS_DATA_URL}mlb/stats/json/PlayerSeasonStats/${season}?key=${process.env.SPORTS_DATA_MLB_KEY}`)
+  
+        if (status === 200){
+          const newStats: AthleteStat[] = []
+          const updateStats: AthleteStat[] = []
+  
+          for (let athleteStat of data){
+            const apiId: number = athleteStat["PlayerID"]
+            const numberOfGames: number = athleteStat["Games"] > 0 ? athleteStat["Games"] : 1
+            const curStat = await AthleteStat.findOne({
+              where: { athlete: {apiId}, season: season?.toString(), type: AthleteStatType.SEASON},
+              relations: {
+                athlete: true,
+              }
             })
-
-            if(curAthlete){
-              newStats.push(
-                AthleteStat.create({
-                  athlete: curAthlete,
-                  season: season?.toString(),
-                  type: AthleteStatType.SEASON,
-                  position: athleteStat["Position"],
-                  played: athleteStat["Games"],
-                  fantasyScore: athleteStat["FantasyPointsDraftKings"] / numberOfGames,
-                  singles: athleteStat["Singles"] / numberOfGames,
-                  doubles: athleteStat["Doubles"] / numberOfGames,
-                  triples: athleteStat["Triples"] / numberOfGames,
-                  homeRuns: athleteStat["HomeRuns"] / numberOfGames,
-                  runsBattedIn: athleteStat["RunsBattedIn"] / numberOfGames,
-                  walks: athleteStat["Walks"] / numberOfGames,
-                  hitByPitch: athleteStat["HitByPitch"] / numberOfGames,
-                  stolenBases: athleteStat["StolenBases"] / numberOfGames,
-                  pitchingStrikeouts: athleteStat["PitchingStrikeouts"] / numberOfGames,
-                  pitchingCompleteGames: athleteStat["PitchingCompleteGames"] / numberOfGames,
-                  pitchingShutouts: athleteStat["PitchingShutOuts"] / numberOfGames,
-                  pitchingNoHitters: athleteStat["PitchingNoHitters"] / numberOfGames,
-
-                })
-              )
+  
+            if (curStat) {
+              //updating stats
+              curStat.fantasyScore = athleteStat["FantasyPointsDraftKings"] / numberOfGames
+              curStat.singles = athleteStat["Singles"] / numberOfGames
+              curStat.doubles = athleteStat["Doubles"] / numberOfGames
+              curStat.triples = athleteStat["Triples"] / numberOfGames
+              curStat.homeRuns = athleteStat["HomeRuns"] / numberOfGames
+              curStat.runsBattedIn = athleteStat["RunsBattedIn"] / numberOfGames
+              curStat.walks = athleteStat["Walks"] / numberOfGames
+              curStat.hitByPitch = athleteStat["HitByPitch"] / numberOfGames
+              curStat.stolenBases = athleteStat["StolenBases"] / numberOfGames
+              curStat.pitchingStrikeouts = athleteStat["PitchingStrikeouts"] / numberOfGames
+              curStat.pitchingCompleteGames = athleteStat["PitchingCompleteGames"] / numberOfGames
+              curStat.pitchingShutouts = athleteStat["PitchingShutOuts"] / numberOfGames
+              curStat.pitchingNoHitters = athleteStat["PitchingNoHitters"] / numberOfGames
+              curStat.played = athleteStat["Games"]
+              updateStats.push(curStat)
+            } else{
+              const curAthlete = await Athlete.findOne({
+                where: {apiId}
+              })
+  
+              if(curAthlete){
+                newStats.push(
+                  AthleteStat.create({
+                    athlete: curAthlete,
+                    season: season.toString(),
+                    type: AthleteStatType.SEASON,
+                    position: athleteStat["Position"],
+                    played: athleteStat["Games"],
+                    fantasyScore: athleteStat["FantasyPointsDraftKings"] / numberOfGames,
+                    singles: athleteStat["Singles"] / numberOfGames,
+                    doubles: athleteStat["Doubles"] / numberOfGames,
+                    triples: athleteStat["Triples"] / numberOfGames,
+                    homeRuns: athleteStat["HomeRuns"] / numberOfGames,
+                    runsBattedIn: athleteStat["RunsBattedIn"] / numberOfGames,
+                    walks: athleteStat["Walks"] / numberOfGames,
+                    hitByPitch: athleteStat["HitByPitch"] / numberOfGames,
+                    stolenBases: athleteStat["StolenBases"] / numberOfGames,
+                    pitchingStrikeouts: athleteStat["PitchingStrikeouts"] / numberOfGames,
+                    pitchingCompleteGames: athleteStat["PitchingCompleteGames"] / numberOfGames,
+                    pitchingShutouts: athleteStat["PitchingShutOuts"] / numberOfGames,
+                    pitchingNoHitters: athleteStat["PitchingNoHitters"] / numberOfGames,
+  
+                  })
+                )
+              }
             }
+            
+            
           }
-          
-          
+          await AthleteStat.save([...newStats, ...updateStats], { chunk: 20})
+          this.logger.debug("Update MLB Athlete Stats (Season): FINISHED")
+        } else{
+          this.logger.debug("Update MLB Athlete Stats (Season): SPORTS DATA ERROR")
         }
-        await AthleteStat.save([...newStats, ...updateStats], { chunk: 20})
-        this.logger.debug("Update MLB Athlete Stats (Season): FINISHED")
       } else{
-        this.logger.debug("Update MLB Athlete Stats (Season): SPORTS DATA ERROR")
+        this.logger.debug("Update MLB Athlete Stats (Season): NO CURRENT SEASON FOUND")
       }
-    } else{
-      this.logger.debug("Update MLB Athlete Stats (Season): NO CURRENT SEASON FOUND")
     }
+    
   }
 
   //@Timeout(1)
@@ -1664,100 +1695,112 @@ export class TasksService {
     this.logger.debug("Update MLB Athlete Stats Per Day: STARTED")
     
     //change this later to same with NBA
-    const timeFrame = await Timeframe.findOne({
-      where: {
-        sport: SportType.MLB
-      }
-    })
+    // const timeFrame = await Timeframe.findOne({
+    //   where: {
+    //     sport: SportType.MLB
+    //   }
+    // })
+    const timeFrames = await axios.get(`${process.env.SPORTS_DATA_URL}mlb/scores/json/CurrentSeason?key=${process.env.SPORTS_DATA_MLB_KEY}`)
 
-    if (timeFrame){
-      const season = timeFrame.apiSeason
-      const date = moment().subtract(1, "day").toDate()
-      const dateFormat = moment(date).format("YYYY-MMM-DD").toUpperCase()
+    if (timeFrames.status === 200){
+      const timeFrame = timeFrames.data
 
-      this.logger.debug("MLB - " +dateFormat)
-
-      const { data, status } = await axios.get(`${process.env.SPORTS_DATA_URL}mlb/stats/json/PlayerGameStatsByDate/${dateFormat}?key=${process.env.SPORTS_DATA_MLB_KEY}`)
-
-      if (status === 200){
-        const newStats: AthleteStat[] = []
-        const updateStats: AthleteStat[] = []
-
-        for (let athleteStat of data){
-          const apiId: number = athleteStat["PlayerID"]
-          const curStat = await AthleteStat.findOne({
-            where: {
-              statId: athleteStat["StatID"],
-            },
-            relations:{
-              athlete: true,
-            }
-          })
-
-          const opponent = await Team.findOne({
-            where: { apiId: athleteStat["GlobalOpponentID"]},
-          })
-
-          const apiDate = moment.tz(athleteStat["DateTime"], "America/New_York")
-          const utcDate = apiDate.utc().format()
-
-          if (curStat){
-            curStat.fantasyScore = athleteStat["FantasyPointsDraftKings"]
-            curStat.singles = athleteStat["Singles"]
-            curStat.doubles = athleteStat["Doubles"]
-            curStat.triples = athleteStat["Triples"]
-            curStat.homeRuns = athleteStat["HomeRuns"]
-            curStat.runsBattedIn = athleteStat["RunsBattedIn"]
-            curStat.walks = athleteStat["Walks"]
-            curStat.hitByPitch = athleteStat["HitByPitch"]
-            curStat.stolenBases = athleteStat["StolenBases"]
-            curStat.pitchingStrikeouts = athleteStat["PitchingStrikeouts"]
-            curStat.pitchingCompleteGames = athleteStat["PitchingCompleteGames"]
-            curStat.pitchingShutouts = athleteStat["PitchingShutOuts"]
-            curStat.pitchingNoHitters = athleteStat["PitchingNoHitters"]
-            curStat.played = athleteStat["Games"]
-            updateStats.push(curStat)
-          } else{
-            const curAthlete = await Athlete.findOne({
-              where: { apiId}
+      if (timeFrame){
+        const season = timeFrame.ApiSeason
+        const date = moment().subtract(1, "day").toDate()
+        const dateFormat = moment(date).format("YYYY-MMM-DD").toUpperCase()
+  
+        this.logger.debug("MLB - " +dateFormat)
+  
+        const { data, status } = await axios.get(`${process.env.SPORTS_DATA_URL}mlb/stats/json/PlayerGameStatsByDate/${dateFormat}?key=${process.env.SPORTS_DATA_MLB_KEY}`)
+  
+        if (status === 200){
+          const newStats: AthleteStat[] = []
+          const updateStats: AthleteStat[] = []
+  
+          for (let athleteStat of data){
+            const apiId: number = athleteStat["PlayerID"]
+            const curStat = await AthleteStat.findOne({
+              where: {
+                statId: athleteStat["StatID"],
+              },
+              relations:{
+                athlete: true,
+              }
             })
-
-            if (curAthlete){
-              newStats.push(
-                AthleteStat.create({
-                  athlete: curAthlete,
-                  season: season?.toString(),
-                  type: AthleteStatType.DAILY,
-                  position: athleteStat["Position"],
-                  played: athleteStat["Games"],
-                  fantasyScore: athleteStat["FantasyPointsDraftKings"],
-                  singles: athleteStat["Singles"],
-                  doubles: athleteStat["Doubles"],
-                  triples: athleteStat["Triples"],
-                  homeRuns: athleteStat["HomeRuns"],
-                  runsBattedIn: athleteStat["RunsBattedIn"],
-                  walks: athleteStat["Walks"],
-                  hitByPitch: athleteStat["HitByPitch"],
-                  stolenBases: athleteStat["StolenBases"],
-                  pitchingStrikeouts: athleteStat["PitchingStrikeouts"],
-                  pitchingCompleteGames: athleteStat["PitchingCompleteGames"],
-                  pitchingShutouts: athleteStat["PitchingShutOuts"],
-                  pitchingNoHitters: athleteStat["PitchingNoHitters"],
-
-                })
-              )
+  
+            const opponent = await Team.findOne({
+              where: { apiId: athleteStat["GlobalOpponentID"]},
+            })
+  
+            const apiDate = moment.tz(athleteStat["DateTime"], "America/New_York")
+            const utcDate = apiDate.utc().format()
+  
+            if (curStat){
+              curStat.fantasyScore = athleteStat["FantasyPointsDraftKings"]
+              curStat.opponent = opponent
+              curStat.season = season
+              curStat.singles = athleteStat["Singles"]
+              curStat.doubles = athleteStat["Doubles"]
+              curStat.triples = athleteStat["Triples"]
+              curStat.homeRuns = athleteStat["HomeRuns"]
+              curStat.runsBattedIn = athleteStat["RunsBattedIn"]
+              curStat.walks = athleteStat["Walks"]
+              curStat.hitByPitch = athleteStat["HitByPitch"]
+              curStat.stolenBases = athleteStat["StolenBases"]
+              curStat.pitchingStrikeouts = athleteStat["PitchingStrikeouts"]
+              curStat.pitchingCompleteGames = athleteStat["PitchingCompleteGames"]
+              curStat.pitchingShutouts = athleteStat["PitchingShutOuts"]
+              curStat.pitchingNoHitters = athleteStat["PitchingNoHitters"]
+              curStat.played = athleteStat["Games"]
+              curStat.gameDate = athleteStat["DateTime"] !== null ? new Date(utcDate) : athleteStat["DateTime"]
+              updateStats.push(curStat)
+            } else{
+              const curAthlete = await Athlete.findOne({
+                where: { apiId}
+              })
+  
+              if (curAthlete){
+                newStats.push(
+                  AthleteStat.create({
+                    athlete: curAthlete,
+                    season: season,
+                    opponent: opponent,
+                    gameDate: athleteStat["DateTime"] !== null ? new Date(utcDate) : athleteStat["DateTime"],
+                    type: AthleteStatType.DAILY,
+                    statId: athleteStat["StatID"],
+                    position: athleteStat["Position"],
+                    played: athleteStat["Games"],
+                    fantasyScore: athleteStat["FantasyPointsDraftKings"],
+                    singles: athleteStat["Singles"],
+                    doubles: athleteStat["Doubles"],
+                    triples: athleteStat["Triples"],
+                    homeRuns: athleteStat["HomeRuns"],
+                    runsBattedIn: athleteStat["RunsBattedIn"],
+                    walks: athleteStat["Walks"],
+                    hitByPitch: athleteStat["HitByPitch"],
+                    stolenBases: athleteStat["StolenBases"],
+                    pitchingStrikeouts: athleteStat["PitchingStrikeouts"],
+                    pitchingCompleteGames: athleteStat["PitchingCompleteGames"],
+                    pitchingShutouts: athleteStat["PitchingShutOuts"],
+                    pitchingNoHitters: athleteStat["PitchingNoHitters"],
+  
+                  })
+                )
+              }
             }
           }
+  
+          await AthleteStat.save([...newStats, ...updateStats], { chunk: 20 })
+          this.logger.debug("Update MLB Athlete Stats (Daily): FINISHED")
+        } else{
+          this.logger.debug("Update MLB Athlete Stats (Daily): SPORTS DATA ERROR")
         }
-
-        await AthleteStat.save([...newStats, ...updateStats], { chunk: 20 })
-        this.logger.debug("Update MLB Athlete Stats (Daily): FINISHED")
       } else{
-        this.logger.debug("Update MLB Athlete Stats (Daily): SPORTS DATA ERROR")
+        this.logger.debug("Update MLB Athlete Stats (Daily): NO CURRENT SEASON")
       }
-    } else{
-      this.logger.debug("Update MLB Athlete Stats (Daily): NO CURRENT SEASON")
     }
+    
   }
    //@Timeout(1)
   //@Interval(300000) // Runs every 5 mins
