@@ -2009,7 +2009,7 @@ export class TasksService {
     }
   }
 
-  //@Timeout(1)
+  @Timeout(1)
   async getInitialNflTimeframe (){
 
     this.logger.debug("Get Initial NFL Timeframe: STARTED")
