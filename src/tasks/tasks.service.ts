@@ -2969,7 +2969,7 @@ export class TasksService {
   //   this.logger.debug("Update Cricket Match: FINISHED")
   // }
 
-  @Timeout(1)
+  //@Timeout(1)
   async updateCricketAthleteStats(){
     this.logger.debug("Update Cricket Athlete Stat: STARTED")
 
@@ -3125,9 +3125,95 @@ export class TasksService {
   //   }
   // }
 
-  // async updateCricketAthleteSeasonStats(){
-  //   this.logger.debug("Update Cricket Athlete Stat (Season): STARTED")
+  @Timeout(1)
+  async updateCricketAthleteSeasonStats(){
+    this.logger.debug("Update Cricket Athlete Stat (Season): STARTED")
+    const tourney_key_2022 = 'iplt20_2022' // testing purposes
+    const athletes = await CricketAthlete.find({
+      where: {playerKey: 'ms_dhoni'}
+    })
 
-    
-  // }
+    if(athletes){
+      const auth = await axios.post(`${process.env.ROANUZ_DATA_URL}core/${process.env.ROANUZ_PROJECT_KEY}/auth/`, {
+        api_key: process.env.ROANUZ_API_KEY
+      })
+
+      const tourney = await CricketTournament.findOneOrFail({
+        where: {sport: SportType.CRICKET}
+      })
+
+      const newStats: CricketAthleteStat[] = []
+      const updateStats: CricketAthleteStat[] = []
+      for (let athlete of athletes){
+        const stats_response = await axios.get(`${process.env.ROANUZ_DATA_URL}cricket/${process.env.ROANUZ_PROJECT_KEY}/tournament/${tourney_key_2022}/player/${athlete.playerKey}/stats/`, {
+          headers:{
+            'rs-token': auth.data.data.token
+          }
+        })
+
+        if(stats_response.status === 200){
+          const stats = stats_response.data.data.stats
+          const currStat = await CricketAthleteStat.findOne({
+            where: { athlete: {playerKey: athlete.playerKey}, type: AthleteStatType.SEASON},
+            relations: {
+              athlete: true
+            }
+          })
+
+          if (currStat){
+            currStat.matches = stats.batting.matches
+            currStat.not_outs = stats.batting.not_outs
+            currStat.batting_runs = stats.batting.runs
+            currStat.high_score = stats.batting.high_score
+            currStat.batting_average = stats.batting.average
+            currStat.batting_balls = stats.batting.balls
+            currStat.batting_strike_rate = stats.batting.strike_rate
+            currStat.hundreds = stats.batting.hundreds
+            currStat.fifties = stats.batting.fifties
+            currStat.fours = stats.batting.fours
+            currStat.sixes = stats.batting.sixes
+            currStat.catches = stats.fielding.catches
+            currStat.stumpings = stats.fielding.stumpings
+            currStat.bowling_balls = stats.bowling.balls
+            currStat.wickets = stats.bowling.wickets
+            currStat.bowling_average = stats.bowling.average
+            currStat.economy = stats.bowling.economy
+            currStat.bowling_strike_rate = stats.bowling.strike_rate
+            currStat.four_wickets = stats.bowling.four_wickets
+            currStat.five_wickets = stats.bowling.five_wickets
+            updateStats.push(currStat)
+          } else{
+            newStats.push(
+              CricketAthleteStat.create({
+                athlete: athlete,
+                type: AthleteStatType.SEASON,
+                matches: stats.batting.matches,
+                not_outs: stats.batting.not_outs,
+                batting_runs: stats.batting.runs,
+                high_score: stats.batting.high_score,
+                batting_average: stats.batting.average,
+                batting_balls: stats.batting.balls,
+                batting_strike_rate: stats.batting.strike_rate,
+                hundreds: stats.batting.hundreds,
+                fifties: stats.batting.fifties,
+                fours: stats.batting.fours,
+                sixes: stats.batting.sixes,
+                catches: stats.fielding.catches,
+                stumpings: stats.fielding.stumpings,
+                bowling_balls: stats.bowling.balls,
+                wickets: stats.bowling.wickets,
+                bowling_average: stats.bowling.average,
+                economy: stats.bowling.economy,
+                bowling_strike_rate: stats.bowling.strike_rate,
+                four_wickets: stats.bowling.four_wickets,
+                five_wickets: stats.bowling.five_wickets,
+              })
+            )
+          }
+        }
+      }
+      await CricketAthleteStat.save([...newStats, ...updateStats], { chunk: 20 })
+      this.logger.debug("Update Cricket Athlete Stat (Season): FINISHED")
+    }
+  }
 }
