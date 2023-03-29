@@ -2863,7 +2863,7 @@ export class TasksService {
   //   this.logger.debug(`Cricket Athletes: ${athleteCount ? "ALREADY EXISTS" : 'SYNCED'}`)
   // }
 
-  @Timeout(1)
+  //@Timeout(1)
   async updateCricketMatches(){
     this.logger.debug("Update Cricket Matches: START")
     const tourney_key_2022 = "iplt20_2023" // for testing
@@ -2969,6 +2969,7 @@ export class TasksService {
   //   this.logger.debug("Update Cricket Match: FINISHED")
   // }
 
+  @Timeout(1)
   async updateCricketAthleteStats(){
     this.logger.debug("Update Cricket Athlete Stat: STARTED")
 
@@ -2976,60 +2977,87 @@ export class TasksService {
       api_key: process.env.ROANUZ_API_KEY
     })
 
-    if (auth.status === 20){
+    if (auth.status === 200){
       const date = moment().subtract(1, "day").toDate()
       const dateFormat = moment(date).format("YYYY-MMM-DD").toUpperCase()
 
       const matches = await CricketMatch.find({
-        where: { key: 'a'}
+        where: { key: 'iplt20_2023_g1'}
       })
-
       if(matches){
         //add for let
         const newStats: CricketAthleteStat[] = []
         const updateStats: CricketAthleteStat[] = []
-
         for (let match of matches ){
-          const match_response = await axios.get(`${process.env.ROANUZ_DATA_URL}`)
-        if (match_response.status === 20){
-          const metric = match_response.data.data.metrics
-          
+          const match_response = await axios.get(`${process.env.ROANUZ_DATA_URL}cricket/${process.env.ROANUZ_PROJECT_KEY}/fantasy-match-points/${match.key}/`, {
+            headers: {
+              'rs-token': auth.data.data.token
+            }
+          })
 
-          for (let athleteStat of match_response.data.data.points){
-            const athlete = await CricketAthlete.findOne({
-              where: { playerKey: athleteStat.player_key}
-            })
-
-            if(athlete){
-              let currStat = await CricketAthleteStat.findOne({
-                where : { athlete: { playerKey: athleteStat.player_key}, match: {key : 'a'}}
+          if (match_response.status === 200){
+            const metric = match_response.data.data.metrics
+            
+            for (let athleteStat of match_response.data.data.points){
+              const athlete = await CricketAthlete.findOne({
+                where: { playerKey: athleteStat.player_key}
               })
-              const points_breakup = athleteStat.points_breakup.map((x: CricketPointsBreakup) => (
-                {[metric[x.metric_rule_index].key] : x.points}
-              ))
-              if(currStat){
-                
-                updateStats.push(CricketAthleteStat.create(Object.assign({
-                  "id": currStat.id,
-                  "athlete": athlete,
-                  "fantasyScore": athleteStat.points,
-                  "type": AthleteStatType.DAILY,
-                }, ...points_breakup)))
+
+              if(athlete){
+                let currStat = await CricketAthleteStat.findOne({
+                  where : { athlete: { playerKey: athleteStat.player_key}, match: {key : 'iplt20_2023_g1'}}
+                })
+                if(currStat){
+
+                  if(Object.keys(athleteStat.points_breakup).length){
+                    const points_breakup = athleteStat.points_breakup.map((x: CricketPointsBreakup) => (
+                      {[metric[x.metric_rule_index].key] : x.points}
+                    ))
+                    updateStats.push(CricketAthleteStat.create(Object.assign({
+                      "id": currStat.id,
+                      "athlete": athlete,
+                      "fantasyScore": athleteStat.points,
+                      "type": AthleteStatType.DAILY,
+                    }, ...points_breakup)))
+                  } else{
+                    updateStats.push(CricketAthleteStat.create(Object.assign({
+                      "id": currStat.id,
+                      "athlete": athlete,
+                      "fantasyScore": athleteStat.points,
+                      "type": AthleteStatType.DAILY,
+                    })))
+                  }
+                  
+                } else{
+
+                  if(Object.keys(athleteStat.points_breakup).length){
+                    const points_breakup = athleteStat.points_breakup.map((x: CricketPointsBreakup) => (
+                      {[metric[x.metric_rule_index].key] : x.points}
+                    ))
+                    newStats.push(CricketAthleteStat.create(Object.assign({
+                      "athlete": athlete,
+                      "match": match,
+                      "fantasyScore": athleteStat.points,
+                      "type": AthleteStatType.DAILY,
+                    }, ...points_breakup)))
+                  } else{
+                    newStats.push(CricketAthleteStat.create(Object.assign({
+                      "athlete": athlete,
+                      "match": match,
+                      "fantasyScore": athleteStat.points,
+                      "type": AthleteStatType.DAILY
+                    })))
+                  }
+                  
+                }
               } else{
-                newStats.push(CricketAthleteStat.create(Object.assign({
-                  "athlete": athlete,
-                  "match": match,
-                  "fantasyScore": athleteStat.points,
-                  "type": AthleteStatType.DAILY,
-                }, ...points_breakup)))
+                this.logger.error("Update Cricket Athlete Stat: ERROR ATHLETE DOES NOT EXIST")
               }
-            } else{
-              this.logger.error("Update Cricket Athlete Stat: ERROR ATHLETE DOES NOT EXIST")
             }
           }
         }
-        }
-        
+        await CricketAthleteStat.save([...newStats, ...updateStats], {chunk: 20})
+        this.logger.debug("Update Cricket Athlete Stat: FINISHED")
       }
       //TODO: check how match dates are formatted in backend
     }
