@@ -2678,7 +2678,7 @@ export class TasksService {
     }
   }
 
-  @Timeout(1)
+  //@Timeout(1)
   async syncCricketData(){
     this.logger.debug("START CRICKET DATA SYNC")
     const TOURNEY_KEY = 'iplt20_2023' //hardcoded iplt2023 key
@@ -2712,15 +2712,13 @@ export class TasksService {
           } catch(e){
             this.logger.error(e)
           }
-
           const teamCount = await CricketTeam.count({
-            where: { tournament: {key: tournament.tournament.key}}
+            where: { tournament: {sport: SportType.CRICKET}}
           })
-
           if(teamCount === 0){
-            //start getting team and athlete data
+            //start getting team data from tournament API result
             const tourney = await CricketTournament.findOneOrFail({
-              where: {key: tournament.tournament.key}
+              where: {sport: SportType.CRICKET}
             })
             for(let [key, value] of Object.entries(tournament.teams as CricketTeamInterface)){
               try{
@@ -2734,39 +2732,55 @@ export class TasksService {
                 this.logger.error(e)
               }
             }
+          }
+        }
+      } else{
+        this.logger.debug("CRICKET DATA SYNC")
+      }
 
-            const athleteCount = await CricketAthlete.count({
-              where: { cricketTeam: {sport: SportType.CRICKET}}
-            })
+      const athleteCount = await CricketAthlete.count({
+        where: { cricketTeam: {sport: SportType.CRICKET}}
+      })
 
-            if(athleteCount === 0){
-              const teams = await CricketTeam.find({
-                where:{
-                  sport: SportType.CRICKET
-                }
-              })
-              for (let team of teams){
-                const team_response = await axios.get(`${process.env.ROANUZ_DATA_URL}cricket/${process.env.ROANUZ_PROJECT_KEY}/tournament/${tourney.key}/team/${team.key}/`)
-                const athletes = team_response.data.data.tournament_team.players
+      if(athleteCount === 0){
+        const teams = await CricketTeam.find({
+          where:{
+            sport: SportType.CRICKET
+          },
+          relations: {
+            tournament: true,
+          }
+          
+        })
+        for (let team of teams){
+          this.logger.debug("START ATHLETE SYNC")
+          const team_response = await axios.get(`${process.env.ROANUZ_DATA_URL}cricket/${process.env.ROANUZ_PROJECT_KEY}/tournament/${team.tournament.key}/team/${team.key}/`, {
+            headers: {
+              'rs-token': auth.data.data.token
+            }
+          })
+          if(team_response.status === 200){
+            const athletes = team_response.data.data.tournament_team.players
 
-                for(let [key, value] of Object.entries(athletes as CricketAthleteInterface)){
-                  try{
-                    await CricketAthlete.create({
-                      playerKey: value.key,
-                      name: value.name,
-                      jerseyName: value.jersey_name,
-                      gender: value.gender,
-                      nationality: value.nationality.name,
-                      cricketTeam: team,
-                    }).save()
-                  } catch(e){
-                    this.logger.error(e)
-                  }
-                }
+            for(let [key, value] of Object.entries(athletes as CricketAthleteInterface)){
+              try{
+                await CricketAthlete.create({
+                  playerKey: value.key,
+                  name: value.name,
+                  jerseyName: value.jersey_name,
+                  gender: value.gender,
+                  nationality: value.nationality.name,
+                  seasonalRole: value.seasonal_role,
+                  cricketTeam: team,
+                }).save()
+              } catch(e){
+                this.logger.error(e)
               }
             }
           }
+          
         }
+        this.logger.debug("FINISH CRICKET DATA SYNC")
       }
     } else{
       this.logger.error("CRICKET AUTHENTICATION FAIL !!!")
@@ -2849,9 +2863,10 @@ export class TasksService {
   //   this.logger.debug(`Cricket Athletes: ${athleteCount ? "ALREADY EXISTS" : 'SYNCED'}`)
   // }
 
+  @Timeout(1)
   async updateCricketMatches(){
     this.logger.debug("Update Cricket Matches: START")
-    const tourney_key_2022 = "iplt20_2022" // for testing
+    const tourney_key_2022 = "iplt20_2023" // for testing
     const auth = await axios.post(`${process.env.ROANUZ_DATA_URL}core/${process.env.ROANUZ_PROJECT_KEY}/auth/`, {
       api_key: process.env.ROANUZ_API_KEY
     })
@@ -2860,7 +2875,11 @@ export class TasksService {
         where: {sport: SportType.CRICKET}
       })
 
-      const match_response = await axios.get(`${process.env.ROANUZ_DATA_URL}cricket/${process.env.ROANUZ_PROJECT_KEY}/tournament/${tourney_key_2022}`)
+      const match_response = await axios.get(`${process.env.ROANUZ_DATA_URL}cricket/${process.env.ROANUZ_PROJECT_KEY}/tournament/${tourney_key_2022}/fixtures/`, {
+        headers: {
+          'rs-token': auth.data.data.token
+        }
+      })
 
       if (match_response.status === 200){
         const matches = match_response.data.data.matches
@@ -2870,12 +2889,19 @@ export class TasksService {
           const existingMatch = await CricketMatch.findOne({
             where: { key: match.key}
           })
-
+          
+          const team_a = await CricketTeam.findOne({
+            where: {key : match.teams.a.key}
+          })
+          const team_b = await CricketTeam.findOne({
+            where: {key: match.teams.b.key}
+          })
           if (existingMatch){
             existingMatch.name = match.name
             existingMatch.status = match.status
             existingMatch.start_at = moment.unix(match.start_at).toDate()
-
+            existingMatch.team_a = team_a !== null ? team_a : undefined
+            existingMatch.team_b = team_b !== null ? team_b : undefined
             updateMatch.push(existingMatch)
           } else {
             newMatch.push(
@@ -2884,6 +2910,8 @@ export class TasksService {
                 name: match.name,
                 status: match.status,
                 start_at: moment.unix(match.start_at),
+                team_a: team_a !== null ? team_a : undefined,
+                team_b: team_b !== null ? team_b : undefined,
                 tournament: tourney,
               })
             )

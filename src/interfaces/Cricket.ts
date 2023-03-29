@@ -16,7 +16,7 @@ type CricketAthleteJson = {
   jerseyName: string,
   gender: string,
   nationality: CricketNationality
-  seasonalRole: string,
+  seasonal_role: string,
 }
 export interface CricketTeamInterface{
   key: CricketTeamJson
