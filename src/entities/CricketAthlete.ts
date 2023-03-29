@@ -34,6 +34,22 @@ export class CricketAthlete extends BaseEntity{
   @Column({ type: "varchar", length: 50, nullable: true})
   seasonalRole!: string
 
+  @Field(() => String, { nullable: true })
+  @Column({ type: "text", nullable: true })
+  nftImage?: string
+
+  @Field(() => String, { nullable: true })
+  @Column({ type: "text", nullable: true })
+  nftImagePromo?: string
+
+  @Field(() => String, { nullable: true })
+  @Column({ type: "text", nullable: true })
+  nftImageLocked?: string
+
+  @Field(() => String, { nullable: true })
+  @Column({ type: "text", nullable: true })
+  nftAnimation?: string
+  
   @Field(() => CricketTeam)
   @ManyToOne(() => CricketTeam, (cricketTeam) => cricketTeam.athletes)
   @JoinColumn({referencedColumnName: "key"})
