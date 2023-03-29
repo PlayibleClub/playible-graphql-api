@@ -26,3 +26,8 @@ export interface CricketAthleteInterface{
   key: CricketAthleteJson
 }
 
+export interface CricketPointsBreakup{
+  metric_rule_index: number,
+  points: number,
+  points_str: string,
+}

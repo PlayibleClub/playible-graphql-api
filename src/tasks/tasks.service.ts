@@ -23,7 +23,7 @@ import { CricketMatch } from '../entities/CricketMatch'
 import { getSeasonType } from "../helpers/Timeframe"
 import { ATHLETE_MLB_BASE_ANIMATION, ATHLETE_MLB_BASE_IMG, ATHLETE_MLB_IMG } from "../utils/svgTemplates"
 import { AthleteStatType, SportType } from "../utils/types"
-import { CricketTeamInterface, CricketAthleteInterface } from '../interfaces/Cricket'
+import { CricketTeamInterface, CricketAthleteInterface, CricketPointsBreakup } from '../interfaces/Cricket'
 import e from "express"
 
 import cricketTournamentJson from '../utils/json-files/get-tournament-teams-api-results.json'
@@ -779,7 +779,6 @@ export class TasksService {
     this.logger.debug("Generate Athlete MLB Assets: FINISHED")
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
-  
   // @Timeout(1)
   async generateAthleteNbaAssetsAnimation() {
     this.logger.debug("Generate Athlete NBA Assets Animation: STARTED")
@@ -1062,8 +1061,8 @@ export class TasksService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
 
-  // @Timeout(1)
-  async generateAthleteMlbAssetsPromo() {
+   // @Timeout(1)
+   async generateAthleteMlbAssetsPromo() {
     this.logger.debug("Generate Athlete MLB Assets Promo: STARTED")
 
     const athletes = await Athlete.find({
@@ -1264,73 +1263,6 @@ export class TasksService {
   }
 
   // @Timeout(1)
-  async generateAthleteMlbAssetsLocked() {
-    this.logger.debug("Generate Athlete MLB Assets Locked: STARTED")
-
-    const athletes = await Athlete.find({
-      where: { team: { sport: SportType.MLB } },
-      relations: {
-        team: true,
-      },
-    })
-
-    for (let athlete of athletes) {
-      var svgTemplate = fs.readFileSync(`./src/utils/mlb-svg-teams-lock-templates/${athlete.team.key}.svg`, "utf-8")
-      var options = { compact: true, ignoreComment: true, spaces: 4 }
-      var result: any = convert.xml2js(svgTemplate, options)
-
-      try {
-        if (athlete.firstName.length > 11) {
-          result.svg.g[6].text[1]["_attributes"]["style"] = "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700"
-        }
-        if (athlete.lastName.length > 11) {
-          result.svg.g[6].text[2]["_attributes"]["style"] = "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700"
-        }
-
-        result.svg.g[6]["text"][1]["tspan"]["_text"] = athlete.firstName.toUpperCase()
-        result.svg.g[6]["text"][2]["tspan"]["_text"] = athlete.lastName.toUpperCase()
-        result.svg.g[6]["text"][0]["tspan"]["_text"] = athlete.position.toUpperCase()
-      } catch (e) {
-        console.log(`FAILED AT ATHLETE ID: ${athlete.apiId} and TEAM KEY: ${athlete.team.key}`)
-      }
-
-      result = convert.js2xml(result, options)
-      // fs.writeFileSync(
-      //   `./nba-images-locked/${athlete.apiId}-${athlete.firstName.toLowerCase()}-${athlete.lastName.toLowerCase()}.svg`,
-      //   result
-      // )
-
-      var buffer = Buffer.from(result, "utf8")
-      const s3 = new S3({
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-      })
-      const filename = `${athlete.apiId}-${athlete.firstName.toLowerCase()}-${athlete.lastName.toLowerCase()}.svg`
-      const s3_location = "media/athlete/mlb/locked_images/"
-      const fileContent = buffer
-      const params: any = {
-        Bucket: process.env.AWS_BUCKET_NAME,
-        Key: `${s3_location}${filename}`,
-        Body: fileContent,
-        ContentType: "image/svg+xml",
-        CacheControl: "no-cache",
-      }
-
-      s3.upload(params, async (err: any, data: any) => {
-        if (err) {
-          this.logger.error(err)
-        } else {
-          athlete.nftImageLocked = data["Location"]
-          await Athlete.save(athlete)
-        }
-      })
-    }
-
-    this.logger.debug("Generate Athlete MLB Assets Locked: FINISHED")
-    this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
-  }
-
-  // @Timeout(1)
   //@Interval(900000) // Runs every 15 mins
   async updateNflAthleteStatsPerSeason() {
     this.logger.debug("Update NFL Athlete Stats: STARTED")
@@ -1421,6 +1353,72 @@ export class TasksService {
     }
   }
 
+  // @Timeout(1)
+  async generateAthleteMlbAssetsLocked() {
+    this.logger.debug("Generate Athlete MLB Assets Locked: STARTED")
+
+    const athletes = await Athlete.find({
+      where: { team: { sport: SportType.MLB } },
+      relations: {
+        team: true,
+      },
+    })
+
+    for (let athlete of athletes) {
+      var svgTemplate = fs.readFileSync(`./src/utils/mlb-svg-teams-lock-templates/${athlete.team.key}.svg`, "utf-8")
+      var options = { compact: true, ignoreComment: true, spaces: 4 }
+      var result: any = convert.xml2js(svgTemplate, options)
+
+      try {
+        if (athlete.firstName.length > 11) {
+          result.svg.g[6].text[1]["_attributes"]["style"] = "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700"
+        }
+        if (athlete.lastName.length > 11) {
+          result.svg.g[6].text[2]["_attributes"]["style"] = "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700"
+        }
+
+        result.svg.g[6]["text"][1]["tspan"]["_text"] = athlete.firstName.toUpperCase()
+        result.svg.g[6]["text"][2]["tspan"]["_text"] = athlete.lastName.toUpperCase()
+        result.svg.g[6]["text"][0]["tspan"]["_text"] = athlete.position.toUpperCase()
+      } catch (e) {
+        console.log(`FAILED AT ATHLETE ID: ${athlete.apiId} and TEAM KEY: ${athlete.team.key}`)
+      }
+
+      result = convert.js2xml(result, options)
+      // fs.writeFileSync(
+      //   `./nba-images-locked/${athlete.apiId}-${athlete.firstName.toLowerCase()}-${athlete.lastName.toLowerCase()}.svg`,
+      //   result
+      // )
+
+      var buffer = Buffer.from(result, "utf8")
+      const s3 = new S3({
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+      })
+      const filename = `${athlete.apiId}-${athlete.firstName.toLowerCase()}-${athlete.lastName.toLowerCase()}.svg`
+      const s3_location = "media/athlete/mlb/locked_images/"
+      const fileContent = buffer
+      const params: any = {
+        Bucket: process.env.AWS_BUCKET_NAME,
+        Key: `${s3_location}${filename}`,
+        Body: fileContent,
+        ContentType: "image/svg+xml",
+        CacheControl: "no-cache",
+      }
+
+      s3.upload(params, async (err: any, data: any) => {
+        if (err) {
+          this.logger.error(err)
+        } else {
+          athlete.nftImageLocked = data["Location"]
+          await Athlete.save(athlete)
+        }
+      })
+    }
+
+    this.logger.debug("Generate Athlete MLB Assets Locked: FINISHED")
+    this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
+  }
   //@Interval(300000) // Runs every 5 mins
   async updateNflAthleteStatsPerWeek() {
     this.logger.debug("Update NFL Athlete Stats Per Week: STARTED")
@@ -1573,7 +1571,7 @@ export class TasksService {
     }
   }
 
-  @Interval(3600000) // runs every 1 hour
+  //@Interval(3600000) // runs every 1 hour
   async updateMlbAthleteInjuryStatus(){
     this.logger.debug("Update MLB Athlete Injury Status: STARTED")
 
@@ -2851,7 +2849,54 @@ export class TasksService {
   //   this.logger.debug(`Cricket Athletes: ${athleteCount ? "ALREADY EXISTS" : 'SYNCED'}`)
   // }
 
-  // //@Timeout(1)
+  async updateCricketMatches(){
+    this.logger.debug("Update Cricket Matches: START")
+    const tourney_key_2022 = "iplt20_2022" // for testing
+    const auth = await axios.post(`${process.env.ROANUZ_DATA_URL}core/${process.env.ROANUZ_PROJECT_KEY}/auth/`, {
+      api_key: process.env.ROANUZ_API_KEY
+    })
+    if(auth.status === 200 ){
+      const tourney = await CricketTournament.findOneOrFail({
+        where: {sport: SportType.CRICKET}
+      })
+
+      const match_response = await axios.get(`${process.env.ROANUZ_DATA_URL}cricket/${process.env.ROANUZ_PROJECT_KEY}/tournament/${tourney_key_2022}`)
+
+      if (match_response.status === 200){
+        const matches = match_response.data.data.matches
+        const newMatch: CricketMatch[] = []
+        const updateMatch: CricketMatch[] = []
+        for (let match of matches){
+          const existingMatch = await CricketMatch.findOne({
+            where: { key: match.key}
+          })
+
+          if (existingMatch){
+            existingMatch.name = match.name
+            existingMatch.status = match.status
+            existingMatch.start_at = moment.unix(match.start_at).toDate()
+
+            updateMatch.push(existingMatch)
+          } else {
+            newMatch.push(
+              CricketMatch.create({
+                key: match.key,
+                name: match.name,
+                status: match.status,
+                start_at: moment.unix(match.start_at),
+                tournament: tourney,
+              })
+            )
+          }
+        }
+        await CricketMatch.save([...newMatch, ...updateMatch], { chunk: 20})
+        this.logger.debug("Update Cricket Match: FINISHED")
+      } else{
+        this.logger.error("Update Cricket Match: ROANUZ")
+      }
+    }
+  }
+  //@Timeout(1)
   // async getCricketMatches(){
   //   //TODO: currently getting from JSON only, change to API request later
   //   this.logger.debug("Update Cricket Matches: START")
@@ -2874,7 +2919,7 @@ export class TasksService {
   //       updateMatch.push(existingMatch)
   //     } else{
   //       const tourney = await CricketTournament.findOne({
-  //         where: {key: match.tournament.key}
+  //         where: {key: 'iplt20_2023'}
   //       })
   //       if(tourney){
   //         newMatch.push(
@@ -2896,6 +2941,71 @@ export class TasksService {
   //   this.logger.debug("Update Cricket Match: FINISHED")
   // }
 
+  async updateCricketAthleteStats(){
+    this.logger.debug("Update Cricket Athlete Stat: STARTED")
+
+    const auth = await axios.post(`${process.env.ROANUZ_DATA_URL}core/${process.env.ROANUZ_PROJECT_KEY}/auth/`, {
+      api_key: process.env.ROANUZ_API_KEY
+    })
+
+    if (auth.status === 20){
+      const date = moment().subtract(1, "day").toDate()
+      const dateFormat = moment(date).format("YYYY-MMM-DD").toUpperCase()
+
+      const matches = await CricketMatch.find({
+        where: { key: 'a'}
+      })
+
+      if(matches){
+        //add for let
+        const newStats: CricketAthleteStat[] = []
+        const updateStats: CricketAthleteStat[] = []
+
+        for (let match of matches ){
+          const match_response = await axios.get(`${process.env.ROANUZ_DATA_URL}`)
+        if (match_response.status === 20){
+          const metric = match_response.data.data.metrics
+          
+
+          for (let athleteStat of match_response.data.data.points){
+            const athlete = await CricketAthlete.findOne({
+              where: { playerKey: athleteStat.player_key}
+            })
+
+            if(athlete){
+              let currStat = await CricketAthleteStat.findOne({
+                where : { athlete: { playerKey: athleteStat.player_key}, match: {key : 'a'}}
+              })
+              const points_breakup = athleteStat.points_breakup.map((x: CricketPointsBreakup) => (
+                {[metric[x.metric_rule_index].key] : x.points}
+              ))
+              if(currStat){
+                
+                updateStats.push(CricketAthleteStat.create(Object.assign({
+                  "id": currStat.id,
+                  "athlete": athlete,
+                  "fantasyScore": athleteStat.points,
+                  "type": AthleteStatType.DAILY,
+                }, ...points_breakup)))
+              } else{
+                newStats.push(CricketAthleteStat.create(Object.assign({
+                  "athlete": athlete,
+                  "match": match,
+                  "fantasyScore": athleteStat.points,
+                  "type": AthleteStatType.DAILY,
+                }, ...points_breakup)))
+              }
+            } else{
+              this.logger.error("Update Cricket Athlete Stat: ERROR ATHLETE DOES NOT EXIST")
+            }
+          }
+        }
+        }
+        
+      }
+      //TODO: check how match dates are formatted in backend
+    }
+  }
   // //@Timeout(1)
   // async updateCricketAthleteStats(){
   //   //TODO add interval querying to API logic
