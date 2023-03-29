@@ -2969,7 +2969,7 @@ export class TasksService {
   //   this.logger.debug("Update Cricket Match: FINISHED")
   // }
 
-  //@Timeout(1)
+  @Timeout(1)
   async updateCricketAthleteStats(){
     this.logger.debug("Update Cricket Athlete Stat: STARTED")
 
@@ -2978,17 +2978,18 @@ export class TasksService {
     })
 
     if (auth.status === 200){
-      const date = moment().subtract(1, "day").toDate()
-      const dateFormat = moment(date).format("YYYY-MMM-DD").toUpperCase()
-
-      const matches = await CricketMatch.find({
-        where: { key: 'iplt20_2023_g1'}
-      })
+      const date = moment().add(2, "day").toDate()
+      const dateFormat = moment(date).format("YYYY-MM-DD").toUpperCase()
+      this.logger.debug(dateFormat)
+      let matches = await CricketMatch.find()
+      matches = matches.filter((x) => x.start_at.toISOString().split("T")[0] === dateFormat)
+      
       if(matches){
         //add for let
         const newStats: CricketAthleteStat[] = []
         const updateStats: CricketAthleteStat[] = []
         for (let match of matches ){
+          this.logger.debug("Date: " + match.start_at.toISOString().split("T")[0])
           const match_response = await axios.get(`${process.env.ROANUZ_DATA_URL}cricket/${process.env.ROANUZ_PROJECT_KEY}/fantasy-match-points/${match.key}/`, {
             headers: {
               'rs-token': auth.data.data.token
@@ -3005,7 +3006,7 @@ export class TasksService {
 
               if(athlete){
                 let currStat = await CricketAthleteStat.findOne({
-                  where : { athlete: { playerKey: athleteStat.player_key}, match: {key : 'iplt20_2023_g1'}}
+                  where : { athlete: { playerKey: athleteStat.player_key}, match: {key : match.key}}
                 })
                 if(currStat){
 
@@ -3125,7 +3126,7 @@ export class TasksService {
   //   }
   // }
 
-  @Timeout(1)
+  //@Timeout(1)
   async updateCricketAthleteSeasonStats(){
     this.logger.debug("Update Cricket Athlete Stat (Season): STARTED")
     const tourney_key_2022 = 'iplt20_2022' // testing purposes
