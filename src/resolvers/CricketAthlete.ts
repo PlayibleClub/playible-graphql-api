@@ -1,6 +1,6 @@
 import { AthleteStatType, SportType } from './../utils/types'
 import { Arg, Authorized, Field, Mutation, ObjectType, Query, Resolver } from 'type-graphql'
-
+import { IsNull, Not} from 'typeorm'
 import { CricketAthlete } from '../entities/CricketAthlete'
 import { CricketAthleteStat } from '../entities/CricketAthleteStat'
 import { CricketTeam } from '../entities/CricketTeam'
@@ -17,17 +17,17 @@ export class CricketAthleteResolver {
       where: {playerKey: key},
       relations: {
         stats: {
-          match: true
+          match: true,
         },
         cricketTeam: true,
       }
     })
 
     if(from){
-      athlete.stats = athlete.stats.filter((stat) => stat.match.start_at && moment(stat.match.start_at).unix() >= moment(from).unix())
+      athlete.stats = athlete.stats.filter((stat) => stat.match?.start_at && moment(stat.match.start_at).unix() >= moment(from).unix())
     }
     if(to){
-      athlete.stats = athlete.stats.filter((stat) => stat.match.start_at && moment(stat.match.start_at).unix() <= moment(from).unix())
+      athlete.stats = athlete.stats.filter((stat) => stat.match?.start_at && moment(stat.match.start_at).unix() <= moment(to).unix())
     }
 
     return athlete
@@ -61,7 +61,7 @@ export class CricketAthleteResolver {
     // }
     // return athlete
     const athlete = await CricketAthlete.findOneOrFail({
-      where: { playerKey: playerKey},
+      where: { playerKey: playerKey, stats: {match: Not(IsNull())}},
       relations: {
         stats: {
           match: {
@@ -73,7 +73,7 @@ export class CricketAthleteResolver {
       }
     })
     if(matchKey){
-      athlete.stats = athlete.stats.filter((stat) => stat.match.key === matchKey)
+      athlete.stats = athlete.stats.filter((stat) => stat.match !== undefined && stat.match.key === matchKey)
     }
     return athlete
   }
@@ -82,14 +82,14 @@ export class CricketAthleteResolver {
     @Arg("playerKey") playerKey: string,
   ): Promise<CricketAthlete>{
     const athlete = await CricketAthlete.findOneOrFail({
-      where: { playerKey: playerKey},
+      where: { playerKey: playerKey, stats: { match: Not(IsNull())}},
       relations: {
         stats: {
           match: true,
         }
       }
     })
-    athlete.stats = athlete.stats.filter((stat) => stat.match.status === 'completed' && stat.type === AthleteStatType.SEASON)
+    athlete.stats = athlete.stats.filter((stat) => stat.match !== undefined && stat.match.status === 'completed')
     return athlete
   }
   // @Query(() => [CricketAthlete])
