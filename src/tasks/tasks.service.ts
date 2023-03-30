@@ -3,7 +3,7 @@ import { Cron, Interval, Timeout } from "@nestjs/schedule"
 import S3 from "aws-sdk/clients/s3"
 import axios from "axios"
 import fs from "fs"
-import { LessThanOrEqual, MoreThanOrEqual, Equal, Not } from "typeorm"
+import { LessThanOrEqual, MoreThanOrEqual, Equal, Not, In } from "typeorm"
 import convert from "xml-js"
 import moment from 'moment-timezone'
 
@@ -24,6 +24,8 @@ import { getSeasonType } from "../helpers/Timeframe"
 import { ATHLETE_MLB_BASE_ANIMATION, ATHLETE_MLB_BASE_IMG, ATHLETE_MLB_IMG } from "../utils/svgTemplates"
 import { AthleteStatType, SportType } from "../utils/types"
 import { CricketTeamInterface, CricketAthleteInterface, CricketPointsBreakup } from '../interfaces/Cricket'
+import { NFL_ATHLETE_IDS, NBA_ATHLETE_IDS, NBA_ATHLETE_PROMO_IDS, MLB_ATHLETE_IDS, MLB_ATHLETE_PROMO_IDS } from "./../utils/athlete-ids"
+
 import e from "express"
 
 @Injectable()
@@ -770,7 +772,9 @@ export class TasksService {
     this.logger.debug("Generate Athlete MLB Assets: STARTED")
 
     const athletes = await Athlete.find({
-      where: { team: { sport: SportType.MLB } },
+      where: { 
+        apiId: In(MLB_ATHLETE_IDS),
+        team: { sport: SportType.MLB }},
       relations: {
         team: true,
       },
@@ -912,7 +916,9 @@ export class TasksService {
     this.logger.debug("Generate Athlete MLB Assets Animation: STARTED")
 
     const athletes = await Athlete.find({
-      where: { team: { sport: SportType.MLB } },
+      where: {
+        apiId: In(MLB_ATHLETE_IDS), 
+        team: { sport: SportType.MLB } },
       relations: {
         team: true,
       },
@@ -1120,7 +1126,9 @@ export class TasksService {
     this.logger.debug("Generate Athlete MLB Assets Promo: STARTED")
 
     const athletes = await Athlete.find({
-      where: { team: { sport: SportType.MLB } },
+      where: {
+        apiId: In(MLB_ATHLETE_IDS), 
+        team: { sport: SportType.MLB } },
       relations: {
         team: true,
       },
@@ -1321,7 +1329,9 @@ export class TasksService {
     this.logger.debug("Generate Athlete MLB Assets Locked: STARTED")
 
     const athletes = await Athlete.find({
-      where: { team: { sport: SportType.MLB } },
+      where: {
+        apiId: In(MLB_ATHLETE_IDS), 
+        team: { sport: SportType.MLB } },
       relations: {
         team: true,
       },
