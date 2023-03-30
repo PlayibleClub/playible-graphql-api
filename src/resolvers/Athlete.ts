@@ -76,7 +76,8 @@ export class AthleteResolver {
   async getAthleteById(
     @Arg("id") id: number,
     @Arg("from", { nullable: true }) from?: Date,
-    @Arg("to", { nullable: true }) to?: Date
+    @Arg("to", { nullable: true }) to?: Date,
+    @Arg("season", {nullable: true}) season?: string,
   ): Promise<Athlete> {
     const athlete = await Athlete.findOneOrFail({
       where: { id },
@@ -86,6 +87,10 @@ export class AthleteResolver {
       },
     })
 
+    if (season){
+      athlete.stats = athlete.stats.filter((stat) => stat.season === season)
+    }
+    
     if (from) {
       //athlete.stats = athlete.stats.filter((stat) => stat.gameDate && stat.gameDate.toISOString() >= from.toISOString())
       athlete.stats = athlete.stats.filter((stat) => stat.gameDate && moment(stat.gameDate).unix() >= moment(from).unix())
