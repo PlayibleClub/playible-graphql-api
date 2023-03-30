@@ -3,7 +3,7 @@ import { Field, ID, ObjectType } from "type-graphql"
 import { BaseEntity, Column, Entity, JoinColumn, ManyToOne, OneToMany, PrimaryGeneratedColumn, Relation } from "typeorm"
 import { CricketAthlete } from './CricketAthlete'
 import { CricketTournament } from "./CricketTournament"
-
+import { CricketMatch } from './CricketMatch'
 @ObjectType()
 @Entity()
 export class CricketTeam extends BaseEntity {
@@ -27,6 +27,16 @@ export class CricketTeam extends BaseEntity {
   @Field(() => [CricketAthlete])
   @OneToMany(() => CricketAthlete, (cricketAthlete) => cricketAthlete.cricketTeam, {cascade: true})
   athletes!: Relation<CricketAthlete>[]
+
+  @Field(() => [CricketMatch])
+  @OneToMany(() => CricketMatch, (matches) => matches.team_a, {nullable: true})
+  @JoinColumn({referencedColumnName: 'team_a'})
+  team_a_matches?: Relation<CricketMatch>[]
+
+  @Field(() => [CricketMatch])
+  @OneToMany(() => CricketMatch, (matches) => matches.team_b, { nullable: true})
+  @JoinColumn({referencedColumnName: 'team_b'})
+  team_b_matches?: Relation<CricketMatch>[]
 
   @Field(() => String)
   @Column({
