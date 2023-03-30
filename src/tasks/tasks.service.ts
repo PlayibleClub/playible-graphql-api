@@ -1259,6 +1259,73 @@ export class TasksService {
   }
 
   // @Timeout(1)
+  async generateAthleteMlbAssetsLocked() {
+    this.logger.debug("Generate Athlete MLB Assets Locked: STARTED")
+
+    const athletes = await Athlete.find({
+      where: { team: { sport: SportType.MLB } },
+      relations: {
+        team: true,
+      },
+    })
+
+    for (let athlete of athletes) {
+      var svgTemplate = fs.readFileSync(`./src/utils/mlb-svg-teams-lock-templates/${athlete.team.key}.svg`, "utf-8")
+      var options = { compact: true, ignoreComment: true, spaces: 4 }
+      var result: any = convert.xml2js(svgTemplate, options)
+
+      try {
+        if (athlete.firstName.length > 11) {
+          result.svg.g[6].text[1]["_attributes"]["style"] = "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700"
+        }
+        if (athlete.lastName.length > 11) {
+          result.svg.g[6].text[2]["_attributes"]["style"] = "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700"
+        }
+
+        result.svg.g[6]["text"][1]["tspan"]["_text"] = athlete.firstName.toUpperCase()
+        result.svg.g[6]["text"][2]["tspan"]["_text"] = athlete.lastName.toUpperCase()
+        result.svg.g[6]["text"][0]["tspan"]["_text"] = athlete.position.toUpperCase()
+      } catch (e) {
+        console.log(`FAILED AT ATHLETE ID: ${athlete.apiId} and TEAM KEY: ${athlete.team.key}`)
+      }
+
+      result = convert.js2xml(result, options)
+      // fs.writeFileSync(
+      //   `./nba-images-locked/${athlete.apiId}-${athlete.firstName.toLowerCase()}-${athlete.lastName.toLowerCase()}.svg`,
+      //   result
+      // )
+
+      var buffer = Buffer.from(result, "utf8")
+      const s3 = new S3({
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+      })
+      const filename = `${athlete.apiId}-${athlete.firstName.toLowerCase()}-${athlete.lastName.toLowerCase()}.svg`
+      const s3_location = "media/athlete/mlb/locked_images/"
+      const fileContent = buffer
+      const params: any = {
+        Bucket: process.env.AWS_BUCKET_NAME,
+        Key: `${s3_location}${filename}`,
+        Body: fileContent,
+        ContentType: "image/svg+xml",
+        CacheControl: "no-cache",
+      }
+
+      s3.upload(params, async (err: any, data: any) => {
+        if (err) {
+          this.logger.error(err)
+        } else {
+          athlete.nftImageLocked = data["Location"]
+          await Athlete.save(athlete)
+        }
+      })
+    }
+
+    this.logger.debug("Generate Athlete MLB Assets Locked: FINISHED")
+    this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
+  }
+
+  // @Timeout(1)
   @Interval(900000) // Runs every 15 mins
   async updateNflAthleteStatsPerSeason() {
     this.logger.debug("Update NFL Athlete Stats: STARTED")
@@ -1349,72 +1416,7 @@ export class TasksService {
     }
   }
 
-  // @Timeout(1)
-  async generateAthleteMlbAssetsLocked() {
-    this.logger.debug("Generate Athlete MLB Assets Locked: STARTED")
-
-    const athletes = await Athlete.find({
-      where: { team: { sport: SportType.MLB } },
-      relations: {
-        team: true,
-      },
-    })
-
-    for (let athlete of athletes) {
-      var svgTemplate = fs.readFileSync(`./src/utils/mlb-svg-teams-lock-templates/${athlete.team.key}.svg`, "utf-8")
-      var options = { compact: true, ignoreComment: true, spaces: 4 }
-      var result: any = convert.xml2js(svgTemplate, options)
-
-      try {
-        if (athlete.firstName.length > 11) {
-          result.svg.g[6].text[1]["_attributes"]["style"] = "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700"
-        }
-        if (athlete.lastName.length > 11) {
-          result.svg.g[6].text[2]["_attributes"]["style"] = "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700"
-        }
-
-        result.svg.g[6]["text"][1]["tspan"]["_text"] = athlete.firstName.toUpperCase()
-        result.svg.g[6]["text"][2]["tspan"]["_text"] = athlete.lastName.toUpperCase()
-        result.svg.g[6]["text"][0]["tspan"]["_text"] = athlete.position.toUpperCase()
-      } catch (e) {
-        console.log(`FAILED AT ATHLETE ID: ${athlete.apiId} and TEAM KEY: ${athlete.team.key}`)
-      }
-
-      result = convert.js2xml(result, options)
-      // fs.writeFileSync(
-      //   `./nba-images-locked/${athlete.apiId}-${athlete.firstName.toLowerCase()}-${athlete.lastName.toLowerCase()}.svg`,
-      //   result
-      // )
-
-      var buffer = Buffer.from(result, "utf8")
-      const s3 = new S3({
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-      })
-      const filename = `${athlete.apiId}-${athlete.firstName.toLowerCase()}-${athlete.lastName.toLowerCase()}.svg`
-      const s3_location = "media/athlete/mlb/locked_images/"
-      const fileContent = buffer
-      const params: any = {
-        Bucket: process.env.AWS_BUCKET_NAME,
-        Key: `${s3_location}${filename}`,
-        Body: fileContent,
-        ContentType: "image/svg+xml",
-        CacheControl: "no-cache",
-      }
-
-      s3.upload(params, async (err: any, data: any) => {
-        if (err) {
-          this.logger.error(err)
-        } else {
-          athlete.nftImageLocked = data["Location"]
-          await Athlete.save(athlete)
-        }
-      })
-    }
-
-    this.logger.debug("Generate Athlete MLB Assets Locked: FINISHED")
-    this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
-  }
+  
   //@Interval(300000) // Runs every 5 mins
   async updateNflAthleteStatsPerWeek() {
     this.logger.debug("Update NFL Athlete Stats Per Week: STARTED")
@@ -2967,7 +2969,7 @@ export class TasksService {
   //   this.logger.debug("Update Cricket Match: FINISHED")
   // }
 
-  @Timeout(1)
+  //@Timeout(1)
   async updateCricketAthleteStats(){
     this.logger.debug("Update Cricket Athlete Stat: STARTED")
 
@@ -2976,7 +2978,7 @@ export class TasksService {
     })
 
     if (auth.status === 200){
-      const date = moment().add(2, "day").toDate()
+      const date = moment().subtract(1, "day").toDate()
       const dateFormat = moment(date).format("YYYY-MM-DD").toUpperCase()
       this.logger.debug(dateFormat)
       let matches = await CricketMatch.find()
@@ -2987,7 +2989,6 @@ export class TasksService {
         const newStats: CricketAthleteStat[] = []
         const updateStats: CricketAthleteStat[] = []
         for (let match of matches ){
-          this.logger.debug("Date: " + match.start_at.toISOString().split("T")[0])
           const match_response = await axios.get(`${process.env.ROANUZ_DATA_URL}cricket/${process.env.ROANUZ_PROJECT_KEY}/fantasy-match-points/${match.key}/`, {
             headers: {
               'rs-token': auth.data.data.token
@@ -3057,6 +3058,8 @@ export class TasksService {
         }
         await CricketAthleteStat.save([...newStats, ...updateStats], {chunk: 20})
         this.logger.debug("Update Cricket Athlete Stat: FINISHED")
+      } else{
+        this.logger.debug("Update Cricket Athlete Stat: No games found on " + dateFormat )
       }
       //TODO: check how match dates are formatted in backend
     }
@@ -3127,10 +3130,8 @@ export class TasksService {
   //@Timeout(1)
   async updateCricketAthleteSeasonStats(){
     this.logger.debug("Update Cricket Athlete Stat (Season): STARTED")
-    const tourney_key_2022 = 'iplt20_2022' // testing purposes
-    const athletes = await CricketAthlete.find({
-      where: {playerKey: 'ms_dhoni'}
-    })
+ // testing purposes
+    const athletes = await CricketAthlete.find()
 
     if(athletes){
       const auth = await axios.post(`${process.env.ROANUZ_DATA_URL}core/${process.env.ROANUZ_PROJECT_KEY}/auth/`, {
@@ -3144,7 +3145,7 @@ export class TasksService {
       const newStats: CricketAthleteStat[] = []
       const updateStats: CricketAthleteStat[] = []
       for (let athlete of athletes){
-        const stats_response = await axios.get(`${process.env.ROANUZ_DATA_URL}cricket/${process.env.ROANUZ_PROJECT_KEY}/tournament/${tourney_key_2022}/player/${athlete.playerKey}/stats/`, {
+        const stats_response = await axios.get(`${process.env.ROANUZ_DATA_URL}cricket/${process.env.ROANUZ_PROJECT_KEY}/tournament/${tourney.key}/player/${athlete.playerKey}/stats/`, {
           headers:{
             'rs-token': auth.data.data.token
           }
