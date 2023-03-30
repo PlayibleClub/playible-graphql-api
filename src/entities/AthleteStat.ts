@@ -56,6 +56,19 @@ export class AthleteStat extends BaseEntity {
   statId?: number
 
   // START MLB
+
+  @Field(() => Number)
+  @Column({type: "numeric", default: 0})
+  atBats?: number
+
+  @Field(() => Number)
+  @Column({type: "numeric", default: 0})
+  runs?: number
+
+  @Field(() => Number)
+  @Column({type: "numeric", default: 0})
+  hits?: number
+
   @Field(() => Number)
   @Column({ type: "numeric", default: 0 })
   singles?: number
@@ -77,8 +90,44 @@ export class AthleteStat extends BaseEntity {
   runsBattedIn?: number
 
   @Field(() => Number)
+  @Column({ type:"numeric", default: 0})
+  strikeouts?: number
+
+  @Field(() => Number)
   @Column({ type: "numeric", default: 0 })
   walks?: number
+
+  @Field(() => Number)
+  @Column({ type: "numeric", default: 0})
+  caughtStealing?: number
+
+  @Field(() => Number)
+  @Column({ type: "numeric", default: 0})
+  onBasePercentage?: number
+
+  @Field(() => Number)
+  @Column({ type: "numeric", default: 0})
+  sluggingPercentage?: number
+
+  @Field(() => Number)
+  @Column({ type: "numeric", default: 0})
+  onBasePlusSlugging?: number
+
+  @Field(() => Number)
+  @Column({ type: "numeric", default: 0})
+  wins?: number
+
+  @Field(() => Number)
+  @Column({ type: "numeric", default: 0})
+  losses?: number
+
+  @Field(() => Number)
+  @Column({ type: "numeric", default: 0})
+  saves?: number
+
+  @Field(() => Number)
+  @Column({ type: "numeric", default: 0})
+  earnedRunAverage?: number
 
   @Field(() => Number)
   @Column({ type: "numeric", default: 0 })
