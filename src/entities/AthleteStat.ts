@@ -90,6 +90,10 @@ export class AthleteStat extends BaseEntity {
   runsBattedIn?: number
 
   @Field(() => Number)
+  @Column({ type: "numeric", default: 0 })
+  battingAverage?: number
+
+  @Field(() => Number)
   @Column({ type:"numeric", default: 0})
   strikeouts?: number
 
@@ -139,11 +143,40 @@ export class AthleteStat extends BaseEntity {
 
   @Field(() => Number)
   @Column({ type: "numeric", default: 0 })
+  walksHitsPerInningsPitched?: number
+
+  @Field(() => Number)
+  @Column({ type: "numeric", default: 0 })
+  pitchingBattingAverageAgainst?: number
+  
+  @Field(() => Number)
+  @Column({ type: "numeric", default: 0 })
+  pitchingHits?: number
+
+  @Field(() => Number)
+  @Column({ type: "numeric", default: 0 })
+  pitchingRuns?: number
+
+  @Field(() => Number)
+  @Column({ type: "numeric", default: 0 })
+  pitchingEarnedRuns?: number
+
+  @Field(() => Number)
+  @Column({ type: "numeric", default: 0 })
+  pitchingWalks?: number
+
+  @Field(() => Number)
+  @Column({ type: "numeric", default: 0 })
+  pitchingHomeRuns?: number
+
+  @Field(() => Number)
+  @Column({ type: "numeric", default: 0 })
   pitchingTotalInningsPitched?: number //not in sportsdata
 
   @Field(() => Number)
   @Column({ type: "numeric", default: 0 })
   pitchingStrikeouts?: number
+
 
   @Field(() => Number)
   @Column({ type: "numeric", default: 0 })

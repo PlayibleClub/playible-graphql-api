@@ -207,7 +207,7 @@ export class TasksService {
     this.logger.debug(`MLB Athletes Data: ${athletesCount ? "DID NOT SYNC" : "SYNCED SUCCESSFULLY"}`)
   }
 
-  @Timeout(1)
+  //@Timeout(1)
   async syncMlbData2(){
     const teamCount = await Team.count({
       where: { sport: SportType.MLB},
@@ -275,6 +275,65 @@ export class TasksService {
       }
         
       
+    } else{
+      const {data, status} = await axios.get(`${process.env.SPORTS_DATA_URL}mlb/scores/json/Players?key=${process.env.SPORTS_DATA_MLB_KEY}`)
+      if (status === 200){
+        const newAthlete: Athlete[] = []
+        const updateAthlete: Athlete[] = []
+        for (let athlete of data){
+          if (athlete["Status"] === "Active"){
+            try {
+              const team = await Team.findOne({
+                where: {apiId: athlete["GlobalTeamID"]},
+              })
+              
+              if(team){
+
+                const currAthlete = await Athlete.findOne({
+                  where: {apiId: athlete["PlayerID"]}
+                })
+
+                if(currAthlete){
+                  currAthlete.apiId = athlete["PlayerID"]
+                  currAthlete.firstName = athlete["FirstName"]
+                  currAthlete.lastName = athlete["LastName"]
+                  currAthlete.position = athlete["Position"]
+                  currAthlete.jersey = athlete["Jersey"]
+                  currAthlete.isActive = athlete["Status"] === "Active"
+                  currAthlete.isInjured = athlete["InjuryStatus"]
+                  updateAthlete.push(currAthlete)
+                } else{
+                  newAthlete.push(
+                    Athlete.create({
+                      apiId: athlete["PlayerID"],
+                      firstName: athlete["FirstName"],
+                      lastName: athlete["LastName"],
+                      position: athlete["Position"],
+                      jersey: athlete["Jersey"],
+                      team,
+                      isActive: athlete["Status"] === "Active",
+                      isInjured: athlete["InjuryStatus"],
+                    })
+                  )
+                }
+                
+              }
+            } catch(err){
+              this.logger.error(err)
+            }
+          }
+          
+        }
+        await Athlete.save([...newAthlete, ...updateAthlete], {chunk: 20})
+        this.logger.debug("MLB Athlete: UPDATED ")
+
+        const athleteCount = await Athlete.count({
+          where: {team: { sport: SportType.MLB}}
+        })
+        this.logger.debug("CURRENT MLB ATHLETE COUNT: " + athleteCount)
+      } else{
+        this.logger.error("MLB Athlete: SPORTS DATA ERROR")
+      }
     }
     this.logger.debug(`MLB Athlete: ${athleteCount ? 'ALREADY EXISTS' : 'SYNCED'}`)
   }
@@ -1905,14 +1964,33 @@ export class TasksService {
             if (curStat) {
               //updating stats
               curStat.fantasyScore = athleteStat["FantasyPointsDraftKings"] / numberOfGames
+              curStat.atBats = athleteStat["AtBats"] / numberOfGames
+              curStat.runs = athleteStat["Runs"] / numberOfGames
+              curStat.hits = athleteStat["Hits"] / numberOfGames
               curStat.singles = athleteStat["Singles"] / numberOfGames
               curStat.doubles = athleteStat["Doubles"] / numberOfGames
               curStat.triples = athleteStat["Triples"] / numberOfGames
               curStat.homeRuns = athleteStat["HomeRuns"] / numberOfGames
               curStat.runsBattedIn = athleteStat["RunsBattedIn"] / numberOfGames
+              curStat.battingAverage = athleteStat["BattingAverage"]
+              curStat.strikeouts = athleteStat["Strikeouts"] / numberOfGames
               curStat.walks = athleteStat["Walks"] / numberOfGames
+              curStat.caughtStealing = athleteStat["CaughtStealing"] / numberOfGames
+              curStat.onBasePercentage = athleteStat["OnBasePercentage"]
+              curStat.sluggingPercentage = athleteStat["SluggingPercentage"]
+              curStat.onBasePlusSlugging = athleteStat["OnBasePlusSlugging"] / numberOfGames
+              curStat.wins = athleteStat["Wins"] / numberOfGames
+              curStat.losses = athleteStat["Losses"] / numberOfGames
+              curStat.earnedRunAverage = athleteStat["EarnedRunAverage"]
               curStat.hitByPitch = athleteStat["HitByPitch"] / numberOfGames
               curStat.stolenBases = athleteStat["StolenBases"] / numberOfGames
+              curStat.walksHitsPerInningsPitched = athleteStat["WalksHitsPerInningsPitched"]
+              curStat.pitchingBattingAverageAgainst = athleteStat["PitchingBattingAverageAgainst"]
+              curStat.pitchingHits = athleteStat["PitchingHits"] / numberOfGames
+              curStat.pitchingRuns = athleteStat["PitchingRuns"] / numberOfGames
+              curStat.pitchingEarnedRuns = athleteStat["PitchingEarnedRuns"] / numberOfGames
+              curStat.pitchingWalks = athleteStat["PitchingWalks"] / numberOfGames
+              curStat.pitchingHomeRuns = athleteStat["PitchingHomeRuns"] / numberOfGames
               curStat.pitchingStrikeouts = athleteStat["PitchingStrikeouts"] / numberOfGames
               curStat.pitchingCompleteGames = athleteStat["PitchingCompleteGames"] / numberOfGames
               curStat.pitchingShutouts = athleteStat["PitchingShutOuts"] / numberOfGames
@@ -1932,15 +2010,34 @@ export class TasksService {
                     type: AthleteStatType.SEASON,
                     position: athleteStat["Position"],
                     played: athleteStat["Games"],
+                    statId: athleteStat["StatID"],
                     fantasyScore: athleteStat["FantasyPointsDraftKings"] / numberOfGames,
+                    atBats: athleteStat["AtBats"] / numberOfGames,
+                    runs: athleteStat["Runs"] / numberOfGames,
+                    hits: athleteStat["Hits"] / numberOfGames,
                     singles: athleteStat["Singles"] / numberOfGames,
                     doubles: athleteStat["Doubles"] / numberOfGames,
                     triples: athleteStat["Triples"] / numberOfGames,
                     homeRuns: athleteStat["HomeRuns"] / numberOfGames,
                     runsBattedIn: athleteStat["RunsBattedIn"] / numberOfGames,
+                    battingAverage: athleteStat["BattingAverage"],
+                    strikeouts: athleteStat["Strikeouts"] / numberOfGames,
                     walks: athleteStat["Walks"] / numberOfGames,
+                    caughtStealing: athleteStat["CaughtStealing"] / numberOfGames,
+                    onBasePercentage: athleteStat["OnBasePercentage"] / numberOfGames,
+                    sluggingPercentage: athleteStat["SluggingPercentage"] / numberOfGames,
+                    wins: athleteStat["Wins"] / numberOfGames,
+                    losses: athleteStat["Losses"] / numberOfGames,
+                    earnedRunAverage: athleteStat["EarnedRunAverage"],
                     hitByPitch: athleteStat["HitByPitch"] / numberOfGames,
                     stolenBases: athleteStat["StolenBases"] / numberOfGames,
+                    walksHitsPerInningsPitched: athleteStat["WalksHitsPerInningsPitched"],
+                    pitchingBattingAverageAgainst: athleteStat["PitchingBattingAverageAgainst"],
+                    pitchingHits: athleteStat["PitchingHits"],
+                    pitchingRuns: athleteStat["PitchingRuns"],
+                    pitchingEarnedRuns: athleteStat["PitchingEarnedRuns"],
+                    pitchingWalks: athleteStat["PitchingWalks"],
+                    pitchingHomeRuns: athleteStat["PitchingHomeRuns"],
                     pitchingStrikeouts: athleteStat["PitchingStrikeouts"] / numberOfGames,
                     pitchingCompleteGames: athleteStat["PitchingCompleteGames"] / numberOfGames,
                     pitchingShutouts: athleteStat["PitchingShutOuts"] / numberOfGames,
@@ -2013,16 +2110,33 @@ export class TasksService {
   
             if (curStat){
               curStat.fantasyScore = athleteStat["FantasyPointsDraftKings"]
-              curStat.opponent = opponent
-              curStat.season = season
+              curStat.atBats = athleteStat["AtBats"]
+              curStat.runs = athleteStat["Runs"]
+              curStat.hits = athleteStat["Hits"]
               curStat.singles = athleteStat["Singles"]
               curStat.doubles = athleteStat["Doubles"]
               curStat.triples = athleteStat["Triples"]
               curStat.homeRuns = athleteStat["HomeRuns"]
               curStat.runsBattedIn = athleteStat["RunsBattedIn"]
+              curStat.battingAverage = athleteStat["BattingAverage"]
+              curStat.strikeouts = athleteStat["Strikeouts"]
               curStat.walks = athleteStat["Walks"]
+              curStat.caughtStealing = athleteStat["CaughtStealing"]
+              curStat.onBasePercentage = athleteStat["OnBasePercentage"]
+              curStat.sluggingPercentage = athleteStat["SluggingPercentage"]
+              curStat.onBasePlusSlugging = athleteStat["OnBasePlusSlugging"]
+              curStat.wins = athleteStat["Wins"]
+              curStat.losses = athleteStat["Losses"]
+              curStat.earnedRunAverage = athleteStat["EarnedRunAverage"]
               curStat.hitByPitch = athleteStat["HitByPitch"]
               curStat.stolenBases = athleteStat["StolenBases"]
+              curStat.walksHitsPerInningsPitched = athleteStat["WalksHitsPerInningsPitched"]
+              curStat.pitchingBattingAverageAgainst = athleteStat["PitchingBattingAverageAgainst"]
+              curStat.pitchingHits = athleteStat["PitchingHits"]
+              curStat.pitchingRuns = athleteStat["PitchingRuns"]
+              curStat.pitchingEarnedRuns = athleteStat["PitchingEarnedRuns"]
+              curStat.pitchingWalks = athleteStat["PitchingWalks"]
+              curStat.pitchingHomeRuns = athleteStat["PitchingHomeRuns"]
               curStat.pitchingStrikeouts = athleteStat["PitchingStrikeouts"]
               curStat.pitchingCompleteGames = athleteStat["PitchingCompleteGames"]
               curStat.pitchingShutouts = athleteStat["PitchingShutOuts"]
@@ -2047,14 +2161,32 @@ export class TasksService {
                     position: athleteStat["Position"],
                     played: athleteStat["Games"],
                     fantasyScore: athleteStat["FantasyPointsDraftKings"],
+                    atBats: athleteStat["AtBats"],
+                    runs: athleteStat["Runs"],
+                    hits: athleteStat["Hits"],
                     singles: athleteStat["Singles"],
                     doubles: athleteStat["Doubles"],
                     triples: athleteStat["Triples"],
                     homeRuns: athleteStat["HomeRuns"],
                     runsBattedIn: athleteStat["RunsBattedIn"],
+                    battingAverage: athleteStat["BattingAverage"],
+                    strikeouts: athleteStat["Strikeouts"],
                     walks: athleteStat["Walks"],
+                    caughtStealing: athleteStat["CaughtStealing"],
+                    onBasePercentage: athleteStat["OnBasePercentage"],
+                    sluggingPercentage: athleteStat["SluggingPercentage"],
+                    wins: athleteStat["Wins"],
+                    losses: athleteStat["Losses"],
+                    earnedRunAverage: athleteStat["EarnedRunAverage"],
                     hitByPitch: athleteStat["HitByPitch"],
                     stolenBases: athleteStat["StolenBases"],
+                    walksHitsPerInningsPitched: athleteStat["WalksHitsPerInningsPitched"],
+                    pitchingBattingAverageAgainst: athleteStat["PitchingBattingAverageAgainst"],
+                    pitchingHits: athleteStat["PitchingHits"],
+                    pitchingRuns: athleteStat["PitchingRuns"],
+                    pitchingEarnedRuns: athleteStat["PitchingEarnedRuns"],
+                    pitchingWalks: athleteStat["PitchingWalks"],
+                    pitchingHomeRuns: athleteStat["PitchingHomeRuns"],
                     pitchingStrikeouts: athleteStat["PitchingStrikeouts"],
                     pitchingCompleteGames: athleteStat["PitchingCompleteGames"],
                     pitchingShutouts: athleteStat["PitchingShutOuts"],
