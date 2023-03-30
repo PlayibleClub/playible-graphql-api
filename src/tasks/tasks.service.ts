@@ -707,7 +707,7 @@ export class TasksService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
 
-  // @Timeout(1)
+  @Timeout(1)
   async generateAthleteMlbAssets() {
     this.logger.debug("Generate Athlete MLB Assets: STARTED")
 
@@ -849,7 +849,7 @@ export class TasksService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
 
-  // @Timeout(1)
+  @Timeout(1)
   async generateAthleteMlbAssetsAnimation() {
     this.logger.debug("Generate Athlete MLB Assets Animation: STARTED")
 
@@ -1057,8 +1057,8 @@ export class TasksService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
 
-   // @Timeout(1)
-   async generateAthleteMlbAssetsPromo() {
+  @Timeout(1)
+  async generateAthleteMlbAssetsPromo() {
     this.logger.debug("Generate Athlete MLB Assets Promo: STARTED")
 
     const athletes = await Athlete.find({
@@ -1258,7 +1258,7 @@ export class TasksService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
 
-  // @Timeout(1)
+  @Timeout(1)
   async generateAthleteMlbAssetsLocked() {
     this.logger.debug("Generate Athlete MLB Assets Locked: STARTED")
 
