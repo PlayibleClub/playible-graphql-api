@@ -207,7 +207,7 @@ export class TasksService {
     this.logger.debug(`MLB Athletes Data: ${athletesCount ? "DID NOT SYNC" : "SYNCED SUCCESSFULLY"}`)
   }
 
-  //@Timeout(1)
+  @Timeout(1)
   async syncMlbData2(){
     const teamCount = await Team.count({
       where: { sport: SportType.MLB},
@@ -246,28 +246,28 @@ export class TasksService {
       const {data, status} = await axios.get(`${process.env.SPORTS_DATA_URL}mlb/scores/json/Players?key=${process.env.SPORTS_DATA_MLB_KEY}`)
       if (status === 200){
         for (let athlete of data){
-          if (athlete["Status"] === "Active"){
-            try {
-              const team = await Team.findOne({
-                where: {apiId: athlete["GlobalTeamID"]},
-              })
-  
-              if(team){
-                await Athlete.create({
-                  apiId: athlete["PlayerID"],
-                  firstName: athlete["FirstName"],
-                  lastName: athlete["LastName"],
-                  position: athlete["Position"],
-                  jersey: athlete["Jersey"],
-                  team,
-                  isActive: athlete["Status"] === "Active",
-                  isInjured: athlete["InjuryStatus"],
-                }).save()
-              }
-            } catch(err){
-              this.logger.error(err)
+          
+          try {
+            const team = await Team.findOne({
+              where: {apiId: athlete["GlobalTeamID"]},
+            })
+
+            if(team){
+              await Athlete.create({
+                apiId: athlete["PlayerID"],
+                firstName: athlete["FirstName"],
+                lastName: athlete["LastName"],
+                position: athlete["Position"],
+                jersey: athlete["Jersey"],
+                team,
+                isActive: athlete["Status"] === "Active",
+                isInjured: athlete["InjuryStatus"],
+              }).save()
             }
+          } catch(err){
+            this.logger.error(err)
           }
+          
           
         }
       } else{
@@ -281,7 +281,7 @@ export class TasksService {
         const newAthlete: Athlete[] = []
         const updateAthlete: Athlete[] = []
         for (let athlete of data){
-          if (athlete["Status"] === "Active"){
+          
             try {
               const team = await Team.findOne({
                 where: {apiId: athlete["GlobalTeamID"]},
@@ -294,7 +294,6 @@ export class TasksService {
                 })
 
                 if(currAthlete){
-                  currAthlete.apiId = athlete["PlayerID"]
                   currAthlete.firstName = athlete["FirstName"]
                   currAthlete.lastName = athlete["LastName"]
                   currAthlete.position = athlete["Position"]
@@ -321,7 +320,7 @@ export class TasksService {
             } catch(err){
               this.logger.error(err)
             }
-          }
+          
           
         }
         await Athlete.save([...newAthlete, ...updateAthlete], {chunk: 20})
