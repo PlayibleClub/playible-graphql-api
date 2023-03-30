@@ -1417,7 +1417,7 @@ export class TasksService {
   }
 
   
-  //@Interval(300000) // Runs every 5 mins
+  @Interval(300000) // Runs every 5 mins
   async updateNflAthleteStatsPerWeek() {
     this.logger.debug("Update NFL Athlete Stats Per Week: STARTED")
 
@@ -1569,7 +1569,7 @@ export class TasksService {
     }
   }
 
-  //@Interval(3600000) // runs every 1 hour
+  @Interval(3600000) // runs every 1 hour
   async updateMlbAthleteInjuryStatus(){
     this.logger.debug("Update MLB Athlete Injury Status: STARTED")
 
