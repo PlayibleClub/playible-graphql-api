@@ -26,10 +26,6 @@ import { AthleteStatType, SportType } from "../utils/types"
 import { CricketTeamInterface, CricketAthleteInterface, CricketPointsBreakup } from '../interfaces/Cricket'
 import e from "express"
 
-import cricketTournamentJson from '../utils/json-files/get-tournament-teams-api-results.json'
-import cricketAthletesJson from '../utils/json-files/ipl_all_teams_players.json'
-import cricketMatchesJson from '../utils/json-files/ipl_2022_tournament_fixtures_api_result.json'
-import cricketGameOne from '../utils/json-files/ipl_2022_g1_fantasy_score.json'
 @Injectable()
 export class TasksService {
   private readonly logger = new Logger(TasksService.name)
