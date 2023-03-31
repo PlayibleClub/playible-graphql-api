@@ -209,7 +209,7 @@ export class TasksService {
     this.logger.debug(`MLB Athletes Data: ${athletesCount ? "DID NOT SYNC" : "SYNCED SUCCESSFULLY"}`)
   }
 
-  //@Timeout(1)
+  @Timeout(1)
   async syncMlbData2(){
     const teamCount = await Team.count({
       where: { sport: SportType.MLB},
@@ -248,28 +248,28 @@ export class TasksService {
       const {data, status} = await axios.get(`${process.env.SPORTS_DATA_URL}mlb/scores/json/Players?key=${process.env.SPORTS_DATA_MLB_KEY}`)
       if (status === 200){
         for (let athlete of data){
-          
-          try {
-            const team = await Team.findOne({
-              where: {apiId: athlete["GlobalTeamID"]},
-            })
-
-            if(team){
-              await Athlete.create({
-                apiId: athlete["PlayerID"],
-                firstName: athlete["FirstName"],
-                lastName: athlete["LastName"],
-                position: athlete["Position"],
-                jersey: athlete["Jersey"],
-                team,
-                isActive: athlete["Status"] === "Active",
-                isInjured: athlete["InjuryStatus"],
-              }).save()
+          if(MLB_ATHLETE_IDS.includes(athlete["PlayerID"])){
+            try {
+              const team = await Team.findOne({
+                where: {apiId: athlete["GlobalTeamID"]},
+              })
+  
+              if(team){
+                await Athlete.create({
+                  apiId: athlete["PlayerID"],
+                  firstName: athlete["FirstName"],
+                  lastName: athlete["LastName"],
+                  position: athlete["Position"],
+                  jersey: athlete["Jersey"],
+                  team,
+                  isActive: athlete["Status"] === "Active",
+                  isInjured: athlete["InjuryStatus"],
+                }).save()
+              }
+            } catch(err){
+              this.logger.error(err)
             }
-          } catch(err){
-            this.logger.error(err)
           }
-          
           
         }
       } else{
@@ -283,45 +283,48 @@ export class TasksService {
         const newAthlete: Athlete[] = []
         const updateAthlete: Athlete[] = []
         for (let athlete of data){
-          
-            try {
-              const team = await Team.findOne({
-                where: {apiId: athlete["GlobalTeamID"]},
-              })
-              
-              if(team){
 
-                const currAthlete = await Athlete.findOne({
-                  where: {apiId: athlete["PlayerID"]}
+            if(MLB_ATHLETE_IDS.includes(athlete["PlayerID"])){
+              try {
+                const team = await Team.findOne({
+                  where: {apiId: athlete["GlobalTeamID"]},
                 })
-
-                if(currAthlete){
-                  currAthlete.firstName = athlete["FirstName"]
-                  currAthlete.lastName = athlete["LastName"]
-                  currAthlete.position = athlete["Position"]
-                  currAthlete.jersey = athlete["Jersey"]
-                  currAthlete.isActive = athlete["Status"] === "Active"
-                  currAthlete.isInjured = athlete["InjuryStatus"]
-                  updateAthlete.push(currAthlete)
-                } else{
-                  newAthlete.push(
-                    Athlete.create({
-                      apiId: athlete["PlayerID"],
-                      firstName: athlete["FirstName"],
-                      lastName: athlete["LastName"],
-                      position: athlete["Position"],
-                      jersey: athlete["Jersey"],
-                      team,
-                      isActive: athlete["Status"] === "Active",
-                      isInjured: athlete["InjuryStatus"],
-                    })
-                  )
-                }
                 
+                if(team){
+  
+                  const currAthlete = await Athlete.findOne({
+                    where: {apiId: athlete["PlayerID"]}
+                  })
+  
+                  if(currAthlete){
+                    currAthlete.firstName = athlete["FirstName"]
+                    currAthlete.lastName = athlete["LastName"]
+                    currAthlete.position = athlete["Position"]
+                    currAthlete.jersey = athlete["Jersey"]
+                    currAthlete.isActive = athlete["Status"] === "Active"
+                    currAthlete.isInjured = athlete["InjuryStatus"]
+                    updateAthlete.push(currAthlete)
+                  } else{
+                    newAthlete.push(
+                      Athlete.create({
+                        apiId: athlete["PlayerID"],
+                        firstName: athlete["FirstName"],
+                        lastName: athlete["LastName"],
+                        position: athlete["Position"],
+                        jersey: athlete["Jersey"],
+                        team,
+                        isActive: athlete["Status"] === "Active",
+                        isInjured: athlete["InjuryStatus"],
+                      })
+                    )
+                  }
+                  
+                }
+              } catch(err){
+                this.logger.error(err)
               }
-            } catch(err){
-              this.logger.error(err)
             }
+            
           
           
         }
@@ -767,7 +770,7 @@ export class TasksService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
 
-  @Timeout(150000)
+  @Timeout(300000)
   async generateAthleteMlbAssets() {
     this.logger.debug("Generate Athlete MLB Assets: STARTED")
 
@@ -911,7 +914,7 @@ export class TasksService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
 
-  @Timeout(300000)
+  @Timeout(450000)
   async generateAthleteMlbAssetsAnimation() {
     this.logger.debug("Generate Athlete MLB Assets Animation: STARTED")
 
@@ -1121,7 +1124,7 @@ export class TasksService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
 
-  @Timeout(450000)
+  @Timeout(600000)
   async generateAthleteMlbAssetsPromo() {
     this.logger.debug("Generate Athlete MLB Assets Promo: STARTED")
 
@@ -1324,7 +1327,7 @@ export class TasksService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
 
-  @Timeout(600000)
+  @Timeout(750000)
   async generateAthleteMlbAssetsLocked() {
     this.logger.debug("Generate Athlete MLB Assets Locked: STARTED")
 
