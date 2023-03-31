@@ -1,6 +1,6 @@
 import { AthleteStatType } from "../utils/types"
 import { Field, ID, ObjectType } from "type-graphql"
-import { BaseEntity, Column, Entity, ManyToOne, PrimaryGeneratedColumn, Relation } from "typeorm"
+import { BaseEntity, Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, Relation } from "typeorm"
 import { Athlete } from "./Athlete"
 import { Team } from "./Team"
 
@@ -56,6 +56,19 @@ export class AthleteStat extends BaseEntity {
   statId?: number
 
   // START MLB
+
+  @Field(() => Number)
+  @Column({type: "numeric", default: 0})
+  atBats?: number
+
+  @Field(() => Number)
+  @Column({type: "numeric", default: 0})
+  runs?: number
+
+  @Field(() => Number)
+  @Column({type: "numeric", default: 0})
+  hits?: number
+
   @Field(() => Number)
   @Column({ type: "numeric", default: 0 })
   singles?: number
@@ -78,7 +91,47 @@ export class AthleteStat extends BaseEntity {
 
   @Field(() => Number)
   @Column({ type: "numeric", default: 0 })
+  battingAverage?: number
+
+  @Field(() => Number)
+  @Column({ type:"numeric", default: 0})
+  strikeouts?: number
+
+  @Field(() => Number)
+  @Column({ type: "numeric", default: 0 })
   walks?: number
+
+  @Field(() => Number)
+  @Column({ type: "numeric", default: 0})
+  caughtStealing?: number
+
+  @Field(() => Number)
+  @Column({ type: "numeric", default: 0})
+  onBasePercentage?: number
+
+  @Field(() => Number)
+  @Column({ type: "numeric", default: 0})
+  sluggingPercentage?: number
+
+  @Field(() => Number)
+  @Column({ type: "numeric", default: 0})
+  onBasePlusSlugging?: number
+
+  @Field(() => Number)
+  @Column({ type: "numeric", default: 0})
+  wins?: number
+
+  @Field(() => Number)
+  @Column({ type: "numeric", default: 0})
+  losses?: number
+
+  @Field(() => Number)
+  @Column({ type: "numeric", default: 0})
+  saves?: number
+
+  @Field(() => Number)
+  @Column({ type: "numeric", default: 0})
+  earnedRunAverage?: number
 
   @Field(() => Number)
   @Column({ type: "numeric", default: 0 })
@@ -90,27 +143,56 @@ export class AthleteStat extends BaseEntity {
 
   @Field(() => Number)
   @Column({ type: "numeric", default: 0 })
-  pitchingTotalInningsPitched?: number
+  walksHitsPerInningsPitched?: number
+
+  @Field(() => Number)
+  @Column({ type: "numeric", default: 0 })
+  pitchingBattingAverageAgainst?: number
+  
+  @Field(() => Number)
+  @Column({ type: "numeric", default: 0 })
+  pitchingHits?: number
+
+  @Field(() => Number)
+  @Column({ type: "numeric", default: 0 })
+  pitchingRuns?: number
+
+  @Field(() => Number)
+  @Column({ type: "numeric", default: 0 })
+  pitchingEarnedRuns?: number
+
+  @Field(() => Number)
+  @Column({ type: "numeric", default: 0 })
+  pitchingWalks?: number
+
+  @Field(() => Number)
+  @Column({ type: "numeric", default: 0 })
+  pitchingHomeRuns?: number
+
+  @Field(() => Number)
+  @Column({ type: "numeric", default: 0 })
+  pitchingTotalInningsPitched?: number //not in sportsdata
 
   @Field(() => Number)
   @Column({ type: "numeric", default: 0 })
   pitchingStrikeouts?: number
 
-  @Field(() => Number)
-  @Column({ type: "numeric", default: 0 })
-  pitchingHitsAllowed?: number
 
   @Field(() => Number)
   @Column({ type: "numeric", default: 0 })
-  pitchingWalksAllowed?: number
+  pitchingHitsAllowed?: number //not in sportsdata
 
   @Field(() => Number)
   @Column({ type: "numeric", default: 0 })
-  pitchingEarnedRunsAllowed?: number
+  pitchingWalksAllowed?: number //not in sportsdata
 
   @Field(() => Number)
   @Column({ type: "numeric", default: 0 })
-  pitchingHitsByPitchAllowed?: number
+  pitchingEarnedRunsAllowed?: number // not in sportsdata
+
+  @Field(() => Number)
+  @Column({ type: "numeric", default: 0 })
+  pitchingHitsByPitchAllowed?: number //not in sportsdata
 
   @Field(() => Number)
   @Column({ type: "numeric", default: 0 })

@@ -2,9 +2,11 @@ import { InputType, Field } from "type-graphql"
 
 export enum SportType {
   MLB = "mlb",
+  MLB_PROMO = "mlb-promo",
   NBA = "nba",
   NBA_PROMO = "nba-promo",
   NFL = "nfl",
+  CRICKET = "cricket",
 }
 
 export enum AthleteStatType {

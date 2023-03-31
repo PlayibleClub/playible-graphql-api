@@ -7,22 +7,23 @@ import { SportType } from '../utils/types'
 export class ScheduleResolver {
 
   @Query(() => [Schedule])
-  async getNbaPlayerSchedule(
+  async getPlayerSchedule(
     @Arg("startDate") startDate: Date,
     @Arg("endDate") endDate: Date,
     @Arg("team") team: string,
+    @Arg("sport") sport: SportType
   ): Promise<Schedule[]>{
 
     return await Schedule.find({
       where:[
         {
           dateTimeUTC: Between(startDate, endDate),
-          sport: SportType.NBA,
+          sport: sport,
           homeTeam: team
         },
         {
           dateTimeUTC: Between(startDate, endDate),
-          sport: SportType.NBA,
+          sport: sport,
           awayTeam: team
         }
       ]

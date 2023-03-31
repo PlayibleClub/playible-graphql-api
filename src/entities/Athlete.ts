@@ -15,6 +15,10 @@ export class Athlete extends BaseEntity {
   @Column("integer", { unique: true })
   apiId!: number
 
+  @Field(() => String, {nullable: true})
+  @Column({ type: "varchar", length: 50, nullable: true})
+  playerKey!: string //for cricket
+
   @Field(() => String)
   @Column({ type: "varchar", length: 155 })
   firstName!: string

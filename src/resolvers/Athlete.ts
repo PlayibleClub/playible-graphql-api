@@ -10,7 +10,7 @@ import { AthleteStat } from "../entities/AthleteStat"
 import { Team } from "../entities/Team"
 
 import { In, MoreThanOrEqual, LessThanOrEqual} from "typeorm"
-import { NFL_ATHLETE_IDS, NBA_ATHLETE_IDS, NBA_ATHLETE_PROMO_IDS } from "./../utils/athlete-ids"
+import { NFL_ATHLETE_IDS, NBA_ATHLETE_IDS, NBA_ATHLETE_PROMO_IDS, MLB_ATHLETE_IDS, MLB_ATHLETE_PROMO_IDS } from "./../utils/athlete-ids"
 import moment from "moment"
 
 @ObjectType()
@@ -76,7 +76,8 @@ export class AthleteResolver {
   async getAthleteById(
     @Arg("id") id: number,
     @Arg("from", { nullable: true }) from?: Date,
-    @Arg("to", { nullable: true }) to?: Date
+    @Arg("to", { nullable: true }) to?: Date,
+    @Arg("season", {nullable: true}) season?: string,
   ): Promise<Athlete> {
     const athlete = await Athlete.findOneOrFail({
       where: { id },
@@ -86,6 +87,10 @@ export class AthleteResolver {
       },
     })
 
+    if (season){
+      athlete.stats = athlete.stats.filter((stat) => stat.season === season)
+    }
+    
     if (from) {
       //athlete.stats = athlete.stats.filter((stat) => stat.gameDate && stat.gameDate.toISOString() >= from.toISOString())
       athlete.stats = athlete.stats.filter((stat) => stat.gameDate && moment(stat.gameDate).unix() >= moment(from).unix())
@@ -226,10 +231,15 @@ export class AthleteResolver {
         athleteIds = NBA_ATHLETE_PROMO_IDS
         break
       case SportType.MLB:
-        contractId = process.env.OPENPACK_MLB_ACCOUNT_ID
+        contractId = process.env.OPENPACK_MLB_ACCOUNT_ID //add MLB athlete ids here
+        athleteIds = MLB_ATHLETE_IDS
+        break
+      case SportType.MLB_PROMO:
+        contractId = process.env.OPENPACK_MLB_PROMO_ACCOUNT_ID
+        athleteIds = MLB_ATHLETE_PROMO_IDS
         break
       default:
-        contractId = process.env.OPENPACK_NFL_ACCOUNT_ID
+        contractId = process.env.OPENPACK_NFL_ACCOUNT_ID //add cricket athlete id/key here
         break
     }
 

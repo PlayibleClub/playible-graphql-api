@@ -20,10 +20,12 @@ export class TimeframeResolver {
     
   }
   @Query(() => Timeframe)
-  async getNbaCurrentSeason(): Promise<Timeframe>{
+  async getSportCurrentSeason(
+    @Arg("sport") sport: SportType
+  ): Promise<Timeframe>{
     return await Timeframe.findOneOrFail({
       where: {
-        sport: SportType.NBA
+        sport: sport
       }
     })
   }

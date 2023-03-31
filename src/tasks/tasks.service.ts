@@ -3,7 +3,7 @@ import { Cron, Interval, Timeout } from "@nestjs/schedule"
 import S3 from "aws-sdk/clients/s3"
 import axios from "axios"
 import fs from "fs"
-import { LessThanOrEqual, MoreThanOrEqual, Equal, Not } from "typeorm"
+import { LessThanOrEqual, MoreThanOrEqual, Equal, Not, In } from "typeorm"
 import convert from "xml-js"
 import moment from 'moment-timezone'
 
@@ -14,10 +14,18 @@ import { GameTeam } from "../entities/GameTeam"
 import { Team } from "../entities/Team"
 import { Timeframe } from "../entities/Timeframe"
 import { Schedule } from "../entities/Schedule"
-
+import { CricketAuth } from "../entities/CricketAuth"
+import { CricketTournament } from "../entities/CricketTournament"
+import { CricketTeam } from "../entities/CricketTeam"
+import { CricketAthlete } from '../entities/CricketAthlete'
+import { CricketAthleteStat } from '../entities/CricketAthleteStat'
+import { CricketMatch } from '../entities/CricketMatch'
 import { getSeasonType } from "../helpers/Timeframe"
 import { ATHLETE_MLB_BASE_ANIMATION, ATHLETE_MLB_BASE_IMG, ATHLETE_MLB_IMG } from "../utils/svgTemplates"
 import { AthleteStatType, SportType } from "../utils/types"
+import { CricketTeamInterface, CricketAthleteInterface, CricketPointsBreakup } from '../interfaces/Cricket'
+import { NFL_ATHLETE_IDS, NBA_ATHLETE_IDS, NBA_ATHLETE_PROMO_IDS, MLB_ATHLETE_IDS, MLB_ATHLETE_PROMO_IDS } from "./../utils/athlete-ids"
+
 import e from "express"
 
 @Injectable()
@@ -202,6 +210,138 @@ export class TasksService {
   }
 
   @Timeout(1)
+  async syncMlbData2(){
+    const teamCount = await Team.count({
+      where: { sport: SportType.MLB},
+    })
+
+    if (teamCount === 0){ //init mlb teams
+      const {data, status} = await axios.get(`${process.env.SPORTS_DATA_URL}mlb/scores/json/teams?key=${process.env.SPORTS_DATA_MLB_KEY}`)
+
+      if (status === 200) {
+        for (let team of data){
+          try {
+            await Team.create({
+              apiId: team["GlobalTeamID"],
+              name: team["Name"],
+              key: team["Key"],
+              location: team["City"],
+              sport: SportType.MLB,
+              primaryColor: `#${team["PrimaryColor"]}`,
+              secondaryColor: `#${team["SecondaryColor"]}`,
+            }).save()
+          } catch(err){
+            this.logger.error(err)
+          }
+        }
+      } else{
+        this.logger.error("MLB Teams Data: SPORTS DATA ERROR")
+      }
+    }
+    this.logger.debug(`MLB Teams: ${teamCount ? "ALREADY EXISTS" : "SYNCED"}`)
+
+    const athleteCount = await Athlete.count({
+      where: { team: { sport: SportType.MLB } },
+    })
+
+    if (athleteCount === 0){
+      const {data, status} = await axios.get(`${process.env.SPORTS_DATA_URL}mlb/scores/json/Players?key=${process.env.SPORTS_DATA_MLB_KEY}`)
+      if (status === 200){
+        for (let athlete of data){
+          if(MLB_ATHLETE_IDS.includes(athlete["PlayerID"])){
+            try {
+              const team = await Team.findOne({
+                where: {apiId: athlete["GlobalTeamID"]},
+              })
+  
+              if(team){
+                await Athlete.create({
+                  apiId: athlete["PlayerID"],
+                  firstName: athlete["FirstName"],
+                  lastName: athlete["LastName"],
+                  position: athlete["Position"],
+                  jersey: athlete["Jersey"],
+                  team,
+                  isActive: athlete["Status"] === "Active",
+                  isInjured: athlete["InjuryStatus"],
+                }).save()
+              }
+            } catch(err){
+              this.logger.error(err)
+            }
+          }
+          
+        }
+      } else{
+        this.logger.error("MLB Athlete: SPORTS DATA ERROR")
+      }
+        
+      
+    } else{
+      const {data, status} = await axios.get(`${process.env.SPORTS_DATA_URL}mlb/scores/json/Players?key=${process.env.SPORTS_DATA_MLB_KEY}`)
+      if (status === 200){
+        const newAthlete: Athlete[] = []
+        const updateAthlete: Athlete[] = []
+        for (let athlete of data){
+
+            if(MLB_ATHLETE_IDS.includes(athlete["PlayerID"])){
+              try {
+                const team = await Team.findOne({
+                  where: {apiId: athlete["GlobalTeamID"]},
+                })
+                
+                if(team){
+  
+                  const currAthlete = await Athlete.findOne({
+                    where: {apiId: athlete["PlayerID"]}
+                  })
+  
+                  if(currAthlete){
+                    currAthlete.firstName = athlete["FirstName"]
+                    currAthlete.lastName = athlete["LastName"]
+                    currAthlete.position = athlete["Position"]
+                    currAthlete.jersey = athlete["Jersey"]
+                    currAthlete.isActive = athlete["Status"] === "Active"
+                    currAthlete.isInjured = athlete["InjuryStatus"]
+                    updateAthlete.push(currAthlete)
+                  } else{
+                    newAthlete.push(
+                      Athlete.create({
+                        apiId: athlete["PlayerID"],
+                        firstName: athlete["FirstName"],
+                        lastName: athlete["LastName"],
+                        position: athlete["Position"],
+                        jersey: athlete["Jersey"],
+                        team,
+                        isActive: athlete["Status"] === "Active",
+                        isInjured: athlete["InjuryStatus"],
+                      })
+                    )
+                  }
+                  
+                }
+              } catch(err){
+                this.logger.error(err)
+              }
+            }
+            
+          
+          
+        }
+        await Athlete.save([...newAthlete, ...updateAthlete], {chunk: 20})
+        this.logger.debug("MLB Athlete: UPDATED ")
+
+        const athleteCount = await Athlete.count({
+          where: {team: { sport: SportType.MLB}}
+        })
+        this.logger.debug("CURRENT MLB ATHLETE COUNT: " + athleteCount)
+      } else{
+        this.logger.error("MLB Athlete: SPORTS DATA ERROR")
+      }
+    }
+    this.logger.debug(`MLB Athlete: ${athleteCount ? 'ALREADY EXISTS' : 'SYNCED'}`)
+  }
+  //@Timeout(1)
   async syncNflData() {
     const teamsCount = await Team.count({
       where: { sport: SportType.NFL },
@@ -364,7 +504,7 @@ export class TasksService {
     this.logger.debug(`NFL Athletes Data: ${athletesCount ? "DID NOT SYNC" : "SYNCED SUCCESSFULLY"}`)
   }
 
-  @Timeout(1)
+  //@Timeout(1)
   async syncNbaData() {
     const teamsCount = await Team.count({
       where: { sport: SportType.NBA },
@@ -630,6 +770,76 @@ export class TasksService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
 
+  @Timeout(300000)
+  async generateAthleteMlbAssets() {
+    this.logger.debug("Generate Athlete MLB Assets: STARTED")
+
+    const athletes = await Athlete.find({
+      where: { 
+        apiId: In(MLB_ATHLETE_IDS),
+        team: { sport: SportType.MLB }},
+      relations: {
+        team: true,
+      },
+    })
+
+    for (let athlete of athletes) {
+      var svgTemplate = fs.readFileSync(`./src/utils/mlb-svg-teams-templates/${athlete.team.key}.svg`, "utf-8")
+      var options = { compact: true, ignoreComment: true, spaces: 4 }
+      var result: any = convert.xml2js(svgTemplate, options)
+
+      try {
+        if (athlete.firstName.length > 11) {
+          result.svg.g[6].text[1]["_attributes"]["style"] = "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700"
+        }
+        if (athlete.lastName.length > 11) {
+          result.svg.g[6].text[2]["_attributes"]["style"] = "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700"
+        }
+
+        result.svg.g[6]["text"][1]["tspan"]["_text"] = athlete.firstName.toUpperCase()
+        result.svg.g[6]["text"][2]["tspan"]["_text"] = athlete.lastName.toUpperCase()
+        result.svg.g[6]["text"][0]["tspan"]["_text"] = athlete.position.toUpperCase()
+      } catch (e) {
+        console.log(`FAILED AT ATHLETE ID: ${athlete.apiId} and TEAM KEY: ${athlete.team.key}`)
+      }
+
+      result = convert.js2xml(result, options)
+      // fs.writeFileSync(
+      //   `./nba-images/${athlete.apiId}-${athlete.firstName.toLowerCase()}-${athlete.lastName.toLowerCase()}.svg`,
+      //   result
+      // )
+
+      var buffer = Buffer.from(result, "utf8")
+
+      const s3 = new S3({
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+      })
+      const filename = `${athlete.apiId}-${athlete.firstName.toLowerCase()}-${athlete.lastName.toLowerCase()}.svg`
+      const s3_location = "media/athlete/mlb/images/"
+      const fileContent = buffer
+      const params: any = {
+        Bucket: process.env.AWS_BUCKET_NAME,
+        Key: `${s3_location}${filename}`,
+        Body: fileContent,
+        ContentType: "image/svg+xml",
+        CacheControl: "no-cache",
+      }
+
+      s3.upload(params, async (err: any, data: any) => {
+        if (err) {
+          this.logger.error(err)
+        } else {
+          athlete.nftImage = data["Location"]
+
+          await Athlete.save(athlete)
+        }
+      })
+    }
+
+    this.logger.debug("Generate Athlete MLB Assets: FINISHED")
+    this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
+  }
   // @Timeout(1)
   async generateAthleteNbaAssetsAnimation() {
     this.logger.debug("Generate Athlete NBA Assets Animation: STARTED")
@@ -701,6 +911,82 @@ export class TasksService {
     }
 
     this.logger.debug("Generate Athlete NBA Assets Animations: FINISHED")
+    this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
+  }
+
+  @Timeout(450000)
+  async generateAthleteMlbAssetsAnimation() {
+    this.logger.debug("Generate Athlete MLB Assets Animation: STARTED")
+
+    const athletes = await Athlete.find({
+      where: {
+        apiId: In(MLB_ATHLETE_IDS), 
+        team: { sport: SportType.MLB } },
+      relations: {
+        team: true,
+      },
+    })
+
+    for (let athlete of athletes) {
+      var svgAnimationTemplate = fs.readFileSync(`./src/utils/mlb-svg-teams-animation-templates/${athlete.team.key}.svg`, "utf-8")
+      var options = { compact: true, ignoreComment: true, spaces: 4 }
+      var result: any = convert.xml2js(svgAnimationTemplate, options)
+
+
+      try {
+        if (athlete.firstName.length > 11) {
+          result.svg.g[4].text[2].tspan["_attributes"]["font-size"] = "50"
+          result.svg.g[4].text[3].tspan["_attributes"]["font-size"] = "50"
+        }
+        if (athlete.lastName.length > 11) {
+          result.svg.g[4].text[4].tspan["_attributes"]["font-size"] = "50"
+          result.svg.g[4].text[5].tspan["_attributes"]["font-size"] = "50"
+        }
+
+        result.svg.g[4].text[0].tspan["_cdata"] = athlete.position.toUpperCase()
+        result.svg.g[4].text[1].tspan["_cdata"] = athlete.position.toUpperCase()
+        result.svg.g[4].text[2].tspan["_cdata"] = athlete.firstName.toUpperCase()
+        result.svg.g[4].text[3].tspan["_cdata"] = athlete.firstName.toUpperCase()
+        result.svg.g[4].text[4].tspan["_cdata"] = athlete.lastName.toUpperCase()
+        result.svg.g[4].text[5].tspan["_cdata"] = athlete.lastName.toUpperCase()
+        result = convert.js2xml(result, options)
+      } catch (e) {
+        console.log(`FAILED AT ATHLETE ID: ${athlete.apiId} and TEAM KEY: ${athlete.team.key}`)
+        console.log(e)
+      }
+
+      // fs.writeFileSync(
+      //   `./nfl-animations/${athlete.apiId}-${athlete.firstName.toLowerCase()}-${athlete.lastName
+      //   .toLowerCase()}.svg`,
+      //   result
+      // )
+      var buffer = Buffer.from(result, "utf8")
+      const s3 = new S3({
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+      })
+      const filename = `${athlete.apiId}-${athlete.firstName.toLowerCase()}-${athlete.lastName.toLowerCase()}.svg`
+      const s3_location = "media/athlete/mlb/animations/"
+      const fileContent = buffer
+      const params: any = {
+        Bucket: process.env.AWS_BUCKET_NAME,
+        Key: `${s3_location}${filename}`,
+        Body: fileContent,
+        ContentType: "image/svg+xml",
+        CacheControl: "no-cache",
+      }
+
+      s3.upload(params, async (err: any, data: any) => {
+        if (err) {
+          this.logger.error(err)
+        } else {
+          athlete.nftAnimation = data["Location"]
+          await Athlete.save(athlete)
+        }
+      })
+    }
+
+    this.logger.debug("Generate Athlete MLB Assets Animations: FINISHED")
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
 
@@ -838,6 +1124,75 @@ export class TasksService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
 
+  @Timeout(600000)
+  async generateAthleteMlbAssetsPromo() {
+    this.logger.debug("Generate Athlete MLB Assets Promo: STARTED")
+
+    const athletes = await Athlete.find({
+      where: {
+        apiId: In(MLB_ATHLETE_IDS), 
+        team: { sport: SportType.MLB } },
+      relations: {
+        team: true,
+      },
+    })
+
+    for (let athlete of athletes) {
+      var svgTemplate = fs.readFileSync(`./src/utils/mlb-svg-teams-promo-templates/${athlete.team.key}.svg`, "utf-8")
+      var options = { compact: true, ignoreComment: true, spaces: 4 }
+      var result: any = convert.xml2js(svgTemplate, options)
+
+      try {
+        if (athlete.firstName.length > 11) {
+          result.svg.g[6].text[1]["_attributes"]["style"] = "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700"
+        }
+        if (athlete.lastName.length > 11) {
+          result.svg.g[6].text[2]["_attributes"]["style"] = "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700"
+        }
+
+        result.svg.g[6]["text"][1]["tspan"]["_text"] = athlete.firstName.toUpperCase()
+        result.svg.g[6]["text"][2]["tspan"]["_text"] = athlete.lastName.toUpperCase()
+        result.svg.g[6]["text"][0]["tspan"]["_text"] = athlete.position.toUpperCase()
+      } catch (e) {
+        console.log(`FAILED AT ATHLETE ID: ${athlete.apiId} and TEAM KEY: ${athlete.team.key}`)
+      }
+
+      result = convert.js2xml(result, options)
+      // fs.writeFileSync(
+      //   `./nba-images-promo/${athlete.apiId}-${athlete.firstName.toLowerCase()}-${athlete.lastName.toLowerCase()}.svg`,
+      //   result
+      // )
+
+      var buffer = Buffer.from(result, "utf8")
+      const s3 = new S3({
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+      })
+      const filename = `${athlete.apiId}-${athlete.firstName.toLowerCase()}-${athlete.lastName.toLowerCase()}.svg`
+      const s3_location = "media/athlete/mlb/promo_images/"
+      const fileContent = buffer
+      const params: any = {
+        Bucket: process.env.AWS_BUCKET_NAME,
+        Key: `${s3_location}${filename}`,
+        Body: fileContent,
+        ContentType: "image/svg+xml",
+        CacheControl: "no-cache",
+      }
+
+      s3.upload(params, async (err: any, data: any) => {
+        if (err) {
+          this.logger.error(err)
+        } else {
+          athlete.nftImagePromo = data["Location"]
+          await Athlete.save(athlete)
+        }
+      })
+    }
+
+    this.logger.debug("Generate Athlete MLB Assets Promo: FINISHED")
+    this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
+  }
+
   // @Timeout(1)
   async generateAthleteNflAssetsLocked() {
     this.logger.debug("Generate Athlete NFL Assets Locked: STARTED")
@@ -972,6 +1327,75 @@ export class TasksService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
 
+  @Timeout(750000)
+  async generateAthleteMlbAssetsLocked() {
+    this.logger.debug("Generate Athlete MLB Assets Locked: STARTED")
+
+    const athletes = await Athlete.find({
+      where: {
+        apiId: In(MLB_ATHLETE_IDS), 
+        team: { sport: SportType.MLB } },
+      relations: {
+        team: true,
+      },
+    })
+
+    for (let athlete of athletes) {
+      var svgTemplate = fs.readFileSync(`./src/utils/mlb-svg-teams-lock-templates/${athlete.team.key}.svg`, "utf-8")
+      var options = { compact: true, ignoreComment: true, spaces: 4 }
+      var result: any = convert.xml2js(svgTemplate, options)
+
+      try {
+        if (athlete.firstName.length > 11) {
+          result.svg.g[6].text[1]["_attributes"]["style"] = "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700"
+        }
+        if (athlete.lastName.length > 11) {
+          result.svg.g[6].text[2]["_attributes"]["style"] = "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700"
+        }
+
+        result.svg.g[6]["text"][1]["tspan"]["_text"] = athlete.firstName.toUpperCase()
+        result.svg.g[6]["text"][2]["tspan"]["_text"] = athlete.lastName.toUpperCase()
+        result.svg.g[6]["text"][0]["tspan"]["_text"] = athlete.position.toUpperCase()
+      } catch (e) {
+        console.log(`FAILED AT ATHLETE ID: ${athlete.apiId} and TEAM KEY: ${athlete.team.key}`)
+      }
+
+      result = convert.js2xml(result, options)
+      // fs.writeFileSync(
+      //   `./nba-images-locked/${athlete.apiId}-${athlete.firstName.toLowerCase()}-${athlete.lastName.toLowerCase()}.svg`,
+      //   result
+      // )
+
+      var buffer = Buffer.from(result, "utf8")
+      const s3 = new S3({
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+      })
+      const filename = `${athlete.apiId}-${athlete.firstName.toLowerCase()}-${athlete.lastName.toLowerCase()}.svg`
+      const s3_location = "media/athlete/mlb/locked_images/"
+      const fileContent = buffer
+      const params: any = {
+        Bucket: process.env.AWS_BUCKET_NAME,
+        Key: `${s3_location}${filename}`,
+        Body: fileContent,
+        ContentType: "image/svg+xml",
+        CacheControl: "no-cache",
+      }
+
+      s3.upload(params, async (err: any, data: any) => {
+        if (err) {
+          this.logger.error(err)
+        } else {
+          athlete.nftImageLocked = data["Location"]
+          await Athlete.save(athlete)
+        }
+      })
+    }
+
+    this.logger.debug("Generate Athlete MLB Assets Locked: FINISHED")
+    this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
+  }
+
   // @Timeout(1)
   @Interval(900000) // Runs every 15 mins
   async updateNflAthleteStatsPerSeason() {
@@ -1063,6 +1487,7 @@ export class TasksService {
     }
   }
 
+  
   @Interval(300000) // Runs every 5 mins
   async updateNflAthleteStatsPerWeek() {
     this.logger.debug("Update NFL Athlete Stats Per Week: STARTED")
@@ -1206,15 +1631,41 @@ export class TasksService {
           updateAthlete.push(curAthlete)
         } 
 
-        await Athlete.save(updateAthlete, {chunk: 20})
-
         
       }
+      await Athlete.save(updateAthlete, {chunk: 20}) 
       this.logger.debug("Update NBA Injury Status: FINISHED")
     } else{
       this.logger.error("NBA Athlete Injury Data: SPORTS DATA ERROR")
     }
   }
+
+  @Interval(3600000) // runs every 1 hour
+  async updateMlbAthleteInjuryStatus(){
+    this.logger.debug("Update MLB Athlete Injury Status: STARTED")
+
+    const { data, status } = await axios.get(`${process.env.SPORTS_DATA_URL}mlb/scores/json/Players?key=${process.env.SPORTS_DATA_MLB_KEY}`)
+
+    if (status === 200){
+      const updateAthlete: Athlete[] = []
+      for (let athlete of data){
+        const apiId: number = athlete["PlayerID"]
+        const curAthlete = await Athlete.findOne({
+          where: { apiId: apiId},
+        })
+        if (curAthlete){
+          curAthlete.isInjured = athlete["InjuryStatus"]
+          updateAthlete.push(curAthlete)
+        }
+
+      }
+      await Athlete.save(updateAthlete, { chunk: 20})
+      this.logger.debug("Update NBA Injury Status: FINISHED")
+    } else{
+      this.logger.error("NBA Athlete Injury Data: SPORTS DATA ERROR")
+    }
+  }
+
   @Timeout(1)
   async updateNflAthleteStatsAllWeeks() {
     this.logger.debug("Update NFL Athlete Stats All Weeks: STARTED")
@@ -1384,7 +1835,7 @@ export class TasksService {
     }
   }
 
-  // @Timeout(1)
+  //@Timeout(1)
   @Interval(900000) // Runs every 15 mins
   async updateNbaAthleteStatsPerSeason() {
     this.logger.debug("Update NBA Athlete Stats: STARTED")
@@ -1490,6 +1941,286 @@ export class TasksService {
     }
   }
 
+  @Interval(900000) // runs every 15 minutes
+  async updateMlbAthleteStatsPerSeason(){
+    this.logger.debug("Update MLB Athlete Stats (Season): STARTED")
+
+    // const timeframe = await Timeframe.findOne({
+    //   where: {
+    //     sport: SportType.MLB
+    //   }
+    // })
+    const timeFrames = await axios.get(`${process.env.SPORTS_DATA_URL}mlb/scores/json/CurrentSeason?key=${process.env.SPORTS_DATA_MLB_KEY}`)
+
+    if (timeFrames.status === 200){
+      const timeFrame = timeFrames.data
+
+      if(timeFrame){
+        const season = timeFrame.ApiSeason
+        const { data, status } = await axios.get(`${process.env.SPORTS_DATA_URL}mlb/stats/json/PlayerSeasonStats/${season}?key=${process.env.SPORTS_DATA_MLB_KEY}`)
+  
+        if (status === 200){
+          const newStats: AthleteStat[] = []
+          const updateStats: AthleteStat[] = []
+  
+          for (let athleteStat of data){
+            const apiId: number = athleteStat["PlayerID"]
+            const numberOfGames: number = athleteStat["Games"] > 0 ? athleteStat["Games"] : 1
+            const curStat = await AthleteStat.findOne({
+              where: { athlete: {apiId}, season: season.toString(), type: AthleteStatType.SEASON},
+              relations: {
+                athlete: true,
+              }
+            })
+  
+            if (curStat) {
+              //updating stats
+              curStat.fantasyScore = athleteStat["FantasyPointsDraftKings"] / numberOfGames
+              curStat.atBats = athleteStat["AtBats"] / numberOfGames
+              curStat.runs = athleteStat["Runs"] / numberOfGames
+              curStat.hits = athleteStat["Hits"] / numberOfGames
+              curStat.singles = athleteStat["Singles"] / numberOfGames
+              curStat.doubles = athleteStat["Doubles"] / numberOfGames
+              curStat.triples = athleteStat["Triples"] / numberOfGames
+              curStat.homeRuns = athleteStat["HomeRuns"] / numberOfGames
+              curStat.runsBattedIn = athleteStat["RunsBattedIn"] / numberOfGames
+              curStat.battingAverage = athleteStat["BattingAverage"]
+              curStat.strikeouts = athleteStat["Strikeouts"] / numberOfGames
+              curStat.walks = athleteStat["Walks"] / numberOfGames
+              curStat.caughtStealing = athleteStat["CaughtStealing"] / numberOfGames
+              curStat.onBasePercentage = athleteStat["OnBasePercentage"]
+              curStat.sluggingPercentage = athleteStat["SluggingPercentage"]
+              curStat.onBasePlusSlugging = athleteStat["OnBasePlusSlugging"] / numberOfGames
+              curStat.wins = athleteStat["Wins"] / numberOfGames
+              curStat.losses = athleteStat["Losses"] / numberOfGames
+              curStat.earnedRunAverage = athleteStat["EarnedRunAverage"]
+              curStat.hitByPitch = athleteStat["HitByPitch"] / numberOfGames
+              curStat.stolenBases = athleteStat["StolenBases"] / numberOfGames
+              curStat.walksHitsPerInningsPitched = athleteStat["WalksHitsPerInningsPitched"]
+              curStat.pitchingBattingAverageAgainst = athleteStat["PitchingBattingAverageAgainst"]
+              curStat.pitchingHits = athleteStat["PitchingHits"] / numberOfGames
+              curStat.pitchingRuns = athleteStat["PitchingRuns"] / numberOfGames
+              curStat.pitchingEarnedRuns = athleteStat["PitchingEarnedRuns"] / numberOfGames
+              curStat.pitchingWalks = athleteStat["PitchingWalks"] / numberOfGames
+              curStat.pitchingHomeRuns = athleteStat["PitchingHomeRuns"] / numberOfGames
+              curStat.pitchingStrikeouts = athleteStat["PitchingStrikeouts"] / numberOfGames
+              curStat.pitchingCompleteGames = athleteStat["PitchingCompleteGames"] / numberOfGames
+              curStat.pitchingShutouts = athleteStat["PitchingShutOuts"] / numberOfGames
+              curStat.pitchingNoHitters = athleteStat["PitchingNoHitters"] / numberOfGames
+              curStat.played = athleteStat["Games"]
+              updateStats.push(curStat)
+            } else{
+              const curAthlete = await Athlete.findOne({
+                where: {apiId}
+              })
+  
+              if(curAthlete){
+                newStats.push(
+                  AthleteStat.create({
+                    athlete: curAthlete,
+                    season: season.toString(),
+                    type: AthleteStatType.SEASON,
+                    position: athleteStat["Position"],
+                    played: athleteStat["Games"],
+                    statId: athleteStat["StatID"],
+                    fantasyScore: athleteStat["FantasyPointsDraftKings"] / numberOfGames,
+                    atBats: athleteStat["AtBats"] / numberOfGames,
+                    runs: athleteStat["Runs"] / numberOfGames,
+                    hits: athleteStat["Hits"] / numberOfGames,
+                    singles: athleteStat["Singles"] / numberOfGames,
+                    doubles: athleteStat["Doubles"] / numberOfGames,
+                    triples: athleteStat["Triples"] / numberOfGames,
+                    homeRuns: athleteStat["HomeRuns"] / numberOfGames,
+                    runsBattedIn: athleteStat["RunsBattedIn"] / numberOfGames,
+                    battingAverage: athleteStat["BattingAverage"],
+                    strikeouts: athleteStat["Strikeouts"] / numberOfGames,
+                    walks: athleteStat["Walks"] / numberOfGames,
+                    caughtStealing: athleteStat["CaughtStealing"] / numberOfGames,
+                    onBasePercentage: athleteStat["OnBasePercentage"] / numberOfGames,
+                    sluggingPercentage: athleteStat["SluggingPercentage"] / numberOfGames,
+                    wins: athleteStat["Wins"] / numberOfGames,
+                    losses: athleteStat["Losses"] / numberOfGames,
+                    earnedRunAverage: athleteStat["EarnedRunAverage"],
+                    hitByPitch: athleteStat["HitByPitch"] / numberOfGames,
+                    stolenBases: athleteStat["StolenBases"] / numberOfGames,
+                    walksHitsPerInningsPitched: athleteStat["WalksHitsPerInningsPitched"],
+                    pitchingBattingAverageAgainst: athleteStat["PitchingBattingAverageAgainst"],
+                    pitchingHits: athleteStat["PitchingHits"],
+                    pitchingRuns: athleteStat["PitchingRuns"],
+                    pitchingEarnedRuns: athleteStat["PitchingEarnedRuns"],
+                    pitchingWalks: athleteStat["PitchingWalks"],
+                    pitchingHomeRuns: athleteStat["PitchingHomeRuns"],
+                    pitchingStrikeouts: athleteStat["PitchingStrikeouts"] / numberOfGames,
+                    pitchingCompleteGames: athleteStat["PitchingCompleteGames"] / numberOfGames,
+                    pitchingShutouts: athleteStat["PitchingShutOuts"] / numberOfGames,
+                    pitchingNoHitters: athleteStat["PitchingNoHitters"] / numberOfGames,
+  
+                  })
+                )
+              }
+            }
+            
+            
+          }
+          await AthleteStat.save([...newStats, ...updateStats], { chunk: 20})
+          this.logger.debug("Update MLB Athlete Stats (Season): FINISHED")
+        } else{
+          this.logger.debug("Update MLB Athlete Stats (Season): SPORTS DATA ERROR")
+        }
+      } else{
+        this.logger.debug("Update MLB Athlete Stats (Season): NO CURRENT SEASON FOUND")
+      }
+    }
+    
+  }
+
+  @Interval(300000) // runs every 5 minutes
+  async updateMlbAthleteStatsPerDay(){
+    this.logger.debug("Update MLB Athlete Stats Per Day: STARTED")
+    
+    //change this later to same with NBA
+    // const timeFrame = await Timeframe.findOne({
+    //   where: {
+    //     sport: SportType.MLB
+    //   }
+    // })
+    const timeFrames = await axios.get(`${process.env.SPORTS_DATA_URL}mlb/scores/json/CurrentSeason?key=${process.env.SPORTS_DATA_MLB_KEY}`)
+
+    if (timeFrames.status === 200){
+      const timeFrame = timeFrames.data
+
+      if (timeFrame){
+        const season = timeFrame.ApiSeason
+        const date = moment().subtract(1, "day").toDate()
+        const dateFormat = moment(date).format("YYYY-MMM-DD").toUpperCase()
+  
+        this.logger.debug("MLB - " +dateFormat)
+  
+        const { data, status } = await axios.get(`${process.env.SPORTS_DATA_URL}mlb/stats/json/PlayerGameStatsByDate/${dateFormat}?key=${process.env.SPORTS_DATA_MLB_KEY}`)
+  
+        if (status === 200){
+          const newStats: AthleteStat[] = []
+          const updateStats: AthleteStat[] = []
+  
+          for (let athleteStat of data){
+            const apiId: number = athleteStat["PlayerID"]
+            const curStat = await AthleteStat.findOne({
+              where: {
+                statId: athleteStat["StatID"],
+              },
+              relations:{
+                athlete: true,
+              }
+            })
+  
+            const opponent = await Team.findOne({
+              where: { apiId: athleteStat["GlobalOpponentID"]},
+            })
+  
+            const apiDate = moment.tz(athleteStat["DateTime"], "America/New_York")
+            const utcDate = apiDate.utc().format()
+  
+            if (curStat){
+              curStat.fantasyScore = athleteStat["FantasyPointsDraftKings"]
+              curStat.atBats = athleteStat["AtBats"]
+              curStat.runs = athleteStat["Runs"]
+              curStat.hits = athleteStat["Hits"]
+              curStat.singles = athleteStat["Singles"]
+              curStat.doubles = athleteStat["Doubles"]
+              curStat.triples = athleteStat["Triples"]
+              curStat.homeRuns = athleteStat["HomeRuns"]
+              curStat.runsBattedIn = athleteStat["RunsBattedIn"]
+              curStat.battingAverage = athleteStat["BattingAverage"]
+              curStat.strikeouts = athleteStat["Strikeouts"]
+              curStat.walks = athleteStat["Walks"]
+              curStat.caughtStealing = athleteStat["CaughtStealing"]
+              curStat.onBasePercentage = athleteStat["OnBasePercentage"]
+              curStat.sluggingPercentage = athleteStat["SluggingPercentage"]
+              curStat.onBasePlusSlugging = athleteStat["OnBasePlusSlugging"]
+              curStat.wins = athleteStat["Wins"]
+              curStat.losses = athleteStat["Losses"]
+              curStat.earnedRunAverage = athleteStat["EarnedRunAverage"]
+              curStat.hitByPitch = athleteStat["HitByPitch"]
+              curStat.stolenBases = athleteStat["StolenBases"]
+              curStat.walksHitsPerInningsPitched = athleteStat["WalksHitsPerInningsPitched"]
+              curStat.pitchingBattingAverageAgainst = athleteStat["PitchingBattingAverageAgainst"]
+              curStat.pitchingHits = athleteStat["PitchingHits"]
+              curStat.pitchingRuns = athleteStat["PitchingRuns"]
+              curStat.pitchingEarnedRuns = athleteStat["PitchingEarnedRuns"]
+              curStat.pitchingWalks = athleteStat["PitchingWalks"]
+              curStat.pitchingHomeRuns = athleteStat["PitchingHomeRuns"]
+              curStat.pitchingStrikeouts = athleteStat["PitchingStrikeouts"]
+              curStat.pitchingCompleteGames = athleteStat["PitchingCompleteGames"]
+              curStat.pitchingShutouts = athleteStat["PitchingShutOuts"]
+              curStat.pitchingNoHitters = athleteStat["PitchingNoHitters"]
+              curStat.played = athleteStat["Games"]
+              curStat.gameDate = athleteStat["DateTime"] !== null ? new Date(utcDate) : athleteStat["DateTime"]
+              updateStats.push(curStat)
+            } else{
+              const curAthlete = await Athlete.findOne({
+                where: { apiId}
+              })
+  
+              if (curAthlete){
+                newStats.push(
+                  AthleteStat.create({
+                    athlete: curAthlete,
+                    season: season,
+                    opponent: opponent,
+                    gameDate: athleteStat["DateTime"] !== null ? new Date(utcDate) : athleteStat["DateTime"],
+                    type: AthleteStatType.DAILY,
+                    statId: athleteStat["StatID"],
+                    position: athleteStat["Position"],
+                    played: athleteStat["Games"],
+                    fantasyScore: athleteStat["FantasyPointsDraftKings"],
+                    atBats: athleteStat["AtBats"],
+                    runs: athleteStat["Runs"],
+                    hits: athleteStat["Hits"],
+                    singles: athleteStat["Singles"],
+                    doubles: athleteStat["Doubles"],
+                    triples: athleteStat["Triples"],
+                    homeRuns: athleteStat["HomeRuns"],
+                    runsBattedIn: athleteStat["RunsBattedIn"],
+                    battingAverage: athleteStat["BattingAverage"],
+                    strikeouts: athleteStat["Strikeouts"],
+                    walks: athleteStat["Walks"],
+                    caughtStealing: athleteStat["CaughtStealing"],
+                    onBasePercentage: athleteStat["OnBasePercentage"],
+                    sluggingPercentage: athleteStat["SluggingPercentage"],
+                    wins: athleteStat["Wins"],
+                    losses: athleteStat["Losses"],
+                    earnedRunAverage: athleteStat["EarnedRunAverage"],
+                    hitByPitch: athleteStat["HitByPitch"],
+                    stolenBases: athleteStat["StolenBases"],
+                    walksHitsPerInningsPitched: athleteStat["WalksHitsPerInningsPitched"],
+                    pitchingBattingAverageAgainst: athleteStat["PitchingBattingAverageAgainst"],
+                    pitchingHits: athleteStat["PitchingHits"],
+                    pitchingRuns: athleteStat["PitchingRuns"],
+                    pitchingEarnedRuns: athleteStat["PitchingEarnedRuns"],
+                    pitchingWalks: athleteStat["PitchingWalks"],
+                    pitchingHomeRuns: athleteStat["PitchingHomeRuns"],
+                    pitchingStrikeouts: athleteStat["PitchingStrikeouts"],
+                    pitchingCompleteGames: athleteStat["PitchingCompleteGames"],
+                    pitchingShutouts: athleteStat["PitchingShutOuts"],
+                    pitchingNoHitters: athleteStat["PitchingNoHitters"],
+  
+                  })
+                )
+              }
+            }
+          }
+  
+          await AthleteStat.save([...newStats, ...updateStats], { chunk: 20 })
+          this.logger.debug("Update MLB Athlete Stats (Daily): FINISHED")
+        } else{
+          this.logger.debug("Update MLB Athlete Stats (Daily): SPORTS DATA ERROR")
+        }
+      } else{
+        this.logger.debug("Update MLB Athlete Stats (Daily): NO CURRENT SEASON")
+      }
+    }
+    
+  }
    //@Timeout(1)
   @Interval(300000) // Runs every 5 mins
   async updateNbaAthleteStatsPerDay() {
@@ -1740,7 +2471,7 @@ export class TasksService {
     }
   }
 
-  @Timeout(1)
+  //@Timeout(1)
   async getInitialNflTimeframe (){
 
     this.logger.debug("Get Initial NFL Timeframe: STARTED")
@@ -1897,6 +2628,50 @@ export class TasksService {
     }
     
   }
+
+  @Interval(3600000) // runs every 1 hour
+  async updateMlbCurrentSeason(){
+    this.logger.debug("Update MLB Current Season: STARTED")
+
+    const { data, status } = await axios.get(`${process.env.SPORTS_DATA_URL}mlb/scores/json/CurrentSeason?key=${process.env.SPORTS_DATA_MLB_KEY}`)
+
+    if (status === 200){
+      const newSeason: Timeframe[] = []
+      const updateSeason: Timeframe[] = []
+
+      const season = data
+      const currSeason = await Timeframe.findOne({
+        where: {
+          sport: SportType.MLB
+        }
+      })
+
+      if(currSeason){
+
+        currSeason.season = season["Season"]
+        currSeason.seasonType = getSeasonType(season["SeasonType"])
+        currSeason.apiSeason = season["ApiSeason"]
+        currSeason.startDate = season["RegularSeasonStartDate"]
+        currSeason.endDate = season["PostSeasonStartDate"]
+        updateSeason.push(currSeason)
+      } else{
+        newSeason.push(
+          Timeframe.create({
+            season: season["Season"],
+            seasonType: getSeasonType(season["SeasonType"]),
+            apiSeason: season["ApiSeason"],
+            startDate: season["RegularSeasonStartDate"],
+            endDate: season["PostSeasonStartDate"],
+            sport: SportType.MLB,
+          })
+        )
+      }
+      await Timeframe.save([...newSeason, ...updateSeason], {chunk: 20})
+      this.logger.debug("Update MLB Current Season: FINISHED")
+    } else{
+      this.logger.debug("Update MLB Current Season: SPORTS DATA ERROR")
+    }
+  }
   
   //@Timeout(1)
   @Interval(4200000) // Runs every 1 hour 10 minutes
@@ -1931,7 +2706,7 @@ export class TasksService {
           const gameId: number = schedule["GameID"]
 
           const currSchedule = await Schedule.findOne({
-            where: { gameId: gameId }
+            where: { gameId: gameId, sport: SportType.NBA }
           })
           
           const timeFromAPI = moment.tz(schedule["DateTime"], 'America/New_York')
@@ -1971,5 +2746,618 @@ export class TasksService {
       this.logger.error("Update NBA Schedules: ERROR CURRENT SEASON NOT FOUND")
     }
     
+  }
+
+  @Interval(4200000) // runs every 1 hour 20 minutes
+  async updateMlbSchedules(){
+    this.logger.debug("UPDATE MLB Schedules: STARTED")
+
+    const currSeason = await Timeframe.findOne({
+      where: { sport: SportType.MLB}
+    })
+
+    if (currSeason){
+      const currSchedules = await Schedule.find({
+        where: [
+          {season: Not(currSeason.season), sport: SportType.MLB},
+          {seasonType: Not(currSeason.seasonType), sport: SportType.MLB},
+        ]
+      })
+
+      if (currSchedules.length > 0){
+        this.logger.debug("Update MLB Schedules: START DELETE PREVIOUS SEASON SCHEDULE")
+        await Schedule.remove(currSchedules)
+        this.logger.debug("Update MLB Schedules: DELETED PREVIOUS SEASON SCHEDULE")
+      }
+
+      const { data, status } = await axios.get(`${process.env.SPORTS_DATA_URL}mlb/scores/json/Games/${currSeason.apiSeason}?key=${process.env.SPORTS_DATA_MLB_KEY}`)
+
+      if (status === 200){
+        const newSchedule: Schedule[] = []
+        const updateSchedule: Schedule[] = []
+
+        for (let schedule of data){
+          const gameId: number = schedule["GameID"]
+
+          const currSchedule = await Schedule.findOne({
+            where: { gameId: gameId, sport: SportType.MLB }
+          })
+
+          const timeFromAPI = moment.tz(schedule["DateTime"], 'America/New_York')
+          const utcDate = timeFromAPI.utc().format()
+
+          if (currSchedule){
+            currSchedule.season = schedule["Season"]
+            currSchedule.seasonType = schedule["SeasonType"]
+            currSchedule.status = schedule["Status"]
+            currSchedule.awayTeam = schedule["AwayTeam"]
+            currSchedule.homeTeam = schedule["HomeTeam"]
+            currSchedule.isClosed = schedule["IsClosed"]
+            currSchedule.dateTime = schedule["DateTime"] !== null ? new Date(utcDate) : schedule["DateTime"]
+            currSchedule.dateTimeUTC = schedule["DateTimeUTC"]
+            updateSchedule.push(currSchedule)
+          } else{
+            newSchedule.push(
+              Schedule.create({
+                gameId: schedule["GameID"],
+                season: schedule["Season"],
+                seasonType: schedule["SeasonType"],
+                status: schedule["Status"],
+                awayTeam: schedule["AwayTeam"],
+                homeTeam: schedule["HomeTeam"],
+                isClosed: schedule["IsClosed"],
+                dateTime: schedule["DateTime"] !== null ? new Date(utcDate) : schedule["DateTime"],
+                dateTimeUTC: schedule["DateTimeUTC"],
+                sport: SportType.MLB,
+              })
+            )
+          }
+        }
+        await Schedule.save([...newSchedule, ...updateSchedule], { chunk: 20 })
+
+      }
+      this.logger.debug("Update MLB Schedules: FINISHED")
+    } else {
+      this.logger.error("Update MLB Schedules: ERROR CURRENT SEASON NOT FOUND")
+    }
+  }
+
+  //@Timeout(1)
+  async syncCricketData(){
+    this.logger.debug("START CRICKET DATA SYNC")
+    const TOURNEY_KEY = 'iplt20_2023' //hardcoded iplt2023 key
+
+    const auth = await axios.post(`${process.env.ROANUZ_DATA_URL}core/${process.env.ROANUZ_PROJECT_KEY}/auth/`, {
+      api_key: process.env.ROANUZ_API_KEY
+    } )
+    if(auth.status === 200){
+      const tourneyCount = await CricketTournament.count({
+        where: { key: TOURNEY_KEY}
+      })
+
+      if (tourneyCount === 0 ){
+        //start getting tournament data
+        const tournament_response = await axios.get(
+          `${process.env.ROANUZ_DATA_URL}cricket/${process.env.ROANUZ_PROJECT_KEY}/tournament/${TOURNEY_KEY}/`, {
+            headers: {
+              'rs-token': auth.data.data.token
+            }
+          } 
+        )
+        if(tournament_response.status === 200){
+          const tournament = tournament_response.data.data
+          try{
+            await CricketTournament.create({
+              key: tournament.tournament.key,
+              name: tournament.tournament.name,
+              start_date: moment.unix(tournament.tournament.start_date),
+              sport: SportType.CRICKET,
+            }).save()
+          } catch(e){
+            this.logger.error(e)
+          }
+          const teamCount = await CricketTeam.count({
+            where: { tournament: {sport: SportType.CRICKET}}
+          })
+          if(teamCount === 0){
+            //start getting team data from tournament API result
+            const tourney = await CricketTournament.findOneOrFail({
+              where: {sport: SportType.CRICKET}
+            })
+            for(let [key, value] of Object.entries(tournament.teams as CricketTeamInterface)){
+              try{
+                await CricketTeam.create({
+                  key: value.key,
+                  name: value.name,
+                  tournament: tourney,
+                  sport: SportType.CRICKET,
+                }).save()
+              } catch(e){
+                this.logger.error(e)
+              }
+            }
+          }
+        }
+      } else{
+        this.logger.debug("CRICKET DATA SYNC")
+      }
+
+      const athleteCount = await CricketAthlete.count({
+        where: { cricketTeam: {sport: SportType.CRICKET}}
+      })
+
+      if(athleteCount === 0){
+        const teams = await CricketTeam.find({
+          where:{
+            sport: SportType.CRICKET
+          },
+          relations: {
+            tournament: true,
+          }
+          
+        })
+        for (let team of teams){
+          this.logger.debug("START ATHLETE SYNC")
+          const team_response = await axios.get(`${process.env.ROANUZ_DATA_URL}cricket/${process.env.ROANUZ_PROJECT_KEY}/tournament/${team.tournament.key}/team/${team.key}/`, {
+            headers: {
+              'rs-token': auth.data.data.token
+            }
+          })
+          if(team_response.status === 200){
+            const athletes = team_response.data.data.tournament_team.players
+
+            for(let [key, value] of Object.entries(athletes as CricketAthleteInterface)){
+              try{
+                await CricketAthlete.create({
+                  playerKey: value.key,
+                  name: value.name,
+                  jerseyName: value.jersey_name,
+                  gender: value.gender,
+                  nationality: value.nationality.name,
+                  seasonalRole: value.seasonal_role,
+                  cricketTeam: team,
+                }).save()
+              } catch(e){
+                this.logger.error(e)
+              }
+            }
+          }
+          
+        }
+        this.logger.debug("FINISH CRICKET DATA SYNC")
+      }
+    } else{
+      this.logger.error("CRICKET AUTHENTICATION FAIL !!!")
+    }
+  }
+  
+  // @Timeout(1)
+  // async getCricketDataFromJson(){
+
+  //   this.logger.debug("START CRICKET DATA SYNC")
+  //   const data = cricketTournamentJson.data
+  //   const tourneyCount = await CricketTournament.count({
+  //     where: { key: data.tournament.key}
+  //   })
+  //   if (tourneyCount === 0){
+  //     try{
+  //       await CricketTournament.create({
+  //         key: data.tournament.key,
+  //         name: data.tournament.name,
+  //         start_date: moment.unix(data.tournament.start_date),
+  //         sport: SportType.CRICKET,
+  //       }).save()
+  //     } catch(e){
+  //       this.logger.error(e)
+  //     }
+  //   } 
+  //   this.logger.debug(`CRICKET TOURNAMENT ${tourneyCount ? 'DID NOT SYNC' : 'SYNCED SUCCESSFULLY'} `)
+
+  //   const teamCount = await CricketTeam.count({
+  //     where: {tournament: {key: data.tournament.key}}
+  //   })
+    
+  //   if(teamCount === 0){
+  //     const tourney = await CricketTournament.findOneOrFail({
+  //       where: {key: data.tournament.key}
+  //     })
+
+  //     for (let [key, value] of Object.entries(data.teams)){
+  //       try{
+  //         await CricketTeam.create({
+  //           key: value.key,
+  //           name: value.name,
+  //           tournament: tourney,
+  //           sport: SportType.CRICKET,
+  //         }).save()
+  //       } catch(err){
+  //         this.logger.error(err)
+  //       }
+  //     }
+  //   }
+  //   this.logger.debug(`Cricket Teams: ${teamCount ? "ALREADY EXISTS" : "SYNCED"}`)
+
+  //   const athleteList = cricketAthletesJson
+  //   const athleteCount = await CricketAthlete.count({
+  //     where: {cricketTeam: {sport: SportType.CRICKET}}
+  //   })
+
+  //   if(athleteCount === 0){
+  //     for (let [key, value] of Object.entries(athleteList)){
+  //       const team = await CricketTeam.findOneOrFail({
+  //         where: {key: value.data.team.key}
+  //       })
+  //       for(let [key, player] of Object.entries(value.data.tournament_team.players)){
+  //         try{
+  //           await CricketAthlete.create({
+  //             playerKey: player.key,
+  //             name: player.name,
+  //             jerseyName: player.jersey_name,
+  //             gender: player.gender,
+  //             nationality: player.nationality.name,
+  //             seasonalRole: player.seasonal_role,
+  //             cricketTeam: team,
+  //           }).save()
+  //         } catch(err){
+  //           this.logger.error(err)
+  //         }
+  //       }
+  //     }
+  //   }
+  //   this.logger.debug(`Cricket Athletes: ${athleteCount ? "ALREADY EXISTS" : 'SYNCED'}`)
+  // }
+
+  //@Timeout(1)
+  async updateCricketMatches(){
+    this.logger.debug("Update Cricket Matches: START")
+    const tourney_key_2022 = "iplt20_2023" // for testing
+    const auth = await axios.post(`${process.env.ROANUZ_DATA_URL}core/${process.env.ROANUZ_PROJECT_KEY}/auth/`, {
+      api_key: process.env.ROANUZ_API_KEY
+    })
+    if(auth.status === 200 ){
+      const tourney = await CricketTournament.findOneOrFail({
+        where: {sport: SportType.CRICKET}
+      })
+
+      const match_response = await axios.get(`${process.env.ROANUZ_DATA_URL}cricket/${process.env.ROANUZ_PROJECT_KEY}/tournament/${tourney_key_2022}/fixtures/`, {
+        headers: {
+          'rs-token': auth.data.data.token
+        }
+      })
+
+      if (match_response.status === 200){
+        const matches = match_response.data.data.matches
+        const newMatch: CricketMatch[] = []
+        const updateMatch: CricketMatch[] = []
+        for (let match of matches){
+          const existingMatch = await CricketMatch.findOne({
+            where: { key: match.key}
+          })
+          
+          const team_a = await CricketTeam.findOne({
+            where: {key : match.teams.a.key}
+          })
+          const team_b = await CricketTeam.findOne({
+            where: {key: match.teams.b.key}
+          })
+          if (existingMatch){
+            existingMatch.name = match.name
+            existingMatch.status = match.status
+            existingMatch.start_at = moment.unix(match.start_at).toDate()
+            existingMatch.team_a = team_a !== null ? team_a : undefined
+            existingMatch.team_b = team_b !== null ? team_b : undefined
+            updateMatch.push(existingMatch)
+          } else {
+            newMatch.push(
+              CricketMatch.create({
+                key: match.key,
+                name: match.name,
+                status: match.status,
+                start_at: moment.unix(match.start_at),
+                team_a: team_a !== null ? team_a : undefined,
+                team_b: team_b !== null ? team_b : undefined,
+                tournament: tourney,
+              })
+            )
+          }
+        }
+        await CricketMatch.save([...newMatch, ...updateMatch], { chunk: 20})
+        this.logger.debug("Update Cricket Match: FINISHED")
+      } else{
+        this.logger.error("Update Cricket Match: ROANUZ")
+      }
+    }
+  }
+  //@Timeout(1)
+  // async getCricketMatches(){
+  //   //TODO: currently getting from JSON only, change to API request later
+  //   this.logger.debug("Update Cricket Matches: START")
+  //   const matches = cricketMatchesJson.data.matches
+
+  //   const newMatch: CricketMatch[] = []
+  //   const updateMatch: CricketMatch[] = []
+
+  //   for(let match of matches){
+  //     const existingMatch = await CricketMatch.findOne({
+  //       where: { key: match.key}
+  //     })
+  
+  //     if (existingMatch){
+  //       existingMatch.name = match.name
+  //       existingMatch.status = match.status
+  //       existingMatch.start_at = moment.unix(match.start_at).toDate()
+
+  //       this.logger.debug("unix date: " + moment.unix(match.start_at).toDate())
+  //       updateMatch.push(existingMatch)
+  //     } else{
+  //       const tourney = await CricketTournament.findOne({
+  //         where: {key: 'iplt20_2023'}
+  //       })
+  //       if(tourney){
+  //         newMatch.push(
+  //           CricketMatch.create({
+  //             key: match.key,
+  //             name: match.name,
+  //             status: match.status,
+  //             start_at: moment.unix(match.start_at),
+  //             tournament: tourney,
+  //           })
+  //         )
+  //       } else{
+  //         this.logger.error("Update Cricket Match: TOURNAMENT DOES NOT EXIST")
+  //       }
+        
+  //     }
+  //   }
+  //   await CricketMatch.save([...newMatch, ...updateMatch], { chunk: 20 })
+  //   this.logger.debug("Update Cricket Match: FINISHED")
+  // }
+
+  //@Timeout(1)
+  async updateCricketAthleteStats(){
+    this.logger.debug("Update Cricket Athlete Stat: STARTED")
+
+    const auth = await axios.post(`${process.env.ROANUZ_DATA_URL}core/${process.env.ROANUZ_PROJECT_KEY}/auth/`, {
+      api_key: process.env.ROANUZ_API_KEY
+    })
+
+    if (auth.status === 200){
+      const date = moment().subtract(1, "day").toDate()
+      const dateFormat = moment(date).format("YYYY-MM-DD").toUpperCase()
+      this.logger.debug(dateFormat)
+      let matches = await CricketMatch.find()
+      matches = matches.filter((x) => x.start_at.toISOString().split("T")[0] === dateFormat)
+      
+      if(matches){
+        //add for let
+        const newStats: CricketAthleteStat[] = []
+        const updateStats: CricketAthleteStat[] = []
+        for (let match of matches ){
+          const match_response = await axios.get(`${process.env.ROANUZ_DATA_URL}cricket/${process.env.ROANUZ_PROJECT_KEY}/fantasy-match-points/${match.key}/`, {
+            headers: {
+              'rs-token': auth.data.data.token
+            }
+          })
+
+          if (match_response.status === 200){
+            const metric = match_response.data.data.metrics
+            
+            for (let athleteStat of match_response.data.data.points){
+              const athlete = await CricketAthlete.findOne({
+                where: { playerKey: athleteStat.player_key}
+              })
+
+              if(athlete){
+                let currStat = await CricketAthleteStat.findOne({
+                  where : { athlete: { playerKey: athleteStat.player_key}, match: {key : match.key}}
+                })
+                if(currStat){
+
+                  if(Object.keys(athleteStat.points_breakup).length){
+                    const points_breakup = athleteStat.points_breakup.map((x: CricketPointsBreakup) => (
+                      {[metric[x.metric_rule_index].key] : x.points}
+                    ))
+                    updateStats.push(CricketAthleteStat.create(Object.assign({
+                      "id": currStat.id,
+                      "athlete": athlete,
+                      "fantasyScore": athleteStat.points,
+                      "type": AthleteStatType.DAILY,
+                    }, ...points_breakup)))
+                  } else{
+                    updateStats.push(CricketAthleteStat.create(Object.assign({
+                      "id": currStat.id,
+                      "athlete": athlete,
+                      "fantasyScore": athleteStat.points,
+                      "type": AthleteStatType.DAILY,
+                    })))
+                  }
+                  
+                } else{
+
+                  if(Object.keys(athleteStat.points_breakup).length){
+                    const points_breakup = athleteStat.points_breakup.map((x: CricketPointsBreakup) => (
+                      {[metric[x.metric_rule_index].key] : x.points}
+                    ))
+                    newStats.push(CricketAthleteStat.create(Object.assign({
+                      "athlete": athlete,
+                      "match": match,
+                      "fantasyScore": athleteStat.points,
+                      "type": AthleteStatType.DAILY,
+                    }, ...points_breakup)))
+                  } else{
+                    newStats.push(CricketAthleteStat.create(Object.assign({
+                      "athlete": athlete,
+                      "match": match,
+                      "fantasyScore": athleteStat.points,
+                      "type": AthleteStatType.DAILY
+                    })))
+                  }
+                  
+                }
+              } else{
+                this.logger.error("Update Cricket Athlete Stat: ERROR ATHLETE DOES NOT EXIST")
+              }
+            }
+          }
+        }
+        await CricketAthleteStat.save([...newStats, ...updateStats], {chunk: 20})
+        this.logger.debug("Update Cricket Athlete Stat: FINISHED")
+      } else{
+        this.logger.debug("Update Cricket Athlete Stat: No games found on " + dateFormat )
+      }
+      //TODO: check how match dates are formatted in backend
+    }
+  }
+  // //@Timeout(1)
+  // async updateCricketAthleteStats(){
+  //   //TODO add interval querying to API logic
+  //   this.logger.debug("Update Cricket Athlete Stat: STARTED")
+  //   //const data = cricketGameOne.data
+   
+
+  //   const {data, status} = await axios.get(`${process.env.ROANUZ_DATA_URL}${process.env.ROANUZ_PROJECT_KEY}`)
+  //   const matchKey = data.match.match_meta.key
+  //   const match = await CricketMatch.findOne({
+  //     where: { key: matchKey}
+  //   })
+    
+  //   if(match){
+  //     const metric = data.metrics
+  //     const newStats: CricketAthleteStat[] = []
+  //     const updateStats: CricketAthleteStat[] = []
+
+  //     for (let athleteStat of data.points){
+
+  //       const athlete = await CricketAthlete.findOne({
+  //         where: {playerKey: athleteStat.player_key}
+  //       })
+
+  //       if(athlete){
+  //         let currStat = await CricketAthleteStat.findOne({
+  //           where: {athlete: {playerKey: athleteStat.player_key}, match: {key: matchKey}}
+  //         })
+
+  //         if(currStat){
+  //           //updating stats, TODO: need to test on API call instead of json
+  //           const points_breakup = athleteStat.points_breakup.map((x) => (
+  //             {[metric[x.metric_rule_index].key]: x.points}
+  //           ))
+  //           updateStats.push(CricketAthleteStat.create(Object.assign({
+  //             "id": currStat.id,
+  //             "athlete": athlete,
+  //             "fantasyScore": athleteStat.points,
+  //             "type": AthleteStatType.DAILY,
+  //           }, ...points_breakup)))
+  //         } else{
+
+  //           const points_breakup = athleteStat.points_breakup.map((x) => (
+  //             {[metric[x.metric_rule_index].key]: x.points}
+  //           ))
+
+  //           newStats.push(CricketAthleteStat.create(Object.assign({
+  //             "athlete": athlete,
+  //             "match": match,
+  //             "fantasyScore": athleteStat.points,
+  //             "type": AthleteStatType.DAILY,
+  //           }, ...points_breakup)))
+  //         }
+
+  //       } else{
+  //         this.logger.error("Update Cricket Athlete Stat: ERROR ATHLETE DOES NOT EXIST")
+  //       }
+
+  //     }
+  //     await CricketAthleteStat.save([...newStats, ...updateStats], {chunk: 20})
+  //   }
+  // }
+
+  //@Timeout(1)
+  async updateCricketAthleteSeasonStats(){
+    this.logger.debug("Update Cricket Athlete Stat (Season): STARTED")
+ // testing purposes
+    const athletes = await CricketAthlete.find()
+
+    if(athletes){
+      const auth = await axios.post(`${process.env.ROANUZ_DATA_URL}core/${process.env.ROANUZ_PROJECT_KEY}/auth/`, {
+        api_key: process.env.ROANUZ_API_KEY
+      })
+
+      const tourney = await CricketTournament.findOneOrFail({
+        where: {sport: SportType.CRICKET}
+      })
+
+      const newStats: CricketAthleteStat[] = []
+      const updateStats: CricketAthleteStat[] = []
+      for (let athlete of athletes){
+        const stats_response = await axios.get(`${process.env.ROANUZ_DATA_URL}cricket/${process.env.ROANUZ_PROJECT_KEY}/tournament/${tourney.key}/player/${athlete.playerKey}/stats/`, {
+          headers:{
+            'rs-token': auth.data.data.token
+          }
+        })
+
+        if(stats_response.status === 200){
+          const stats = stats_response.data.data.stats
+          const currStat = await CricketAthleteStat.findOne({
+            where: { athlete: {playerKey: athlete.playerKey}, type: AthleteStatType.SEASON},
+            relations: {
+              athlete: true
+            }
+          })
+
+          if (currStat){
+            currStat.matches = stats.batting.matches
+            currStat.not_outs = stats.batting.not_outs
+            currStat.batting_runs = stats.batting.runs
+            currStat.high_score = stats.batting.high_score
+            currStat.batting_average = stats.batting.average
+            currStat.batting_balls = stats.batting.balls
+            currStat.batting_strike_rate = stats.batting.strike_rate
+            currStat.hundreds = stats.batting.hundreds
+            currStat.fifties = stats.batting.fifties
+            currStat.fours = stats.batting.fours
+            currStat.sixes = stats.batting.sixes
+            currStat.catches = stats.fielding.catches
+            currStat.stumpings = stats.fielding.stumpings
+            currStat.bowling_balls = stats.bowling.balls
+            currStat.wickets = stats.bowling.wickets
+            currStat.bowling_average = stats.bowling.average
+            currStat.economy = stats.bowling.economy
+            currStat.bowling_strike_rate = stats.bowling.strike_rate
+            currStat.four_wickets = stats.bowling.four_wickets
+            currStat.five_wickets = stats.bowling.five_wickets
+            updateStats.push(currStat)
+          } else{
+            newStats.push(
+              CricketAthleteStat.create({
+                athlete: athlete,
+                type: AthleteStatType.SEASON,
+                matches: stats.batting.matches,
+                not_outs: stats.batting.not_outs,
+                batting_runs: stats.batting.runs,
+                high_score: stats.batting.high_score,
+                batting_average: stats.batting.average,
+                batting_balls: stats.batting.balls,
+                batting_strike_rate: stats.batting.strike_rate,
+                hundreds: stats.batting.hundreds,
+                fifties: stats.batting.fifties,
+                fours: stats.batting.fours,
+                sixes: stats.batting.sixes,
+                catches: stats.fielding.catches,
+                stumpings: stats.fielding.stumpings,
+                bowling_balls: stats.bowling.balls,
+                wickets: stats.bowling.wickets,
+                bowling_average: stats.bowling.average,
+                economy: stats.bowling.economy,
+                bowling_strike_rate: stats.bowling.strike_rate,
+                four_wickets: stats.bowling.four_wickets,
+                five_wickets: stats.bowling.five_wickets,
+              })
+            )
+          }
+        }
+      }
+      await CricketAthleteStat.save([...newStats, ...updateStats], { chunk: 20 })
+      this.logger.debug("Update Cricket Athlete Stat (Season): FINISHED")
+    }
   }
 }
