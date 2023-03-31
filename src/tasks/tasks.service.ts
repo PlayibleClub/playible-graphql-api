@@ -501,7 +501,7 @@ export class TasksService {
     this.logger.debug(`NFL Athletes Data: ${athletesCount ? "DID NOT SYNC" : "SYNCED SUCCESSFULLY"}`)
   }
 
-  @Timeout(1)
+  //@Timeout(1)
   async syncNbaData() {
     const teamsCount = await Team.count({
       where: { sport: SportType.NBA },
@@ -767,7 +767,7 @@ export class TasksService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
 
-  //@Timeout(150000)
+  @Timeout(150000)
   async generateAthleteMlbAssets() {
     this.logger.debug("Generate Athlete MLB Assets: STARTED")
 
@@ -911,7 +911,7 @@ export class TasksService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
 
-  //@Timeout(300000)
+  @Timeout(300000)
   async generateAthleteMlbAssetsAnimation() {
     this.logger.debug("Generate Athlete MLB Assets Animation: STARTED")
 
@@ -929,6 +929,7 @@ export class TasksService {
       var options = { compact: true, ignoreComment: true, spaces: 4 }
       var result: any = convert.xml2js(svgAnimationTemplate, options)
 
+
       try {
         if (athlete.firstName.length > 11) {
           result.svg.g[4].text[2].tspan["_attributes"]["font-size"] = "50"
@@ -939,12 +940,12 @@ export class TasksService {
           result.svg.g[4].text[5].tspan["_attributes"]["font-size"] = "50"
         }
 
-        result.svg.g[4].text[0].tspan["_text"] = athlete.position.toUpperCase()
-        result.svg.g[4].text[1].tspan["_text"] = athlete.position.toUpperCase()
-        result.svg.g[4].text[2].tspan["_text"] = athlete.firstName.toUpperCase()
-        result.svg.g[4].text[3].tspan["_text"] = athlete.firstName.toUpperCase()
-        result.svg.g[4].text[4].tspan["_text"] = athlete.lastName.toUpperCase()
-        result.svg.g[4].text[5].tspan["_text"] = athlete.lastName.toUpperCase()
+        result.svg.g[4].text[0].tspan["_cdata"] = athlete.position.toUpperCase()
+        result.svg.g[4].text[1].tspan["_cdata"] = athlete.position.toUpperCase()
+        result.svg.g[4].text[2].tspan["_cdata"] = athlete.firstName.toUpperCase()
+        result.svg.g[4].text[3].tspan["_cdata"] = athlete.firstName.toUpperCase()
+        result.svg.g[4].text[4].tspan["_cdata"] = athlete.lastName.toUpperCase()
+        result.svg.g[4].text[5].tspan["_cdata"] = athlete.lastName.toUpperCase()
         result = convert.js2xml(result, options)
       } catch (e) {
         console.log(`FAILED AT ATHLETE ID: ${athlete.apiId} and TEAM KEY: ${athlete.team.key}`)
@@ -952,9 +953,8 @@ export class TasksService {
       }
 
       // fs.writeFileSync(
-      //   `./nfl-animations/${athlete["PlayerID"]}-${athlete["FirstName"].toLowerCase()}-${athlete[
-      //     "LastName"
-      //   ].toLowerCase()}.svg`,
+      //   `./nfl-animations/${athlete.apiId}-${athlete.firstName.toLowerCase()}-${athlete.lastName
+      //   .toLowerCase()}.svg`,
       //   result
       // )
       var buffer = Buffer.from(result, "utf8")
@@ -1121,7 +1121,7 @@ export class TasksService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
 
-  //@Timeout(450000)
+  @Timeout(450000)
   async generateAthleteMlbAssetsPromo() {
     this.logger.debug("Generate Athlete MLB Assets Promo: STARTED")
 
@@ -1324,7 +1324,7 @@ export class TasksService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
 
-  //@Timeout(600000)
+  @Timeout(600000)
   async generateAthleteMlbAssetsLocked() {
     this.logger.debug("Generate Athlete MLB Assets Locked: STARTED")
 
