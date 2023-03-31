@@ -2341,7 +2341,7 @@ export class TasksService {
     }
   }
   
-  @Timeout(1)
+ // @Timeout(1)
   async updateNbaAthleteStatsPerDayLoop() {
     this.logger.debug("Update NBA Athlete GameDate Convert: STARTED")
 
