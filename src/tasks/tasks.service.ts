@@ -837,6 +837,27 @@ export class TasksService {
     this.logger.debug("Generate Athlete MLB Assets: FINISHED")
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
+
+  async generateAthleteCricketAssets(){
+    this.logger.debug("Generate Athlete Cricket Assets: STARTED")
+
+    const athletes = await CricketAthlete.find({
+      where: {
+        //key: In(CRICKET_ATHLETE_IDS),
+        cricketTeam: { sport: SportType.CRICKET},
+      },
+      relations: {
+        cricketTeam: true
+      }
+    })
+
+    for (let athlete of athletes ){
+      var svgTemplate = fs.readFileSync(`./src/utils/cricket-svg-teams-templates/${athlete.cricketTeam.key}.svg`, "utf-8")
+      var options = { compact: true, ignoreComment: true, spaces: 4}
+      var result: any = convert.xml2js(svgTemplate, options)
+    }
+  }
+
   // @Timeout(1)
   async generateAthleteNbaAssetsAnimation() {
     this.logger.debug("Generate Athlete NBA Assets Animation: STARTED")
