@@ -767,7 +767,7 @@ export class TasksService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
 
-  @Timeout(150000)
+  //@Timeout(150000)
   async generateAthleteMlbAssets() {
     this.logger.debug("Generate Athlete MLB Assets: STARTED")
 
@@ -838,6 +838,7 @@ export class TasksService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
 
+  //@Timeout(1)
   async generateAthleteCricketAssets(){
     this.logger.debug("Generate Athlete Cricket Assets: STARTED")
 
@@ -852,15 +853,13 @@ export class TasksService {
     })
 
     for (let athlete of athletes ){
-      var svgTemplate = fs.readFileSync(`./src/utils/cricket-svg-teams-templates/${athlete.cricketTeam.key}.svg`, "utf-8")
+      var svgTemplate = fs.readFileSync(`./src/utils/cricket-svg-teams-templates/${athlete.cricketTeam.key.toUpperCase()}.svg`, "utf-8")
       var options = { compact: true, ignoreComment: true, spaces: 4}
       var result: any = convert.xml2js(svgTemplate, options)
       const name = athlete.name.split(/\s/)
       const firstName = name[0]
       const lastName = name[1]
       try {
-
-        
 
         if (firstName.length > 11) {
           result.svg.g[6].text[1]["_attributes"]["style"] = "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700"
@@ -878,31 +877,36 @@ export class TasksService {
 
       result = convert.js2xml(result, options)
 
-      var buffer = Buffer.from(result, "utf8")
+      fs.writeFileSync(
+        `./cricket-images/${athlete.playerKey}-${firstName.toLowerCase()}-${lastName.toLowerCase()}.svg`,
+        result
+      )
 
-      const s3 = new S3({
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-      })
-      const filename = `${athlete.playerKey}-${firstName.toLowerCase()}-${lastName.toLowerCase()}.svg`
-      const s3_location = "media/athlete/cricket/images/"
-      const fileContent = buffer
-      const params: any = {
-        Bucket: process.env.AWS_BUCKET_NAME,
-        Key: `${s3_location}${filename}`,
-        Body: fileContent,
-        ContentType: "image/svg+xml",
-        CacheControl: "no-cache",
-      }
+      // var buffer = Buffer.from(result, "utf8")
 
-      s3.upload(params, async (err: any, data: any) => {
-        if(err){
-          this.logger.error(err)
-        } else{
-          athlete.nftImage = data["Location"]
-          await CricketAthlete.save(athlete)
-        }
-      })
+      // const s3 = new S3({
+      //   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+      //   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+      // })
+      // const filename = `${athlete.playerKey}-${firstName.toLowerCase()}-${lastName.toLowerCase()}.svg`
+      // const s3_location = "media/athlete/cricket/images/"
+      // const fileContent = buffer
+      // const params: any = {
+      //   Bucket: process.env.AWS_BUCKET_NAME,
+      //   Key: `${s3_location}${filename}`,
+      //   Body: fileContent,
+      //   ContentType: "image/svg+xml",
+      //   CacheControl: "no-cache",
+      // }
+
+      // s3.upload(params, async (err: any, data: any) => {
+      //   if(err){
+      //     this.logger.error(err)
+      //   } else{
+      //     athlete.nftImage = data["Location"]
+      //     await CricketAthlete.save(athlete)
+      //   }
+      // })
     }
 
     this.logger.debug("Generate Athlete Cricket Assets: FINISHED")
@@ -983,7 +987,7 @@ export class TasksService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
 
-  @Timeout(300000)
+  //@Timeout(300000)
   async generateAthleteMlbAssetsAnimation() {
     this.logger.debug("Generate Athlete MLB Assets Animation: STARTED")
 
@@ -1059,6 +1063,7 @@ export class TasksService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
 
+  @Timeout(1)
   async generateAthleteCricketAssetsAnimation(){
     this.logger.debug("Generate Athlete Cricket Assets Animation: STARTED")
 
@@ -1073,7 +1078,7 @@ export class TasksService {
     })
 
     for (let athlete of athletes) {
-      var svgAnimationTemplate = fs.readFileSync(`./src/utils/cricket-svg-teams-animation-template/${athlete.cricketTeam.key}.svg`, "utf-8")
+      var svgAnimationTemplate = fs.readFileSync(`./src/utils/cricket-svg-teams-animation-templates/${athlete.cricketTeam.key.toUpperCase()}.svg`, "utf-8")
       var options = { compact: true, ignoreComment: true, spaces: 4}
       var result: any = convert.xml2js(svgAnimationTemplate, options)
 
@@ -1093,39 +1098,44 @@ export class TasksService {
 
         result.svg.g[4].text[0].tspan["_cdata"] = athlete.seasonalRole.toUpperCase() //check if template is cdata or text
         result.svg.g[4].text[1].tspan["_cdata"] = athlete.seasonalRole.toUpperCase()
-        result.svg.g[4].text[2].tspan["_cdata"] = athlete.seasonalRole.toUpperCase()
-        result.svg.g[4].text[3].tspan["_cdata"] = athlete.seasonalRole.toUpperCase()
-        result.svg.g[4].text[4].tspan["_cdata"] = athlete.seasonalRole.toUpperCase()
-        result.svg.g[4].text[5].tspan["_cdata"] = athlete.seasonalRole.toUpperCase()
+        result.svg.g[4].text[2].tspan["_cdata"] = firstName.toUpperCase()
+        result.svg.g[4].text[3].tspan["_cdata"] = firstName.toUpperCase()
+        result.svg.g[4].text[4].tspan["_cdata"] = lastName.toUpperCase()
+        result.svg.g[4].text[5].tspan["_cdata"] = lastName.toUpperCase()
         result = convert.js2xml(result, options)
       } catch (e) {
         console.log(`FAILED AT ATHLETE ID: ${athlete.playerKey} and TEAM KEY: ${athlete.cricketTeam.key}`)
         console.log(e)
       }
 
-      var buffer = Buffer.from(result, "utf8")
-      const s3 = new S3({
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-      })
-      const filename = `${athlete.playerKey}-${firstName.toLowerCase()}-${lastName.toLowerCase()}.svg`
-      const s3_location = "media/athlete/cricket/animations/"
-      const fileContent = buffer
-      const params: any = {
-        Bucket: process.env.AWS_BUCKET_NAME,
-        Key: `${s3_location}${filename}`,
-        Body: fileContent,
-        ContentType: "image/svg+xml",
-        CacheControl: "no-cache",
-      }
-      s3.upload(params, async (err: any, data: any) => {
-        if (err){
-          this.logger.error(err)
-        } else{
-          athlete.nftAnimation = data["Location"]
-          await CricketAthlete.save(athlete)
-        }
-      })
+      fs.writeFileSync(
+        `./cricket-images/${athlete.playerKey}-${firstName.toLowerCase()}-${lastName.toLowerCase()}-anim.svg`,
+        result
+      )
+
+      // var buffer = Buffer.from(result, "utf8")
+      // const s3 = new S3({
+      //   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+      //   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+      // })
+      // const filename = `${athlete.playerKey}-${firstName.toLowerCase()}-${lastName.toLowerCase()}.svg`
+      // const s3_location = "media/athlete/cricket/animations/"
+      // const fileContent = buffer
+      // const params: any = {
+      //   Bucket: process.env.AWS_BUCKET_NAME,
+      //   Key: `${s3_location}${filename}`,
+      //   Body: fileContent,
+      //   ContentType: "image/svg+xml",
+      //   CacheControl: "no-cache",
+      // }
+      // s3.upload(params, async (err: any, data: any) => {
+      //   if (err){
+      //     this.logger.error(err)
+      //   } else{
+      //     athlete.nftAnimation = data["Location"]
+      //     await CricketAthlete.save(athlete)
+      //   }
+      // })
     }
     this.logger.debug("Generate Athlete Cricket Assets Animations: FINISHED")
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
@@ -1265,7 +1275,7 @@ export class TasksService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
 
-  @Timeout(450000)
+  //@Timeout(450000)
   async generateAthleteMlbAssetsPromo() {
     this.logger.debug("Generate Athlete MLB Assets Promo: STARTED")
 
@@ -1539,7 +1549,7 @@ export class TasksService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
 
-  @Timeout(600000)
+  //@Timeout(600000)
   async generateAthleteMlbAssetsLocked() {
     this.logger.debug("Generate Athlete MLB Assets Locked: STARTED")
 
@@ -1682,7 +1692,7 @@ export class TasksService {
   }
 
   // @Timeout(1)
-  @Interval(900000) // Runs every 15 mins
+  //@Interval(900000) // Runs every 15 mins
   async updateNflAthleteStatsPerSeason() {
     this.logger.debug("Update NFL Athlete Stats: STARTED")
 
@@ -1773,7 +1783,7 @@ export class TasksService {
   }
 
   
-  @Interval(300000) // Runs every 5 mins
+  //@Interval(300000) // Runs every 5 mins
   async updateNflAthleteStatsPerWeek() {
     this.logger.debug("Update NFL Athlete Stats Per Week: STARTED")
 
@@ -1869,7 +1879,7 @@ export class TasksService {
       this.logger.error("NFL Timeframes Data: SPORTS DATA ERROR")
     }
   }
-  @Interval(3600000) //runs every 1 hour
+  //@Interval(3600000) //runs every 1 hour
   async updateNflAthleteInjuryStatus(){
     this.logger.debug("Update NFL Athlete Injury Status: STARTED")
 
@@ -1897,7 +1907,7 @@ export class TasksService {
       this.logger.error("NFL Athlete Injury Data: SPORTS DATA ERROR")
     }
   }
-  @Interval(3600000) //runs every 1 hour
+  //@Interval(3600000) //runs every 1 hour
   async updateNbaAthleteInjuryStatus(){
     this.logger.debug("Update NBA Athlete Injury Status: STARTED")
 
@@ -1925,7 +1935,7 @@ export class TasksService {
     }
   }
 
-  @Interval(3600000) // runs every 1 hour
+  //@Interval(3600000) // runs every 1 hour
   async updateMlbAthleteInjuryStatus(){
     this.logger.debug("Update MLB Athlete Injury Status: STARTED")
 
@@ -1951,7 +1961,7 @@ export class TasksService {
     }
   }
 
-  @Timeout(1)
+  //@Timeout(1)
   async updateNflAthleteStatsAllWeeks() {
     this.logger.debug("Update NFL Athlete Stats All Weeks: STARTED")
 
@@ -2121,7 +2131,7 @@ export class TasksService {
   }
 
   //@Timeout(1)
-  @Interval(900000) // Runs every 15 mins
+  //@Interval(900000) // Runs every 15 mins
   async updateNbaAthleteStatsPerSeason() {
     this.logger.debug("Update NBA Athlete Stats: STARTED")
 
@@ -2226,7 +2236,7 @@ export class TasksService {
     }
   }
 
-  @Interval(900000) // runs every 15 minutes
+  //@Interval(900000) // runs every 15 minutes
   async updateMlbAthleteStatsPerSeason(){
     this.logger.debug("Update MLB Athlete Stats (Season): STARTED")
 
@@ -2359,7 +2369,7 @@ export class TasksService {
     
   }
 
-  @Interval(300000) // runs every 5 minutes
+  //@Interval(300000) // runs every 5 minutes
   async updateMlbAthleteStatsPerDay(){
     this.logger.debug("Update MLB Athlete Stats Per Day: STARTED")
     
@@ -2507,7 +2517,7 @@ export class TasksService {
     
   }
    //@Timeout(1)
-  @Interval(300000) // Runs every 5 mins
+  //@Interval(300000) // Runs every 5 mins
   async updateNbaAthleteStatsPerDay() {
     this.logger.debug("Update NBA Athlete Stats Per Day: STARTED")
 
@@ -2810,7 +2820,7 @@ export class TasksService {
     }
   }
 
-  @Interval(259200000) //Runs every 3 days
+  //@Interval(259200000) //Runs every 3 days
   async updateNflTimeframe (){
 
     this.logger.debug("Update NFL Timeframe: STARTED")
@@ -2865,7 +2875,7 @@ export class TasksService {
   }
 
   //@Timeout(1)
-  @Interval(3600000) //Runs every 1 hour
+  //@Interval(3600000) //Runs every 1 hour
   async updateNbaCurrentSeason () {
     
     this.logger.debug("Update NBA Current Season: STARTED")
@@ -2914,7 +2924,7 @@ export class TasksService {
     
   }
 
-  @Interval(3600000) // runs every 1 hour
+  //@Interval(3600000) // runs every 1 hour
   async updateMlbCurrentSeason(){
     this.logger.debug("Update MLB Current Season: STARTED")
 
@@ -2959,7 +2969,7 @@ export class TasksService {
   }
   
   //@Timeout(1)
-  @Interval(4200000) // Runs every 1 hour 10 minutes
+  //@Interval(4200000) // Runs every 1 hour 10 minutes
   async updateNbaSchedules(){
     this.logger.debug("UPDATE NBA Schedules: STARTED")
 
@@ -3033,7 +3043,7 @@ export class TasksService {
     
   }
 
-  @Interval(4200000) // runs every 1 hour 20 minutes
+  //@Interval(4200000) // runs every 1 hour 20 minutes
   async updateMlbSchedules(){
     this.logger.debug("UPDATE MLB Schedules: STARTED")
 
