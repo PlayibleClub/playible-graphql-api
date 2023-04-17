@@ -1,12 +1,13 @@
 import { AthleteStatType, SportType } from './../utils/types'
 import { Arg, Authorized, Field, Mutation, ObjectType, Query, Resolver } from 'type-graphql'
-import { IsNull, Not, In} from 'typeorm'
+import { IsNull, Not, In, Between} from 'typeorm'
 import { CricketAthlete } from '../entities/CricketAthlete'
 import { CricketAthleteStat } from '../entities/CricketAthleteStat'
 import { CricketTeam } from '../entities/CricketTeam'
 import { Contract } from "near-api-js"
 import moment from 'moment'
 import { setup } from "../near-api"
+import { CricketMatch } from '../entities/CricketMatch'
 //import CRICKET_ATHLETE_IDS, CRICKET_ATHLETE_PROMO_IDS
 
 const chunkify = (a: any[], n: number, balanced: boolean) => {
@@ -110,6 +111,27 @@ export class CricketAthleteResolver {
       athlete.stats = athlete.stats.filter((stat) => stat.match !== undefined && stat.match.key === matchKey)
     }
     return athlete
+  }
+
+  @Query(() => [CricketMatch])
+  async getCricketTeamSchedule(
+    @Arg("team") team: string,
+    @Arg("startDate") startDate: Date,
+    @Arg("endDate") endDate: Date,
+  ) : Promise<CricketMatch[]>{
+    
+    const matches = await CricketMatch.find({
+      where: [
+        {team_a: {key: team}, start_at: Between(startDate, endDate)},
+        {team_b: {key: team}, start_at: Between(startDate, endDate)},
+      ],
+      relations: {
+        team_a: true,
+        team_b: true,
+      }
+    })
+    
+    return matches
   }
   @Query(() => CricketAthlete)
   async getCricketAthleteAvgFantasyScore(
