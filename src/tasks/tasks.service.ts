@@ -2091,14 +2091,13 @@ export class TasksService {
 
       if (timeFrame){
         const season = timeFrame.ApiSeason
-        const date = moment().subtract(1, "day").toDate()
-        const dateFormat = moment(date).format("YYYY-MMM-DD").toUpperCase()
+        const dateFormat = moment().tz("America/New_York").subtract(3, "hours").format("YYYY-MMM-DD").toUpperCase()
   
         this.logger.debug("MLB - " +dateFormat)
   
         const { data, status } = await axios.get(`${process.env.SPORTS_DATA_URL}mlb/stats/json/PlayerGameStatsByDate/${dateFormat}?key=${process.env.SPORTS_DATA_MLB_KEY}`)
   
-        if (status === 200){
+        if (status === 200 && Object.keys(data).length !== 0){
           const newStats: AthleteStat[] = []
           const updateStats: AthleteStat[] = []
   
@@ -2214,6 +2213,9 @@ export class TasksService {
           this.logger.debug("Update MLB Athlete Stats (Daily): FINISHED")
         } else{
           this.logger.debug("Update MLB Athlete Stats (Daily): SPORTS DATA ERROR")
+          if(Object.keys(data).length === 0){
+            this.logger.debug("Update MLB Athlete Stats (Daily): EMPTY DATA RESPONSE")
+          }
         }
       } else{
         this.logger.debug("Update MLB Athlete Stats (Daily): NO CURRENT SEASON")
@@ -2233,8 +2235,7 @@ export class TasksService {
 
       if (timeFrame) {
         const season = timeFrame.ApiSeason
-        const date = moment().subtract(1, "day").toDate()
-        const dateFormat = moment(date).format("YYYY-MMM-DD").toUpperCase()
+        const dateFormat = moment().tz("America/New_York").subtract(3, "hours").format("YYYY-MMM-DD").toUpperCase()
 
         this.logger.debug(dateFormat)
 
@@ -2242,7 +2243,7 @@ export class TasksService {
           `${process.env.SPORTS_DATA_URL}nba/stats/json/PlayerGameStatsByDate/${dateFormat}?key=${process.env.SPORTS_DATA_NBA_KEY}`
         )
 
-        if (status === 200) {
+        if (status === 200 && Object.keys(data).length !== 0) {
           const newStats: AthleteStat[] = []
           const updateStats: AthleteStat[] = []
 
@@ -2334,6 +2335,11 @@ export class TasksService {
           await AthleteStat.save([...newStats, ...updateStats], { chunk: 20 })
 
           this.logger.debug("Update NBA Athlete Stats Per Day: FINISHED")
+        } else{
+          this.logger.debug("Update NBA Athlete Stats Per Day: SPORTS DATA ERROR")
+          if(Object.keys(data).length === 0){
+            this.logger.debug("Update NBA Athlete Stats Per Day: EMPTY DATA RESPONSE")
+          }
         }
       }
     } else {
