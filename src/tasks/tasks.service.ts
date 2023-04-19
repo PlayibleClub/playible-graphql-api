@@ -2091,7 +2091,7 @@ export class TasksService {
 
       if (timeFrame){
         const season = timeFrame.ApiSeason
-        const dateFormat = moment().tz("America/New_York").format("YYYY-MMM-DD").toUpperCase()
+        const dateFormat = moment().tz("America/New_York").subtract(3, "hours").format("YYYY-MMM-DD").toUpperCase()
   
         this.logger.debug("MLB - " +dateFormat)
   
@@ -2235,7 +2235,7 @@ export class TasksService {
 
       if (timeFrame) {
         const season = timeFrame.ApiSeason
-        const dateFormat = moment().tz("America/New_York").format("YYYY-MMM-DD").toUpperCase()
+        const dateFormat = moment().tz("America/New_York").subtract(3, "hours").format("YYYY-MMM-DD").toUpperCase()
 
         this.logger.debug(dateFormat)
 
