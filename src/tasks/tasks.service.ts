@@ -3117,7 +3117,7 @@ export class TasksService {
     }
   }
 
-  //@Timeout(1)
+  @Timeout(1)
   async syncCricketData(){
     this.logger.debug("START CRICKET DATA SYNC")
     const TOURNEY_KEY = 'iplt20_2023' //hardcoded iplt2023 key
@@ -3303,7 +3303,7 @@ export class TasksService {
   //   this.logger.debug(`Cricket Athletes: ${athleteCount ? "ALREADY EXISTS" : 'SYNCED'}`)
   // }
 
-  //@Interval(300000)
+  @Interval(300000)
   async updateCricketMatches(){
     this.logger.debug("Update Cricket Matches: START")
     //const tourney_key_2022 = "iplt20_2023" // for testing
