@@ -1,6 +1,6 @@
 import { AthleteStatType, SportType } from './../utils/types'
 import { Arg, Authorized, Field, Mutation, ObjectType, Query, Resolver } from 'type-graphql'
-import { IsNull, Not, In, Between} from 'typeorm'
+import { IsNull, Not, In, Between, MoreThanOrEqual} from 'typeorm'
 import { CricketAthlete } from '../entities/CricketAthlete'
 import { CricketAthleteStat } from '../entities/CricketAthleteStat'
 import { CricketTeam } from '../entities/CricketTeam'
@@ -8,6 +8,7 @@ import { Contract } from "near-api-js"
 import moment from 'moment'
 import { setup } from "../near-api"
 import { CricketMatch } from '../entities/CricketMatch'
+import { AthleteSortOptions, GetAthletesArgs } from '../args/AthleteArgs'
 //import CRICKET_ATHLETE_IDS, CRICKET_ATHLETE_PROMO_IDS
 
 const chunkify = (a: any[], n: number, balanced: boolean) => {
@@ -66,6 +67,52 @@ export class CricketAthleteResolver {
     }
 
     return athlete
+  }
+
+  @Query(() => [CricketAthlete])
+  async getCricketAthletes(
+    @Arg("args", { nullable: true})
+    { sort, filter, pagination }: GetAthletesArgs
+  ): Promise<CricketAthlete[]> {
+    let args: any = {}
+    let order: any = {
+      id: "asc",
+    }
+
+    switch (sort) {
+      case AthleteSortOptions.ID:
+        order = {
+          id: "asc",
+        }
+        break
+      case AthleteSortOptions.SCORE:
+        order = {
+          stats: {
+            fantasyScore: "desc",
+          }
+        }
+        break
+    }
+    if (pagination) {
+      args["take"] = pagination.limit
+      args["skip"] = pagination.offset
+    }
+    let athletes = await CricketAthlete.find({
+      ...args,
+      where: {
+        stats: {
+          ...(sort === AthleteSortOptions.SCORE && { fantasyScore: MoreThanOrEqual(0)}),
+          ...(filter?.statType && { type: filter?.statType}),
+        }
+      },
+      relations: {
+        stats: true,
+        cricketTeam: true,
+      },
+      order: order,
+    })
+
+    return athletes
   }
   @Query(() => CricketAthlete)
   async getAthleteMatchResults(
