@@ -9,7 +9,7 @@ import moment from 'moment'
 import { setup } from "../near-api"
 import { CricketMatch } from '../entities/CricketMatch'
 import { AthleteSortOptions, GetAthletesArgs } from '../args/AthleteArgs'
-//import CRICKET_ATHLETE_IDS, CRICKET_ATHLETE_PROMO_IDS
+import { IPL2023_ATHLETE_IDS } from '../utils/athlete-ids'
 
 const chunkify = (a: any[], n: number, balanced: boolean) => {
   if (n < 2) return [a]
@@ -203,16 +203,16 @@ export class CricketAthleteResolver {
   @Mutation(() => Number)
   async addStarterCricketAthletesToOpenPackContract(@Arg("isPromo") isPromo: boolean = false): Promise<Number>{
     let contractId
-    let athleteIds: number[] = []
+    let athleteIds: string[] = []
 
     switch(isPromo){
       case false:
         contractId = process.env.OPENPACK_CRICKET_ACCOUNT_ID
-        //add athlete id list here
+        athleteIds = IPL2023_ATHLETE_IDS
         break
       case true:
         contractId = process.env.OPENPACK_CRICKET_PROMO_ACCOUNT_ID
-        //add promo athlete id list here
+        athleteIds = IPL2023_ATHLETE_IDS
         break
       
     }
