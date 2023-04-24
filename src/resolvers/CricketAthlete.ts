@@ -224,7 +224,7 @@ export class CricketAthleteResolver {
       changeMethods: ["execute_add_athletes"],
     })
 
-    const athleteTokens = (await CricketAthlete.find({ where: {playerKey: In(['a', 'b'])}, order: { id: "ASC"}, relations: { cricketTeam: true}})).map(
+    const athleteTokens = (await CricketAthlete.find({ where: {playerKey: In(athleteIds)}, order: { id: "ASC"}, relations: { cricketTeam: true}})).map(
       (athlete) => {
         if (isPromo){
           return {
