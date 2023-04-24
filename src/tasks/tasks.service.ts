@@ -1063,7 +1063,7 @@ export class TasksService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
 
-  @Timeout(1)
+  //@Timeout(1)
   async generateAthleteCricketAssetsAnimation(){
     this.logger.debug("Generate Athlete Cricket Assets Animation: STARTED")
 
@@ -3191,8 +3191,9 @@ export class TasksService {
           }
           
         })
+        this.logger.debug("START ATHLETE SYNC")
         for (let team of teams){
-          this.logger.debug("START ATHLETE SYNC")
+          
           const team_response = await axios.get(`${process.env.ROANUZ_DATA_URL}cricket/${process.env.ROANUZ_PROJECT_KEY}/tournament/${team.tournament.key}/team/${team.key}/`, {
             headers: {
               'rs-token': auth.data.data.token
@@ -3567,11 +3568,12 @@ export class TasksService {
   // }
 
   //@Timeout(1)
+  //unused due to required API call not being included in IPL package
   async updateCricketAthleteSeasonStats(){
     this.logger.debug("Update Cricket Athlete Stat (Season): STARTED")
- // testing purposes
-    const athletes = await CricketAthlete.find()
 
+    const athletes = await CricketAthlete.find()
+    //if using pay as you go, add where playerKey: In(CRICKET_ATHLETE_IDS)
     if(athletes){
       const auth = await axios.post(`${process.env.ROANUZ_DATA_URL}core/${process.env.ROANUZ_PROJECT_KEY}/auth/`, {
         api_key: process.env.ROANUZ_API_KEY
