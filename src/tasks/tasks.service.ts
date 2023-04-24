@@ -871,6 +871,14 @@ export class TasksService {
           result.svg.g[6].text[2]["_attributes"]["style"] = "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700"
         }
 
+        let position: string = ""
+        switch(athlete.seasonalRole){
+          case "bowler": position = "BOWL"; break
+          case "batsman": position = "BAT"; break
+          case "all_rounder": position = "AR"; break;
+          case "keeper": position = "WK"; break;
+        }
+
         result.svg.g[6]["text"][1]["tspan"]["_text"] = firstName.toUpperCase()
         result.svg.g[6]["text"][2]["tspan"]["_text"] = lastName.toUpperCase()
         result.svg.g[6]["text"][0]["tspan"]["_text"] = athlete.seasonalRole.toUpperCase()
@@ -1097,6 +1105,14 @@ export class TasksService {
         if (lastName.length > 11) {
           result.svg.g[4].text[4].tspan["_attributes"]["font-size"] = "50"
           result.svg.g[4].text[5].tspan["_attributes"]["font-size"] = "50"
+        }
+
+        let position: string = ""
+        switch(athlete.seasonalRole){
+          case "bowler": position = "BOWL"; break
+          case "batsman": position = "BAT"; break
+          case "all_rounder": position = "AR"; break;
+          case "keeper": position = "WK"; break;
         }
 
         result.svg.g[4].text[0].tspan["_cdata"] = athlete.seasonalRole.toUpperCase() //check if template is cdata or text
@@ -1361,7 +1377,7 @@ export class TasksService {
     })
 
     for (let athlete of athletes) {
-      var svgTemplate = fs.readFileSync(`./src/utils/cricket-svg-teams-promo-templates/${athlete.cricketTeam.key}.svg`, "utf-8")
+      var svgTemplate = fs.readFileSync(`./src/utils/cricket-svg-teams-promo-templates/${athlete.cricketTeam.key.toUpperCase()}.svg`, "utf-8")
       var options = { compact: true, ignoreComment: true, spaces: 4 }
       var result: any = convert.xml2js(svgTemplate, options)
 
@@ -1375,6 +1391,14 @@ export class TasksService {
         }
         if (lastName.length > 11) {
           result.svg.g[6].text[2]["_attributes"]["style"] = "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700"
+        }
+
+        let position: string = ""
+        switch(athlete.seasonalRole){
+          case "bowler": position = "BOWL"; break
+          case "batsman": position = "BAT"; break
+          case "all_rounder": position = "AR"; break;
+          case "keeper": position = "WK"; break;
         }
 
         result.svg.g[6]["text"][1]["tspan"]["_text"] = firstName.toUpperCase()
@@ -1637,7 +1661,7 @@ export class TasksService {
     })
 
     for(let athlete of athletes){
-      var svgTemplate = fs.readFileSync(`./src/utils/cricket-svg-teams-lock-templates/${athlete.cricketTeam.key}.svg`, "utf-8")
+      var svgTemplate = fs.readFileSync(`./src/utils/cricket-svg-teams-lock-templates/${athlete.cricketTeam.key.toUpperCase()}.svg`, "utf-8")
       var options = { compact: true, ignoreComment: true, spaces: 4 }
       var result: any = convert.xml2js(svgTemplate, options)
 
@@ -1653,6 +1677,13 @@ export class TasksService {
           result.svg.g[6].text[2]["_attributes"]["style"] = "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700"
         }
 
+        let position: string = ""
+        switch(athlete.seasonalRole){
+          case "bowler": position = "BOWL"; break
+          case "batsman": position = "BAT"; break
+          case "all_rounder": position = "AR"; break;
+          case "keeper": position = "WK"; break;
+        }
         result.svg.g[6]["text"][1]["tspan"]["_text"] = firstName.toUpperCase()
         result.svg.g[6]["text"][2]["tspan"]["_text"] = lastName.toUpperCase()
         result.svg.g[6]["text"][0]["tspan"]["_text"] = athlete.seasonalRole.toUpperCase()
@@ -3128,7 +3159,7 @@ export class TasksService {
     }
   }
 
-  @Timeout(1)
+  //Timeout(1)
   async syncCricketData(){
     this.logger.debug("START CRICKET DATA SYNC")
     const TOURNEY_KEY = 'iplt20_2023' //hardcoded iplt2023 key
