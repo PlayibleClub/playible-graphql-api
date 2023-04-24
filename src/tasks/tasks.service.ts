@@ -1646,7 +1646,7 @@ export class TasksService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
 
-  //@Timeout(750000)
+  @Timeout(450000)
   async generateAthleteCricketAssetsLocked(){
     this.logger.debug("Generate Athlete Cricket Assets Locked: STARTED")
 
