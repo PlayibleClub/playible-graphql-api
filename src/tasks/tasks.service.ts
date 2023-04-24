@@ -1362,7 +1362,7 @@ export class TasksService {
     this.logger.debug("Generate Athlete MLB Assets Promo: FINISHED")
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
-  //@Timeout(600000)
+  @Timeout(300000)
   async generateAthleteCricketAssetsPromo(){
     this.logger.debug("Generate Athlete Cricket Assets Promo: STARTED")
 
@@ -1435,7 +1435,7 @@ export class TasksService {
           this.logger.error(err)
         } else {
           athlete.nftImagePromo = data["Location"]
-          await Athlete.save(athlete)
+          await CricketAthlete.save(athlete)
         }
       })
     }
@@ -1718,7 +1718,7 @@ export class TasksService {
           this.logger.error(err)
         } else {
           athlete.nftImageLocked = data["Location"]
-          await Athlete.save(athlete)
+          await CricketAthlete.save(athlete)
         }
       })
     }
