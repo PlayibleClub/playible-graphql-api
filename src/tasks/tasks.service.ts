@@ -24,7 +24,7 @@ import { getSeasonType } from "../helpers/Timeframe"
 import { ATHLETE_MLB_BASE_ANIMATION, ATHLETE_MLB_BASE_IMG, ATHLETE_MLB_IMG } from "../utils/svgTemplates"
 import { AthleteStatType, SportType } from "../utils/types"
 import { CricketTeamInterface, CricketAthleteInterface, CricketPointsBreakup } from '../interfaces/Cricket'
-import { NFL_ATHLETE_IDS, NBA_ATHLETE_IDS, NBA_ATHLETE_PROMO_IDS, MLB_ATHLETE_IDS, MLB_ATHLETE_PROMO_IDS } from "./../utils/athlete-ids"
+import { NFL_ATHLETE_IDS, NBA_ATHLETE_IDS, NBA_ATHLETE_PROMO_IDS, MLB_ATHLETE_IDS, MLB_ATHLETE_PROMO_IDS, IPL2023_ATHLETE_IDS } from "./../utils/athlete-ids"
 
 import e from "express"
 
@@ -844,7 +844,7 @@ export class TasksService {
 
     const athletes = await CricketAthlete.find({
       where: {
-        //key: In(CRICKET_ATHLETE_IDS),
+        playerKey: In(IPL2023_ATHLETE_IDS),
         cricketTeam: { sport: SportType.CRICKET},
       },
       relations: {
@@ -856,7 +856,7 @@ export class TasksService {
       var svgTemplate = fs.readFileSync(`./src/utils/cricket-svg-teams-templates/${athlete.cricketTeam.key.toUpperCase()}.svg`, "utf-8")
       var options = { compact: true, ignoreComment: true, spaces: 4}
       var result: any = convert.xml2js(svgTemplate, options)
-      const name = athlete.name.split(/\s/)
+      const name = athlete.name.split(/ (.*)/, 2)
       const firstName = name[0]
       const lastName = name[1]
       try {
@@ -877,36 +877,36 @@ export class TasksService {
 
       result = convert.js2xml(result, options)
 
-      fs.writeFileSync(
-        `./cricket-images/${athlete.playerKey}-${firstName.toLowerCase()}-${lastName.toLowerCase()}.svg`,
-        result
-      )
+      // fs.writeFileSync(
+      //   `./cricket-images/${athlete.playerKey}-${firstName.toLowerCase()}-${lastName.toLowerCase()}.svg`,
+      //   result
+      // )
+      
+      var buffer = Buffer.from(result, "utf8")
 
-      // var buffer = Buffer.from(result, "utf8")
+      const s3 = new S3({
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+      })
+      const filename = `${athlete.playerKey}-${firstName.toLowerCase()}-${lastName.toLowerCase()}.svg`
+      const s3_location = "media/athlete/ipl/images/"
+      const fileContent = buffer
+      const params: any = {
+        Bucket: process.env.AWS_BUCKET_NAME,
+        Key: `${s3_location}${filename}`,
+        Body: fileContent,
+        ContentType: "image/svg+xml",
+        CacheControl: "no-cache",
+      }
 
-      // const s3 = new S3({
-      //   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-      //   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-      // })
-      // const filename = `${athlete.playerKey}-${firstName.toLowerCase()}-${lastName.toLowerCase()}.svg`
-      // const s3_location = "media/athlete/cricket/images/"
-      // const fileContent = buffer
-      // const params: any = {
-      //   Bucket: process.env.AWS_BUCKET_NAME,
-      //   Key: `${s3_location}${filename}`,
-      //   Body: fileContent,
-      //   ContentType: "image/svg+xml",
-      //   CacheControl: "no-cache",
-      // }
-
-      // s3.upload(params, async (err: any, data: any) => {
-      //   if(err){
-      //     this.logger.error(err)
-      //   } else{
-      //     athlete.nftImage = data["Location"]
-      //     await CricketAthlete.save(athlete)
-      //   }
-      // })
+      s3.upload(params, async (err: any, data: any) => {
+        if(err){
+          this.logger.error(err)
+        } else{
+          athlete.nftImage = data["Location"]
+          await CricketAthlete.save(athlete)
+        }
+      })
     }
 
     this.logger.debug("Generate Athlete Cricket Assets: FINISHED")
@@ -1069,7 +1069,7 @@ export class TasksService {
 
     const athletes = await CricketAthlete.find({
       where: {
-        //playerKey: In(CRICKET_ATHLETE_IDS),
+        playerKey: In(IPL2023_ATHLETE_IDS),
         cricketTeam: { sport: SportType.CRICKET},
       },
       relations: {
@@ -1082,7 +1082,7 @@ export class TasksService {
       var options = { compact: true, ignoreComment: true, spaces: 4}
       var result: any = convert.xml2js(svgAnimationTemplate, options)
 
-      const name = athlete.name.split(/\s/)
+      const name = athlete.name.split(/ (.*)/, 2)
       const firstName = name[0]
       const lastName = name[1]
 
@@ -1108,34 +1108,34 @@ export class TasksService {
         console.log(e)
       }
 
-      fs.writeFileSync(
-        `./cricket-images/${athlete.playerKey}-${firstName.toLowerCase()}-${lastName.toLowerCase()}-anim.svg`,
-        result
-      )
+      // fs.writeFileSync(
+      //   `./cricket-images/${athlete.playerKey}-${firstName.toLowerCase()}-${lastName.toLowerCase()}-anim.svg`,
+      //   result
+      // )
 
-      // var buffer = Buffer.from(result, "utf8")
-      // const s3 = new S3({
-      //   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-      //   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-      // })
-      // const filename = `${athlete.playerKey}-${firstName.toLowerCase()}-${lastName.toLowerCase()}.svg`
-      // const s3_location = "media/athlete/cricket/animations/"
-      // const fileContent = buffer
-      // const params: any = {
-      //   Bucket: process.env.AWS_BUCKET_NAME,
-      //   Key: `${s3_location}${filename}`,
-      //   Body: fileContent,
-      //   ContentType: "image/svg+xml",
-      //   CacheControl: "no-cache",
-      // }
-      // s3.upload(params, async (err: any, data: any) => {
-      //   if (err){
-      //     this.logger.error(err)
-      //   } else{
-      //     athlete.nftAnimation = data["Location"]
-      //     await CricketAthlete.save(athlete)
-      //   }
-      // })
+      var buffer = Buffer.from(result, "utf8")
+      const s3 = new S3({
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+      })
+      const filename = `${athlete.playerKey}-${firstName.toLowerCase()}-${lastName.toLowerCase()}.svg`
+      const s3_location = "media/athlete/ipl/animations/"
+      const fileContent = buffer
+      const params: any = {
+        Bucket: process.env.AWS_BUCKET_NAME,
+        Key: `${s3_location}${filename}`,
+        Body: fileContent,
+        ContentType: "image/svg+xml",
+        CacheControl: "no-cache",
+      }
+      s3.upload(params, async (err: any, data: any) => {
+        if (err){
+          this.logger.error(err)
+        } else{
+          athlete.nftAnimation = data["Location"]
+          await CricketAthlete.save(athlete)
+        }
+      })
     }
     this.logger.debug("Generate Athlete Cricket Assets Animations: FINISHED")
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
@@ -1348,7 +1348,7 @@ export class TasksService {
 
     const athletes = await CricketAthlete.find({
       where: {
-        //playerKey: In(CRICKET_ATHLETE_IDS),
+        playerKey: In(IPL2023_ATHLETE_IDS),
         cricketTeam: { sport: SportType.CRICKET},
       },
       relations: {
@@ -1361,7 +1361,7 @@ export class TasksService {
       var options = { compact: true, ignoreComment: true, spaces: 4 }
       var result: any = convert.xml2js(svgTemplate, options)
 
-      const name = athlete.name.split(/\s/)
+      const name = athlete.name.split(/ (.*)/, 2)
       const firstName = name[0]
       const lastName = name[1]
 
@@ -1392,7 +1392,7 @@ export class TasksService {
         secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
       })
       const filename = `${athlete.playerKey}-${firstName.toLowerCase()}-${lastName.toLowerCase()}.svg`
-      const s3_location = "media/athlete/cricket/promo_images/"
+      const s3_location = "media/athlete/ipl/promo_images/"
       const fileContent = buffer
       const params: any = {
         Bucket: process.env.AWS_BUCKET_NAME,
@@ -1623,7 +1623,7 @@ export class TasksService {
 
     const athletes = await CricketAthlete.find({
       where: {
-        //playerKey: In(CRICKET_ATHLETE_IDS),
+        playerKey: In(IPL2023_ATHLETE_IDS),
         cricketTeam: { sport: SportType.CRICKET }
       },
       relations: {
@@ -1636,7 +1636,7 @@ export class TasksService {
       var options = { compact: true, ignoreComment: true, spaces: 4 }
       var result: any = convert.xml2js(svgTemplate, options)
 
-      const name = athlete.name.split(/\s/)
+      const name = athlete.name.split(/ (.*)/, 2)
       const firstName = name[0]
       const lastName = name[1]
 
@@ -1667,7 +1667,7 @@ export class TasksService {
         secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
       })
       const filename = `${athlete.playerKey}-${firstName.toLowerCase()}-${lastName.toLowerCase()}.svg`
-      const s3_location = "media/athlete/cricket/locked_images/"
+      const s3_location = "media/athlete/ipl/locked_images/"
       const fileContent = buffer
       const params: any = {
         Bucket: process.env.AWS_BUCKET_NAME,
@@ -3303,10 +3303,10 @@ export class TasksService {
   //   this.logger.debug(`Cricket Athletes: ${athleteCount ? "ALREADY EXISTS" : 'SYNCED'}`)
   // }
 
-  //@Timeout(1)
+  //@Interval(300000)
   async updateCricketMatches(){
     this.logger.debug("Update Cricket Matches: START")
-    const tourney_key_2022 = "iplt20_2023" // for testing
+    //const tourney_key_2022 = "iplt20_2023" // for testing
     const auth = await axios.post(`${process.env.ROANUZ_DATA_URL}core/${process.env.ROANUZ_PROJECT_KEY}/auth/`, {
       api_key: process.env.ROANUZ_API_KEY
     })
@@ -3315,7 +3315,7 @@ export class TasksService {
         where: {sport: SportType.CRICKET}
       })
 
-      const match_response = await axios.get(`${process.env.ROANUZ_DATA_URL}cricket/${process.env.ROANUZ_PROJECT_KEY}/tournament/${tourney_key_2022}/fixtures/`, {
+      const match_response = await axios.get(`${process.env.ROANUZ_DATA_URL}cricket/${process.env.ROANUZ_PROJECT_KEY}/tournament/${tourney.key}/fixtures/`, {
         headers: {
           'rs-token': auth.data.data.token
         }
@@ -3409,7 +3409,7 @@ export class TasksService {
   //   this.logger.debug("Update Cricket Match: FINISHED")
   // }
 
-  //@Timeout(1)
+  //@Interval(400000)
   async updateCricketAthleteStats(){
     this.logger.debug("Update Cricket Athlete Stat: STARTED")
 
@@ -3418,8 +3418,8 @@ export class TasksService {
     })
 
     if (auth.status === 200){
-      const date = moment().subtract(1, "day").toDate()
-      const dateFormat = moment(date).format("YYYY-MM-DD").toUpperCase()
+      const dateFormat = moment().subtract(6, "hours").format("YYYY-MM-DD").toUpperCase()
+      //const dateFormat = moment(date).format("YYYY-MM-DD").toUpperCase()
       this.logger.debug(dateFormat)
       let matches = await CricketMatch.find()
       matches = matches.filter((x) => x.start_at.toISOString().split("T")[0] === dateFormat)
@@ -3449,6 +3449,7 @@ export class TasksService {
                 })
                 if(currStat){
 
+                  //TODO add tournament_points 
                   if(Object.keys(athleteStat.points_breakup).length){
                     const points_breakup = athleteStat.points_breakup.map((x: CricketPointsBreakup) => (
                       {[metric[x.metric_rule_index].key] : x.points}
@@ -3457,6 +3458,7 @@ export class TasksService {
                       "id": currStat.id,
                       "athlete": athlete,
                       "fantasyScore": athleteStat.points,
+                      "tournament_points": athleteStat.tournament_points,
                       "type": AthleteStatType.DAILY,
                     }, ...points_breakup)))
                   } else{
@@ -3464,6 +3466,7 @@ export class TasksService {
                       "id": currStat.id,
                       "athlete": athlete,
                       "fantasyScore": athleteStat.points,
+                      "tournament_points": athleteStat.tournament_points,
                       "type": AthleteStatType.DAILY,
                     })))
                   }
@@ -3478,6 +3481,7 @@ export class TasksService {
                       "athlete": athlete,
                       "match": match,
                       "fantasyScore": athleteStat.points,
+                      "tournament_points": athleteStat.tournament_points,
                       "type": AthleteStatType.DAILY,
                     }, ...points_breakup)))
                   } else{
@@ -3485,6 +3489,7 @@ export class TasksService {
                       "athlete": athlete,
                       "match": match,
                       "fantasyScore": athleteStat.points,
+                      "tournament_points": athleteStat.tournament_points, 
                       "type": AthleteStatType.DAILY
                     })))
                   }
