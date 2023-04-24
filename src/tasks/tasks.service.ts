@@ -881,7 +881,7 @@ export class TasksService {
 
         result.svg.g[6]["text"][1]["tspan"]["_text"] = firstName.toUpperCase()
         result.svg.g[6]["text"][2]["tspan"]["_text"] = lastName.toUpperCase()
-        result.svg.g[6]["text"][0]["tspan"]["_text"] = athlete.seasonalRole.toUpperCase()
+        result.svg.g[6]["text"][0]["tspan"]["_text"] = position
       } catch (e){
         this.logger.debug(`FAILED AT ATHLETE KEY: ${athlete.playerKey} and TEAM KEY: ${athlete.cricketTeam.key}`)
       }
@@ -1115,8 +1115,8 @@ export class TasksService {
           case "keeper": position = "WK"; break;
         }
 
-        result.svg.g[4].text[0].tspan["_cdata"] = athlete.seasonalRole.toUpperCase() //check if template is cdata or text
-        result.svg.g[4].text[1].tspan["_cdata"] = athlete.seasonalRole.toUpperCase()
+        result.svg.g[4].text[0].tspan["_cdata"] = position //check if template is cdata or text
+        result.svg.g[4].text[1].tspan["_cdata"] = position
         result.svg.g[4].text[2].tspan["_cdata"] = firstName.toUpperCase()
         result.svg.g[4].text[3].tspan["_cdata"] = firstName.toUpperCase()
         result.svg.g[4].text[4].tspan["_cdata"] = lastName.toUpperCase()
@@ -1403,7 +1403,7 @@ export class TasksService {
 
         result.svg.g[6]["text"][1]["tspan"]["_text"] = firstName.toUpperCase()
         result.svg.g[6]["text"][2]["tspan"]["_text"] = lastName.toUpperCase()
-        result.svg.g[6]["text"][0]["tspan"]["_text"] = athlete.seasonalRole.toUpperCase()
+        result.svg.g[6]["text"][0]["tspan"]["_text"] = position
       } catch (e) {
         console.log(`FAILED AT ATHLETE ID: ${athlete.playerKey} and TEAM KEY: ${athlete.cricketTeam.key}`)
       }
@@ -1686,7 +1686,7 @@ export class TasksService {
         }
         result.svg.g[6]["text"][1]["tspan"]["_text"] = firstName.toUpperCase()
         result.svg.g[6]["text"][2]["tspan"]["_text"] = lastName.toUpperCase()
-        result.svg.g[6]["text"][0]["tspan"]["_text"] = athlete.seasonalRole.toUpperCase()
+        result.svg.g[6]["text"][0]["tspan"]["_text"] = position
       } catch (e) {
         console.log(`FAILED AT ATHLETE ID: ${athlete.playerKey} and TEAM KEY: ${athlete.cricketTeam.key}`)
       }
