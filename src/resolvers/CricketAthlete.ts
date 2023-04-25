@@ -44,14 +44,14 @@ const chunkify = (a: any[], n: number, balanced: boolean) => {
 @Resolver()
 export class CricketAthleteResolver {
   @Query(() => CricketAthlete)
-  async getAthleteByKey(
-    @Arg("key") key: string,
+  async getCricketAthleteById(
+    @Arg("id") id: number,
     @Arg("from", { nullable: true}) from?: Date,
     @Arg("to", { nullable: true}) to?: Date,
     @Arg("status", { nullable: true}) status?: string,
   ) : Promise<CricketAthlete>{
     const athlete = await CricketAthlete.findOneOrFail({
-      where: {playerKey: key},
+      where: {id},
       relations: {
         stats: {
           match: true,
@@ -92,7 +92,10 @@ export class CricketAthleteResolver {
       case AthleteSortOptions.SCORE:
         order = {
           stats: {
-            fantasyScore: "desc",
+            tournament_points: "desc",
+            match: {
+              start_at: "desc"
+            }
           }
         }
         break
@@ -105,12 +108,14 @@ export class CricketAthleteResolver {
       ...args,
       where: {
         stats: {
-          ...(sort === AthleteSortOptions.SCORE && { fantasyScore: MoreThanOrEqual(0)}),
+          ...(sort === AthleteSortOptions.SCORE && { tournament_points: MoreThanOrEqual(0)}),
           ...(filter?.statType && { type: filter?.statType}),
         }
       },
       relations: {
-        stats: true,
+        stats: {
+          match: true
+        },
         cricketTeam: true,
       },
       order: order,
