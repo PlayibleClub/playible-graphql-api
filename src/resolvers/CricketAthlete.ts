@@ -47,7 +47,8 @@ export class CricketAthleteResolver {
   async getAthleteByKey(
     @Arg("key") key: string,
     @Arg("from", { nullable: true}) from?: Date,
-    @Arg("to", { nullable: true}) to?: Date
+    @Arg("to", { nullable: true}) to?: Date,
+    @Arg("status", { nullable: true}) status?: string,
   ) : Promise<CricketAthlete>{
     const athlete = await CricketAthlete.findOneOrFail({
       where: {playerKey: key},
@@ -64,6 +65,9 @@ export class CricketAthleteResolver {
     }
     if(to){
       athlete.stats = athlete.stats.filter((stat) => stat.match?.start_at && moment(stat.match.start_at).unix() <= moment(to).unix())
+    }
+    if(status){
+      athlete.stats = athlete.stats.filter((stat) => stat.match?.status === status)
     }
 
     return athlete
@@ -117,7 +121,7 @@ export class CricketAthleteResolver {
   @Query(() => CricketAthlete)
   async getAthleteMatchResults(
     @Arg("playerkey") playerKey: string,
-    @Arg("matchKey", { nullable: true}) matchKey: string,
+    @Arg("matchKey") matchKey: string,
   ): Promise<CricketAthlete> {
     // const athlete = await CricketAthlete.findOneOrFail({
     //   where: { playerKey: playerKey, stats: {match: {key: matchKey}}},
@@ -143,20 +147,19 @@ export class CricketAthleteResolver {
     // }
     // return athlete
     const athlete = await CricketAthlete.findOneOrFail({
-      where: { playerKey: playerKey, stats: {match: Not(IsNull())}},
+      where: { playerKey: playerKey},
       relations: {
         stats: {
-          match: {
-            team_a: true,
-            team_b: true,
-          }
+          match: true
         },
-        cricketTeam: true
+        cricketTeam: true,
       }
     })
+    
     if(matchKey){
       athlete.stats = athlete.stats.filter((stat) => stat.match !== undefined && stat.match.key === matchKey)
     }
+    
     return athlete
   }
 
