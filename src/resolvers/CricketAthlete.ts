@@ -49,12 +49,16 @@ export class CricketAthleteResolver {
     @Arg("from", { nullable: true}) from?: Date,
     @Arg("to", { nullable: true}) to?: Date,
     @Arg("status", { nullable: true}) status?: string,
+    @Arg("team", {nullable: true}) team?: string,
   ) : Promise<CricketAthlete>{
     const athlete = await CricketAthlete.findOneOrFail({
       where: {id},
       relations: {
         stats: {
-          match: true,
+          match: {
+            team_a: true,
+            team_b: true,
+          }
         },
         cricketTeam: true,
       }
@@ -68,6 +72,10 @@ export class CricketAthleteResolver {
     }
     if(status){
       athlete.stats = athlete.stats.filter((stat) => stat.match?.status === status)
+    }
+
+    if(team){
+      athlete.stats = athlete.stats.filter((stat) => (stat.match?.team_a && stat.match?.team_b) && (stat.match.team_a.key === team || stat.match.team_b.key === team) )
     }
 
     return athlete
