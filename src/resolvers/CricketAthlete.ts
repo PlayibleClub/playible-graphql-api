@@ -131,6 +131,17 @@ export class CricketAthleteResolver {
 
     return athletes
   }
+  @Query(() => [CricketTeam])
+  async getCricketTeams(
+    @Arg("sport") sport: SportType,
+  ): Promise<CricketTeam[]> {
+    return await CricketTeam.find({
+      where: {sport: sport},
+      order:{
+        key: "ASC",
+      }
+    })
+  }
   @Query(() => CricketAthlete)
   async getAthleteMatchResults(
     @Arg("playerkey") playerKey: string,
