@@ -841,7 +841,7 @@ export class TasksService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
 
-  //@Timeout(300000)
+  @Timeout(300000)
   async generateAthleteCricketAssets(){
     this.logger.debug("Generate Athlete Cricket Assets: STARTED")
 
@@ -1074,7 +1074,7 @@ export class TasksService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
 
-  //@Timeout(450000)
+  @Timeout(450000)
   async generateAthleteCricketAssetsAnimation(){
     this.logger.debug("Generate Athlete Cricket Assets Animation: STARTED")
 
@@ -1362,7 +1362,7 @@ export class TasksService {
     this.logger.debug("Generate Athlete MLB Assets Promo: FINISHED")
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
-  @Timeout(300000)
+  @Timeout(600000)
   async generateAthleteCricketAssetsPromo(){
     this.logger.debug("Generate Athlete Cricket Assets Promo: STARTED")
 
@@ -1646,7 +1646,7 @@ export class TasksService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
 
-  @Timeout(450000)
+  @Timeout(750000)
   async generateAthleteCricketAssetsLocked(){
     this.logger.debug("Generate Athlete Cricket Assets Locked: STARTED")
 
@@ -3159,7 +3159,7 @@ export class TasksService {
     }
   }
 
-  //Timeout(1)
+  @Timeout(1)
   async syncCricketData(){
     this.logger.debug("START CRICKET DATA SYNC")
     const TOURNEY_KEY = 'iplt20_2023' //hardcoded iplt2023 key
