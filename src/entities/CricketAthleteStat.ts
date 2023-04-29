@@ -33,6 +33,10 @@ export class CricketAthleteStat extends BaseEntity {
   @Column({ type: "numeric", default: 0})
   fantasyScore?: number
 
+  @Field(() => Number)
+  @Column({ type: "numeric", default: 0})
+  tournament_points?: number
+  
   //start cricket fantasy score breakdown stats
   @Field(() => Number)
   @Column({type: "numeric", default: 0, nullable: true})

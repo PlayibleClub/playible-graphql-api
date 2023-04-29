@@ -24,7 +24,7 @@ import { getSeasonType } from "../helpers/Timeframe"
 import { ATHLETE_MLB_BASE_ANIMATION, ATHLETE_MLB_BASE_IMG, ATHLETE_MLB_IMG } from "../utils/svgTemplates"
 import { AthleteStatType, SportType } from "../utils/types"
 import { CricketTeamInterface, CricketAthleteInterface, CricketPointsBreakup } from '../interfaces/Cricket'
-import { NFL_ATHLETE_IDS, NBA_ATHLETE_IDS, NBA_ATHLETE_PROMO_IDS, MLB_ATHLETE_IDS, MLB_ATHLETE_PROMO_IDS } from "./../utils/athlete-ids"
+import { NFL_ATHLETE_IDS, NBA_ATHLETE_IDS, NBA_ATHLETE_PROMO_IDS, MLB_ATHLETE_IDS, MLB_ATHLETE_PROMO_IDS, IPL2023_ATHLETE_IDS } from "./../utils/athlete-ids"
 
 import e from "express"
 
@@ -840,6 +840,90 @@ export class TasksService {
     this.logger.debug("Generate Athlete MLB Assets: FINISHED")
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
+
+  //@Timeout(300000)
+  async generateAthleteCricketAssets(){
+    this.logger.debug("Generate Athlete Cricket Assets: STARTED")
+
+    const athletes = await CricketAthlete.find({
+      where: {
+        playerKey: In(IPL2023_ATHLETE_IDS),
+        cricketTeam: { sport: SportType.CRICKET},
+      },
+      relations: {
+        cricketTeam: true
+      }
+    })
+
+    for (let athlete of athletes ){
+      var svgTemplate = fs.readFileSync(`./src/utils/cricket-svg-teams-templates/${athlete.cricketTeam.key.toUpperCase()}.svg`, "utf-8")
+      var options = { compact: true, ignoreComment: true, spaces: 4}
+      var result: any = convert.xml2js(svgTemplate, options)
+      const name = athlete.name.split(/ (.*)/, 2)
+      const firstName = name[0]
+      const lastName = name[1]
+      try {
+
+        if (firstName.length > 11) {
+          result.svg.g[6].text[1]["_attributes"]["style"] = "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700"
+        }
+        if (lastName.length > 11) {
+          result.svg.g[6].text[2]["_attributes"]["style"] = "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700"
+        }
+
+        let position: string = ""
+        switch(athlete.seasonalRole){
+          case "bowler": position = "BOWL"; break
+          case "batsman": position = "BAT"; break
+          case "all_rounder": position = "AR"; break;
+          case "keeper": position = "WK"; break;
+        }
+
+        result.svg.g[6]["text"][1]["tspan"]["_text"] = firstName.toUpperCase()
+        result.svg.g[6]["text"][2]["tspan"]["_text"] = lastName.toUpperCase()
+        result.svg.g[6]["text"][0]["tspan"]["_text"] = position
+      } catch (e){
+        this.logger.debug(`FAILED AT ATHLETE KEY: ${athlete.playerKey} and TEAM KEY: ${athlete.cricketTeam.key}`)
+      }
+
+      result = convert.js2xml(result, options)
+
+      // fs.writeFileSync(
+      //   `./cricket-images/${athlete.playerKey}-${firstName.toLowerCase()}-${lastName.toLowerCase()}.svg`,
+      //   result
+      // )
+      
+      var buffer = Buffer.from(result, "utf8")
+
+      const s3 = new S3({
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+      })
+      const filename = `${athlete.playerKey}-${firstName.toLowerCase()}-${lastName.toLowerCase()}.svg`
+      const s3_location = "media/athlete/ipl/images/"
+      const fileContent = buffer
+      const params: any = {
+        Bucket: process.env.AWS_BUCKET_NAME,
+        Key: `${s3_location}${filename}`,
+        Body: fileContent,
+        ContentType: "image/svg+xml",
+        CacheControl: "no-cache",
+      }
+
+      s3.upload(params, async (err: any, data: any) => {
+        if(err){
+          this.logger.error(err)
+        } else{
+          athlete.nftImage = data["Location"]
+          await CricketAthlete.save(athlete)
+        }
+      })
+    }
+
+    this.logger.debug("Generate Athlete Cricket Assets: FINISHED")
+    this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
+  }
+
   // @Timeout(1)
   async generateAthleteNbaAssetsAnimation() {
     this.logger.debug("Generate Athlete NBA Assets Animation: STARTED")
@@ -987,6 +1071,92 @@ export class TasksService {
     }
 
     this.logger.debug("Generate Athlete MLB Assets Animations: FINISHED")
+    this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
+  }
+
+  //@Timeout(450000)
+  async generateAthleteCricketAssetsAnimation(){
+    this.logger.debug("Generate Athlete Cricket Assets Animation: STARTED")
+
+    const athletes = await CricketAthlete.find({
+      where: {
+        playerKey: In(IPL2023_ATHLETE_IDS),
+        cricketTeam: { sport: SportType.CRICKET},
+      },
+      relations: {
+        cricketTeam: true
+      }
+    })
+
+    for (let athlete of athletes) {
+      var svgAnimationTemplate = fs.readFileSync(`./src/utils/cricket-svg-teams-animation-templates/${athlete.cricketTeam.key.toUpperCase()}.svg`, "utf-8")
+      var options = { compact: true, ignoreComment: true, spaces: 4}
+      var result: any = convert.xml2js(svgAnimationTemplate, options)
+
+      const name = athlete.name.split(/ (.*)/, 2)
+      const firstName = name[0]
+      const lastName = name[1]
+
+      try {
+        if (firstName.length > 11) {
+          result.svg.g[4].text[2].tspan["_attributes"]["font-size"] = "50"
+          result.svg.g[4].text[3].tspan["_attributes"]["font-size"] = "50"
+        }
+        if (lastName.length > 11) {
+          result.svg.g[4].text[4].tspan["_attributes"]["font-size"] = "50"
+          result.svg.g[4].text[5].tspan["_attributes"]["font-size"] = "50"
+        }
+
+        let position: string = ""
+        switch(athlete.seasonalRole){
+          case "bowler": position = "BOWL"; break
+          case "batsman": position = "BAT"; break
+          case "all_rounder": position = "AR"; break;
+          case "keeper": position = "WK"; break;
+        }
+
+        result.svg.g[4].text[0].tspan["_cdata"] = position //check if template is cdata or text
+        result.svg.g[4].text[1].tspan["_cdata"] = position
+        result.svg.g[4].text[2].tspan["_cdata"] = firstName.toUpperCase()
+        result.svg.g[4].text[3].tspan["_cdata"] = firstName.toUpperCase()
+        result.svg.g[4].text[4].tspan["_cdata"] = lastName.toUpperCase()
+        result.svg.g[4].text[5].tspan["_cdata"] = lastName.toUpperCase()
+        result = convert.js2xml(result, options)
+      } catch (e) {
+        console.log(`FAILED AT ATHLETE ID: ${athlete.playerKey} and TEAM KEY: ${athlete.cricketTeam.key}`)
+        console.log(e)
+      }
+
+      // fs.writeFileSync(
+      //   `./cricket-images/${athlete.playerKey}-${firstName.toLowerCase()}-${lastName.toLowerCase()}-anim.svg`,
+      //   result
+      // )
+
+      var buffer = Buffer.from(result, "utf8")
+      const s3 = new S3({
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+      })
+      const filename = `${athlete.playerKey}-${firstName.toLowerCase()}-${lastName.toLowerCase()}.svg`
+      const s3_location = "media/athlete/ipl/animations/"
+      const fileContent = buffer
+      const params: any = {
+        Bucket: process.env.AWS_BUCKET_NAME,
+        Key: `${s3_location}${filename}`,
+        Body: fileContent,
+        ContentType: "image/svg+xml",
+        CacheControl: "no-cache",
+      }
+      s3.upload(params, async (err: any, data: any) => {
+        if (err){
+          this.logger.error(err)
+        } else{
+          athlete.nftAnimation = data["Location"]
+          await CricketAthlete.save(athlete)
+        }
+      })
+    }
+    this.logger.debug("Generate Athlete Cricket Assets Animations: FINISHED")
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
 
@@ -1192,7 +1362,87 @@ export class TasksService {
     this.logger.debug("Generate Athlete MLB Assets Promo: FINISHED")
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
+  @Timeout(300000)
+  async generateAthleteCricketAssetsPromo(){
+    this.logger.debug("Generate Athlete Cricket Assets Promo: STARTED")
 
+    const athletes = await CricketAthlete.find({
+      where: {
+        playerKey: In(IPL2023_ATHLETE_IDS),
+        cricketTeam: { sport: SportType.CRICKET},
+      },
+      relations: {
+        cricketTeam: true,
+      }
+    })
+
+    for (let athlete of athletes) {
+      var svgTemplate = fs.readFileSync(`./src/utils/cricket-svg-teams-promo-templates/${athlete.cricketTeam.key.toUpperCase()}.svg`, "utf-8")
+      var options = { compact: true, ignoreComment: true, spaces: 4 }
+      var result: any = convert.xml2js(svgTemplate, options)
+
+      const name = athlete.name.split(/ (.*)/, 2)
+      const firstName = name[0]
+      const lastName = name[1]
+
+      try {
+        if (firstName.length > 11) {
+          result.svg.g[6].text[1]["_attributes"]["style"] = "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700"
+        }
+        if (lastName.length > 11) {
+          result.svg.g[6].text[2]["_attributes"]["style"] = "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700"
+        }
+
+        let position: string = ""
+        switch(athlete.seasonalRole){
+          case "bowler": position = "BOWL"; break
+          case "batsman": position = "BAT"; break
+          case "all_rounder": position = "AR"; break;
+          case "keeper": position = "WK"; break;
+        }
+
+        result.svg.g[6]["text"][1]["tspan"]["_text"] = firstName.toUpperCase()
+        result.svg.g[6]["text"][2]["tspan"]["_text"] = lastName.toUpperCase()
+        result.svg.g[6]["text"][0]["tspan"]["_text"] = position
+      } catch (e) {
+        console.log(`FAILED AT ATHLETE ID: ${athlete.playerKey} and TEAM KEY: ${athlete.cricketTeam.key}`)
+      }
+
+      result = convert.js2xml(result, options)
+      // fs.writeFileSync(
+      //   `./nba-images-promo/${athlete.apiId}-${athlete.firstName.toLowerCase()}-${athlete.lastName.toLowerCase()}.svg`,
+      //   result
+      // )
+
+      var buffer = Buffer.from(result, "utf8")
+      const s3 = new S3({
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+      })
+      const filename = `${athlete.playerKey}-${firstName.toLowerCase()}-${lastName.toLowerCase()}.svg`
+      const s3_location = "media/athlete/ipl/promo_images/"
+      const fileContent = buffer
+      const params: any = {
+        Bucket: process.env.AWS_BUCKET_NAME,
+        Key: `${s3_location}${filename}`,
+        Body: fileContent,
+        ContentType: "image/svg+xml",
+        CacheControl: "no-cache",
+      }
+
+      s3.upload(params, async (err: any, data: any) => {
+        if (err) {
+          this.logger.error(err)
+        } else {
+          athlete.nftImagePromo = data["Location"]
+          await CricketAthlete.save(athlete)
+        }
+      })
+    }
+
+    this.logger.debug("Generate Athlete Cricket Assets Promo: FINISHED")
+    this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
+  }
   // @Timeout(1)
   async generateAthleteNflAssetsLocked() {
     this.logger.debug("Generate Athlete NFL Assets Locked: STARTED")
@@ -1393,6 +1643,87 @@ export class TasksService {
     }
 
     this.logger.debug("Generate Athlete MLB Assets Locked: FINISHED")
+    this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
+  }
+
+  @Timeout(450000)
+  async generateAthleteCricketAssetsLocked(){
+    this.logger.debug("Generate Athlete Cricket Assets Locked: STARTED")
+
+    const athletes = await CricketAthlete.find({
+      where: {
+        playerKey: In(IPL2023_ATHLETE_IDS),
+        cricketTeam: { sport: SportType.CRICKET }
+      },
+      relations: {
+        cricketTeam: true,
+      }
+    })
+
+    for(let athlete of athletes){
+      var svgTemplate = fs.readFileSync(`./src/utils/cricket-svg-teams-lock-templates/${athlete.cricketTeam.key.toUpperCase()}.svg`, "utf-8")
+      var options = { compact: true, ignoreComment: true, spaces: 4 }
+      var result: any = convert.xml2js(svgTemplate, options)
+
+      const name = athlete.name.split(/ (.*)/, 2)
+      const firstName = name[0]
+      const lastName = name[1]
+
+      try {
+        if (firstName.length > 11) {
+          result.svg.g[6].text[1]["_attributes"]["style"] = "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700"
+        }
+        if (lastName.length > 11) {
+          result.svg.g[6].text[2]["_attributes"]["style"] = "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700"
+        }
+
+        let position: string = ""
+        switch(athlete.seasonalRole){
+          case "bowler": position = "BOWL"; break
+          case "batsman": position = "BAT"; break
+          case "all_rounder": position = "AR"; break;
+          case "keeper": position = "WK"; break;
+        }
+        result.svg.g[6]["text"][1]["tspan"]["_text"] = firstName.toUpperCase()
+        result.svg.g[6]["text"][2]["tspan"]["_text"] = lastName.toUpperCase()
+        result.svg.g[6]["text"][0]["tspan"]["_text"] = position
+      } catch (e) {
+        console.log(`FAILED AT ATHLETE ID: ${athlete.playerKey} and TEAM KEY: ${athlete.cricketTeam.key}`)
+      }
+
+      result = convert.js2xml(result, options)
+      // fs.writeFileSync(
+      //   `./nba-images-locked/${athlete.apiId}-${athlete.firstName.toLowerCase()}-${athlete.lastName.toLowerCase()}.svg`,
+      //   result
+      // )
+
+      var buffer = Buffer.from(result, "utf8")
+      const s3 = new S3({
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+      })
+      const filename = `${athlete.playerKey}-${firstName.toLowerCase()}-${lastName.toLowerCase()}.svg`
+      const s3_location = "media/athlete/ipl/locked_images/"
+      const fileContent = buffer
+      const params: any = {
+        Bucket: process.env.AWS_BUCKET_NAME,
+        Key: `${s3_location}${filename}`,
+        Body: fileContent,
+        ContentType: "image/svg+xml",
+        CacheControl: "no-cache",
+      }
+
+      s3.upload(params, async (err: any, data: any) => {
+        if (err) {
+          this.logger.error(err)
+        } else {
+          athlete.nftImageLocked = data["Location"]
+          await CricketAthlete.save(athlete)
+        }
+      })
+    }
+    
+    this.logger.debug("Generate Athlete Cricket Assets Locked: FINISHED")
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
 
@@ -1666,7 +1997,7 @@ export class TasksService {
     }
   }
 
-  @Timeout(1)
+  //@Timeout(1)
   async updateNflAthleteStatsAllWeeks() {
     this.logger.debug("Update NFL Athlete Stats All Weeks: STARTED")
 
@@ -2531,7 +2862,7 @@ export class TasksService {
     }
   }
 
-  @Interval(259200000) //Runs every 3 days
+  //@Interval(259200000) //Runs every 3 days
   async updateNflTimeframe (){
 
     this.logger.debug("Update NFL Timeframe: STARTED")
@@ -2828,7 +3159,7 @@ export class TasksService {
     }
   }
 
-  //@Timeout(1)
+  //Timeout(1)
   async syncCricketData(){
     this.logger.debug("START CRICKET DATA SYNC")
     const TOURNEY_KEY = 'iplt20_2023' //hardcoded iplt2023 key
@@ -2902,8 +3233,9 @@ export class TasksService {
           }
           
         })
+        this.logger.debug("START ATHLETE SYNC")
         for (let team of teams){
-          this.logger.debug("START ATHLETE SYNC")
+          
           const team_response = await axios.get(`${process.env.ROANUZ_DATA_URL}cricket/${process.env.ROANUZ_PROJECT_KEY}/tournament/${team.tournament.key}/team/${team.key}/`, {
             headers: {
               'rs-token': auth.data.data.token
@@ -3013,10 +3345,10 @@ export class TasksService {
   //   this.logger.debug(`Cricket Athletes: ${athleteCount ? "ALREADY EXISTS" : 'SYNCED'}`)
   // }
 
-  //@Timeout(1)
+  @Interval(3600000)
   async updateCricketMatches(){
     this.logger.debug("Update Cricket Matches: START")
-    const tourney_key_2022 = "iplt20_2023" // for testing
+    //const tourney_key_2022 = "iplt20_2023" // for testing
     const auth = await axios.post(`${process.env.ROANUZ_DATA_URL}core/${process.env.ROANUZ_PROJECT_KEY}/auth/`, {
       api_key: process.env.ROANUZ_API_KEY
     })
@@ -3025,7 +3357,7 @@ export class TasksService {
         where: {sport: SportType.CRICKET}
       })
 
-      const match_response = await axios.get(`${process.env.ROANUZ_DATA_URL}cricket/${process.env.ROANUZ_PROJECT_KEY}/tournament/${tourney_key_2022}/fixtures/`, {
+      const match_response = await axios.get(`${process.env.ROANUZ_DATA_URL}cricket/${process.env.ROANUZ_PROJECT_KEY}/tournament/${tourney.key}/fixtures/`, {
         headers: {
           'rs-token': auth.data.data.token
         }
@@ -3119,7 +3451,7 @@ export class TasksService {
   //   this.logger.debug("Update Cricket Match: FINISHED")
   // }
 
-  //@Timeout(1)
+  @Interval(3900000)
   async updateCricketAthleteStats(){
     this.logger.debug("Update Cricket Athlete Stat: STARTED")
 
@@ -3128,8 +3460,8 @@ export class TasksService {
     })
 
     if (auth.status === 200){
-      const date = moment().subtract(1, "day").toDate()
-      const dateFormat = moment(date).format("YYYY-MM-DD").toUpperCase()
+      const dateFormat = moment().subtract(6, "hours").format("YYYY-MM-DD").toUpperCase()
+      //const dateFormat = moment(date).format("YYYY-MM-DD").toUpperCase()
       this.logger.debug(dateFormat)
       let matches = await CricketMatch.find()
       matches = matches.filter((x) => x.start_at.toISOString().split("T")[0] === dateFormat)
@@ -3159,6 +3491,7 @@ export class TasksService {
                 })
                 if(currStat){
 
+                  //TODO add tournament_points 
                   if(Object.keys(athleteStat.points_breakup).length){
                     const points_breakup = athleteStat.points_breakup.map((x: CricketPointsBreakup) => (
                       {[metric[x.metric_rule_index].key] : x.points}
@@ -3167,6 +3500,7 @@ export class TasksService {
                       "id": currStat.id,
                       "athlete": athlete,
                       "fantasyScore": athleteStat.points,
+                      "tournament_points": athleteStat.tournament_points,
                       "type": AthleteStatType.DAILY,
                     }, ...points_breakup)))
                   } else{
@@ -3174,6 +3508,7 @@ export class TasksService {
                       "id": currStat.id,
                       "athlete": athlete,
                       "fantasyScore": athleteStat.points,
+                      "tournament_points": athleteStat.tournament_points,
                       "type": AthleteStatType.DAILY,
                     })))
                   }
@@ -3188,6 +3523,7 @@ export class TasksService {
                       "athlete": athlete,
                       "match": match,
                       "fantasyScore": athleteStat.points,
+                      "tournament_points": athleteStat.tournament_points,
                       "type": AthleteStatType.DAILY,
                     }, ...points_breakup)))
                   } else{
@@ -3195,6 +3531,7 @@ export class TasksService {
                       "athlete": athlete,
                       "match": match,
                       "fantasyScore": athleteStat.points,
+                      "tournament_points": athleteStat.tournament_points, 
                       "type": AthleteStatType.DAILY
                     })))
                   }
@@ -3278,11 +3615,12 @@ export class TasksService {
   // }
 
   //@Timeout(1)
+  //unused due to required API call not being included in IPL package
   async updateCricketAthleteSeasonStats(){
     this.logger.debug("Update Cricket Athlete Stat (Season): STARTED")
- // testing purposes
-    const athletes = await CricketAthlete.find()
 
+    const athletes = await CricketAthlete.find()
+    //if using pay as you go, add where playerKey: In(CRICKET_ATHLETE_IDS)
     if(athletes){
       const auth = await axios.post(`${process.env.ROANUZ_DATA_URL}core/${process.env.ROANUZ_PROJECT_KEY}/auth/`, {
         api_key: process.env.ROANUZ_API_KEY
