@@ -3551,6 +3551,53 @@ export class TasksService {
       //TODO: check how match dates are formatted in backend
     }
   }
+
+  async updateCricketAthleteAvgFantasyScore(){  
+      this.logger.debug("Update Cricket Avg. Fantasy Score: STARTED")
+      //let currAthlete = await CricketAthlete.findOne({where: { athlete: {playerKey: key}}})
+      
+      const dateFormat = moment().subtract(6, "hours").format("YYYY-MM-DD").toUpperCase()
+      this.logger.debug(dateFormat)
+      let matches = await CricketMatch.find()
+      matches = matches.filter((x) => x.start_at.toISOString().split("T")[0] === dateFormat)
+      
+      let athlete = await CricketAthlete.find();
+      let newStats: CricketAthleteStat[] = []
+      const updateStats: CricketAthleteStat[] = []
+      if(matches){
+      for(let athleteStat of athlete){
+      let currAthlete = await CricketAthleteStat.findOne({
+        where: { athlete: { playerKey: athleteStat.playerKey, type: AthleteStatType.SEASON} }
+      })
+
+      if(currAthlete){
+        //update average stats 
+        updateStats.push(CricketAthleteStat.create({
+          "id": currAthlete.id,
+          "athlete": currAthlete,
+          "fantasyScore": currAthlete.fantasyScore,
+          "tournament_points": currAthlete.tournament_points,
+          "type": AthleteStatType.SEASON,
+        }))
+      }
+      else {
+       newStats = CricketAthleteStat.create({
+         "id": currAthlete.id,
+         "athlete": currAthlete,
+         "fantasyScore": currAthlete.fantasyScore,
+         "tournament_points": currAthlete.tournament_points,
+         "type": AthleteStatType.SEASON, 
+         "fantasyScore": currAthlete.fantasyScore,
+        }))
+      }
+      
+    }
+      await CricketAthleteStat.save([...newStats, ...updateStats], {chunk: 20})
+      this.logger.debug("Update Cricket Avg. Fantasy Score: FINISHED")
+    } else {
+      this.logger.debug("Update Cricket Avg. Fantasy Score: No games found on " + dateFormat )
+    }
+  }
   // //@Timeout(1)
   // async updateCricketAthleteStats(){
   //   //TODO add interval querying to API logic
