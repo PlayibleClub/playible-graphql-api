@@ -3567,6 +3567,7 @@ export class TasksService {
       if(matches){
       for (let athleteStat of athlete){
       const id: number = athleteStat["id"]
+      const numberOfGames: number = matches.filter((x) => x.status === 'completed').length
       let currStat = await CricketAthleteStat.findOne({
         where: { athlete: { playerKey: id, type: AthleteStatType.SEASON } }
       })
@@ -3591,7 +3592,7 @@ export class TasksService {
             CricketAthleteStat.create({
               id: curAthlete.id,
               athlete: curAthlete,
-              fantasyScore: curAthlete.fantasyScore,
+              fantasyScore: curAthlete.fantasyScore/numberOfGames,
               tournament_points: curAthlete.tournament_points,
               type: AthleteStatType.SEASON,
             })
