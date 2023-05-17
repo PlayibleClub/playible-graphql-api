@@ -3562,33 +3562,41 @@ export class TasksService {
       matches = matches.filter((x) => x.start_at.toISOString().split("T")[0] === dateFormat)
       
       let athlete = await CricketAthlete.find();
-      let newStats: CricketAthleteStat[] = []
+      const newStats: CricketAthleteStat[] = []
       const updateStats: CricketAthleteStat[] = []
       if(matches){
-      for(let athleteStat of athlete){
-      let currAthlete = await CricketAthleteStat.findOne({
-        where: { athlete: { playerKey: athleteStat.playerKey, type: AthleteStatType.SEASON} }
+      for (let athleteStat of athlete){
+      const id: number = athleteStat["id"]
+      let currStat = await CricketAthleteStat.findOne({
+        where: { athlete: { playerKey: id, type: AthleteStatType.SEASON } }
       })
-
-      if(currAthlete){
+      
+      if(currStat){
         //update average stats 
         updateStats.push(CricketAthleteStat.create({
-          "id": currAthlete.id,
-          "athlete": currAthlete,
-          "fantasyScore": currAthlete.fantasyScore,
-          "tournament_points": currAthlete.tournament_points,
-          "type": AthleteStatType.SEASON,
+          id: currStat.id,
+          athlete: currStat,
+          fantasyScore: currStat.fantasyScore,
+          tournament_points: currStat.tournament_points,
+          type: AthleteStatType.SEASON,
         }))
       }
       else {
-       newStats = CricketAthleteStat.create({
-         "id": currAthlete.id,
-         "athlete": currAthlete,
-         "fantasyScore": currAthlete.fantasyScore,
-         "tournament_points": currAthlete.tournament_points,
-         "type": AthleteStatType.SEASON, 
-         "fantasyScore": currAthlete.fantasyScore,
-        }))
+        const curAthlete = await CricketAthlete.findOne({
+          where: {id},
+        })
+
+        if(curAthlete){
+          newStats.push(
+            CricketAthleteStat.create({
+              id: curAthlete.id,
+              athlete: curAthlete,
+              fantasyScore: curAthlete.fantasyScore,
+              tournament_points: curAthlete.tournament_points,
+              type: AthleteStatType.SEASON,
+            })
+          )
+        }
       }
       
     }
