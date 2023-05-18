@@ -3554,22 +3554,26 @@ export class TasksService {
 
   async updateCricketAthleteAvgFantasyScore(){  
       this.logger.debug("Update Cricket Avg. Fantasy Score: STARTED")
-      //let currAthlete = await CricketAthlete.findOne({where: { athlete: {playerKey: key}}})
+      
       
       const dateFormat = moment().subtract(6, "hours").format("YYYY-MM-DD").toUpperCase()
       this.logger.debug(dateFormat)
       let matches = await CricketMatch.find()
       matches = matches.filter((x) => x.start_at.toISOString().split("T")[0] === dateFormat)
       
-      let athlete = await CricketAthlete.find();
+      
       const newStats: CricketAthleteStat[] = []
       const updateStats: CricketAthleteStat[] = []
       if(matches){
+      let athlete = await CricketAthlete.find();
       for (let athleteStat of athlete){
-      const id: number = athleteStat["id"]
+      const id: string = athleteStat["playerKey"]
       const numberOfGames: number = matches.filter((x) => x.status === 'completed').length
       let currStat = await CricketAthleteStat.findOne({
-        where: { athlete: { playerKey: id, type: AthleteStatType.SEASON } }
+        where: { athlete: { playerKey: id }, type: AthleteStatType.SEASON }
+      })
+      let currAthlete = await CricketAthlete.findOne({
+        where: { playerKey: id }
       })
       
       if(currStat){
@@ -3583,17 +3587,13 @@ export class TasksService {
         }))
       }
       else {
-        const curAthlete = await CricketAthlete.findOne({
-          where: {id},
-        })
-
-        if(curAthlete){
+        if(currAthlete){
           newStats.push(
             CricketAthleteStat.create({
-              id: curAthlete.id,
-              athlete: curAthlete,
-              fantasyScore: curAthlete.fantasyScore/numberOfGames,
-              tournament_points: curAthlete.tournament_points,
+              id: currAthlete.id,
+              athlete: currAthlete,
+              fantasyScore: currAthlete.stats.fantasyScore/numberOfGames,
+              tournament_points: currAthlete.stats.tournament_points/numberOfGames,
               type: AthleteStatType.SEASON,
             })
           )
