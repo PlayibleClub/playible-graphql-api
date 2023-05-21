@@ -22,11 +22,11 @@ class UserResponse {
 
 @Resolver()
 export class UserResolver {
-  // @Mutation(() => String)
-  // async addAdmin(@Arg("address") address: string): Promise<String> {
-  //   await AdminWallet.create({
-  //     address: await argon.hash(address),
-  //   }).save();
-  //   return "success";
-  // }
+  @Mutation(() => String)
+  async addAdmin(@Arg("address") address: string): Promise<String> {
+    await AdminWallet.create({
+      address: await argon.hash(address),
+    }).save();
+    return "success";
+  }
 }
