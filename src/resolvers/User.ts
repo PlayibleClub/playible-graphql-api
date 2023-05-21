@@ -1,7 +1,4 @@
-import argon from "argon2";
-
-import { Arg, Field, Mutation, ObjectType, Resolver } from "type-graphql";
-import { AdminWallet } from "../entities/AdminWallet";
+import { Field, ObjectType, Resolver } from "type-graphql";
 import { User } from "../entities/User";
 
 @ObjectType()
@@ -22,11 +19,11 @@ class UserResponse {
 
 @Resolver()
 export class UserResolver {
-  @Mutation(() => String)
-  async addAdmin(@Arg("address") address: string): Promise<String> {
-    await AdminWallet.create({
-      address: await argon.hash(address),
-    }).save();
-    return "success";
-  }
+  // @Mutation(() => String)
+  // async addAdmin(@Arg("address") address: string): Promise<String> {
+  //   await AdminWallet.create({
+  //     address: await argon.hash(address),
+  //   }).save();
+  //   return "success";
+  // }
 }
