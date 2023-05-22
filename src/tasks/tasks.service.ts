@@ -1819,7 +1819,7 @@ export class TasksService {
   }
 
   
-  @Interval(300000) // Runs every 5 mins
+  //@Interval(300000) // Runs every 5 mins
   async updateNflAthleteStatsPerWeek() {
     this.logger.debug("Update NFL Athlete Stats Per Week: STARTED")
 
@@ -2272,7 +2272,7 @@ export class TasksService {
     }
   }
 
-  @Interval(900000) // runs every 15 minutes
+  //@Interval(900000) // runs every 15 minutes
   async updateMlbAthleteStatsPerSeason(){
     this.logger.debug("Update MLB Athlete Stats (Season): STARTED")
 
@@ -2555,7 +2555,7 @@ export class TasksService {
     
   }
    //@Timeout(1)
-  @Interval(300000) // Runs every 5 mins
+  //@Interval(300000) // Runs every 5 mins
   async updateNbaAthleteStatsPerDay() {
     this.logger.debug("Update NBA Athlete Stats Per Day: STARTED")
 
@@ -3345,7 +3345,7 @@ export class TasksService {
   //   this.logger.debug(`Cricket Athletes: ${athleteCount ? "ALREADY EXISTS" : 'SYNCED'}`)
   // }
 
-  @Interval(3600000)
+  //@Interval(3600000)
   async updateCricketMatches(){
     this.logger.debug("Update Cricket Matches: START")
     //const tourney_key_2022 = "iplt20_2023" // for testing
@@ -3451,7 +3451,7 @@ export class TasksService {
   //   this.logger.debug("Update Cricket Match: FINISHED")
   // }
 
-  @Interval(3900000)
+  //@Interval(3900000)
   async updateCricketAthleteStats(){
     this.logger.debug("Update Cricket Athlete Stat: STARTED")
 
@@ -3552,59 +3552,56 @@ export class TasksService {
     }
   }
 
+  @Timeout(1)
   async updateCricketAthleteAvgFantasyScore(){  
-      const newStats: CricketAthleteStat[] = []
-      const updateStats: CricketAthleteStat[] = []
+    this.logger.debug("Update Cricket Athlete Avg. Fantasy Score: STARTED")
+    const newStats: CricketAthleteStat[] = []
+    const updateStats: CricketAthleteStat[] = []
 
-      const athletes = await CricketAthlete.find();
-        for (let athlete of athletes){
+    const athletes = await CricketAthlete.find();
+      for (let athlete of athletes){
+      const completedGames = athlete.stats.filter((x) => (x.match !== undefined) && x.match.status === 'completed')
+      
+      if(completedGames.length > 0){
+        const id: string = athlete["playerKey"]
+        let currStat = await CricketAthleteStat.findOne({
+          where: { athlete: { playerKey: id }, type: AthleteStatType.SEASON }
+        }) 
+
+        let totalFantasyScore = 0
+
+        for (let i = 0 ; i < completedGames.length; i++){
           
-          const completedGames = athlete.stats.filter((x) => (x.match !== undefined) && x.match.status === 'completed')
-          //const completedGames = athlete.stats.filter((x) => x.match?.status === 'completed')
-          
-          if(completedGames.length > 0){
-            const id: string = athlete["playerKey"]
-            let currStat = await CricketAthleteStat.findOne({
-              where: { athlete: { playerKey: id }, type: AthleteStatType.SEASON }
-            }) 
+          //TotalFantasyScore += completedGames[i].fantasyScore !== undefined ? completedGames[i].fantasyScore! : 0
+          totalFantasyScore += completedGames[i].fantasyScore || 0
+        }
 
-            let TotalFantasyScore = 0 , TotalTournamentPoints = 0 
-
-            for (let i = 0 ; i < completedGames.length; i++){
-              
-              //TotalFantasyScore += completedGames[i].fantasyScore !== undefined ? completedGames[i].fantasyScore! : 0
-              TotalFantasyScore += completedGames[i].fantasyScore || 0
-            }
-
-            if(currStat){
-              //update average stats 
-              updateStats.push(CricketAthleteStat.create({
+        if(currStat){
+          //update average stats 
+          updateStats.push(CricketAthleteStat.create({
+            id: athlete.id,
+            athlete: athlete,
+            fantasyScore: totalFantasyScore/completedGames.length,
+            type: AthleteStatType.SEASON,
+          }))
+        }
+        else {
+            newStats.push(
+              CricketAthleteStat.create({
                 id: athlete.id,
                 athlete: athlete,
-                fantasyScore: TotalFantasyScore/completedGames.length,
-                tournament_points: TotalTournamentPoints/completedGames.length,
+                fantasyScore: totalFantasyScore/completedGames.length,
                 type: AthleteStatType.SEASON,
-              }))
-            }
-            else {
-                newStats.push(
-                  CricketAthleteStat.create({
-                    id: athlete.id,
-                    athlete: athlete,
-                    fantasyScore: TotalFantasyScore/completedGames.length,
-                    tournament_points: TotalTournamentPoints/completedGames.length,
-                    type: AthleteStatType.SEASON,
-                  })
-                )
-            }
-          }
-          else{
-            
-          }
+              })
+            )
+        }
       }
-      await CricketAthleteStat.save([...newStats, ...updateStats], {chunk: 20})
-      this.logger.debug("Update Cricket Avg. Fantasy Score: FINISHED")
-
+      else{
+        this.logger.debug("Update Cricket Avg. Fantasy Score: No completed games found")
+      }
+    }
+    await CricketAthleteStat.save([...newStats, ...updateStats], {chunk: 20})
+    this.logger.debug("Update Cricket Avg. Fantasy Score: FINISHED")
   }
 
   // //@Timeout(1)
