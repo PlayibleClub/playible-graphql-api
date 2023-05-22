@@ -3159,7 +3159,7 @@ export class TasksService {
     }
   }
 
-  //Timeout(1)
+  //@Timeout(1)
   async syncCricketData(){
     this.logger.debug("START CRICKET DATA SYNC")
     const TOURNEY_KEY = 'iplt20_2023' //hardcoded iplt2023 key
@@ -3553,61 +3553,60 @@ export class TasksService {
   }
 
   async updateCricketAthleteAvgFantasyScore(){  
-      this.logger.debug("Update Cricket Avg. Fantasy Score: STARTED")
-      
-      
-      const dateFormat = moment().subtract(6, "hours").format("YYYY-MM-DD").toUpperCase()
-      this.logger.debug(dateFormat)
-      let matches = await CricketMatch.find()
-      matches = matches.filter((x) => x.start_at.toISOString().split("T")[0] === dateFormat)
-      
-      
       const newStats: CricketAthleteStat[] = []
       const updateStats: CricketAthleteStat[] = []
-      if(matches){
+
       const athletes = await CricketAthlete.find();
         for (let athlete of athletes){
-          const id: string = athlete["playerKey"]
-          const numberOfGames: number = matches.filter((x) => x.status === 'completed').length
-          let currStat = await CricketAthleteStat.findOne({
-            where: { athlete: { playerKey: id }, type: AthleteStatType.SEASON }
-          }) 
-          for(let i = 0 ; i < numberOfGames; i++){
-            let AvgFantasyScore = 0 , AvgTournamentPoints = 0 ;
+          
+          const completedGames = athlete.stats.filter((x) => x.match?.status === 'completed')
+          
+          if(completedGames !== null || completedGames !== undefined){
+            const id: string = athlete["playerKey"]
+            let currStat = await CricketAthleteStat.findOne({
+              where: { athlete: { playerKey: id }, type: AthleteStatType.SEASON }
+            }) 
+
+            let TotalFantasyScore = 0 , TotalTournamentPoints = 0 
+
+            for (let i = 0 ; i < completedGames.length; i++){
+              
+              TotalFantasyScore += completedGames[i].fantasyScore
+              TotalTournamentPoints +=  completedGames[i].tournament_points
+
+            }
+
+            if(currStat){
+              //update average stats 
+              updateStats.push(CricketAthleteStat.create({
+                id: athlete.id,
+                athlete: athlete,
+                fantasyScore: TotalFantasyScore/completedGames.length,
+                tournament_points: TotalTournamentPoints/completedGames.length,
+                type: AthleteStatType.SEASON,
+              }))
+            }
+            else {
+                newStats.push(
+                  CricketAthleteStat.create({
+                    id: athlete.id,
+                    athlete: athlete,
+                    fantasyScore: TotalFantasyScore/completedGames.length,
+                    tournament_points: TotalTournamentPoints/completedGames.length,
+                    type: AthleteStatType.SEASON,
+                  })
+                )
+            }
+          }
+          else{
             
-            AvgFantasyScore += athletes.stats.fantasyScore
-            AvgTournamentPoints +=  athlete.stats.tournament_points
           }
-          if(currStat){
-            //update average stats 
-            updateStats.push(CricketAthleteStat.create({
-              id: currStat.id,
-              athlete: currStat,
-              fantasyScore: currStat.fantasyScore,
-              tournament_points: currStat.tournament_points,
-              type: AthleteStatType.SEASON,
-            }))
-          }
-          else {
-            
-              newStats.push(
-                CricketAthleteStat.create({
-                  id: athlete.id,
-                  athlete: athlete,
-                  fantasyScore: athlete.stats.fantasyScore/numberOfGames,
-                  tournament_points: athlete.stats.tournament_points/numberOfGames,
-                  type: AthleteStatType.SEASON,
-                })
-              )
-          }
-        
-    }
+      }
       await CricketAthleteStat.save([...newStats, ...updateStats], {chunk: 20})
       this.logger.debug("Update Cricket Avg. Fantasy Score: FINISHED")
-    } else {
-      this.logger.debug("Update Cricket Avg. Fantasy Score: No games found on " + dateFormat )
-    }
+
   }
+
   // //@Timeout(1)
   // async updateCricketAthleteStats(){
   //   //TODO add interval querying to API logic
