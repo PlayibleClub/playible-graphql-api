@@ -3572,8 +3572,8 @@ export class TasksService {
 
             for (let i = 0 ; i < completedGames.length; i++){
               
-              TotalFantasyScore += completedGames[i] !== undefined ? completedGames[i].fantasyScore : 0
-              
+              //TotalFantasyScore += completedGames[i].fantasyScore !== undefined ? completedGames[i].fantasyScore! : 0
+              TotalFantasyScore += completedGames[i].fantasyScore || 0
             }
 
             if(currStat){
