@@ -3559,9 +3559,10 @@ export class TasksService {
       const athletes = await CricketAthlete.find();
         for (let athlete of athletes){
           
-          const completedGames = athlete.stats.filter((x) => x.match?.status === 'completed')
+          const completedGames = athlete.stats.filter((x) => (x.match !== undefined) && x.match.status === 'completed')
+          //const completedGames = athlete.stats.filter((x) => x.match?.status === 'completed')
           
-          if(completedGames !== null || completedGames !== undefined){
+          if(completedGames.length > 0){
             const id: string = athlete["playerKey"]
             let currStat = await CricketAthleteStat.findOne({
               where: { athlete: { playerKey: id }, type: AthleteStatType.SEASON }
@@ -3571,9 +3572,8 @@ export class TasksService {
 
             for (let i = 0 ; i < completedGames.length; i++){
               
-              TotalFantasyScore += completedGames[i].fantasyScore
-              TotalTournamentPoints +=  completedGames[i].tournament_points
-
+              TotalFantasyScore += completedGames[i] !== undefined ? completedGames[i].fantasyScore : 0
+              
             }
 
             if(currStat){
