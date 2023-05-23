@@ -3558,47 +3558,56 @@ export class TasksService {
     const newStats: CricketAthleteStat[] = []
     const updateStats: CricketAthleteStat[] = []
 
-    const athletes = await CricketAthlete.find();
+    const athletes = await CricketAthlete.find({
+      relations: { stats: { match: true }}
+    })
+
+    if(athletes.length > 0){
       for (let athlete of athletes){
-      const completedGames = athlete.stats.filter((x) => (x.match !== undefined) && x.match.status === 'completed')
+      const completedGames = athlete.stats ? athlete.stats.filter((x) => (x.match !== undefined) && (x.match !==null) && x.match.status === 'completed') : []
       
-      if(completedGames.length > 0){
-        const id: string = athlete["playerKey"]
-        let currStat = await CricketAthleteStat.findOne({
-          where: { athlete: { playerKey: id }, type: AthleteStatType.SEASON }
-        }) 
+        if(completedGames.length > 0 && Array.isArray(completedGames)){
+          this.logger.debug('completedGames',completedGames)
+          const id: string = athlete["playerKey"]
+          let currStat = await CricketAthleteStat.findOne({
+            where: { athlete: { playerKey: id }, type: AthleteStatType.SEASON },
+            relations: { athlete: true, },
+          }) 
 
-        let totalFantasyScore = 0
+          let totalFantasyScore = 0
 
-        for (let i = 0 ; i < completedGames.length; i++){
-          
-          //TotalFantasyScore += completedGames[i].fantasyScore !== undefined ? completedGames[i].fantasyScore! : 0
-          totalFantasyScore += completedGames[i].fantasyScore || 0
-        }
+          for (let i = 0 ; i < completedGames.length; i++){
+            this.logger.debug("fantasy score games:",completedGames[i].fantasyScore)
+            //TotalFantasyScore += completedGames[i].fantasyScore !== undefined ? completedGames[i].fantasyScore! : 0
+            totalFantasyScore += completedGames[i].fantasyScore || 0
+          }
 
-        if(currStat){
-          //update average stats 
-          updateStats.push(CricketAthleteStat.create({
-            id: athlete.id,
-            athlete: athlete,
-            fantasyScore: totalFantasyScore/completedGames.length,
-            type: AthleteStatType.SEASON,
-          }))
-        }
-        else {
+          if(currStat){
+            //update average stats 
+            updateStats.push(CricketAthleteStat.create({
+              id: athlete.id,
+              athlete: athlete,
+              fantasyScore: totalFantasyScore/completedGames.length,
+              type: AthleteStatType.SEASON,
+            }))
+          }
+          else {
             newStats.push(
               CricketAthleteStat.create({
                 id: athlete.id,
                 athlete: athlete,
                 fantasyScore: totalFantasyScore/completedGames.length,
                 type: AthleteStatType.SEASON,
-              })
-            )
+              }))
+          }
+        }
+        else{
+          this.logger.debug("Update Cricket Avg. Fantasy Score: No completed games found")
         }
       }
-      else{
-        this.logger.debug("Update Cricket Avg. Fantasy Score: No completed games found")
-      }
+    } 
+    else{
+      this.logger.debug("Update Cricket Avg. Fantasy Score: No athletes found")
     }
     await CricketAthleteStat.save([...newStats, ...updateStats], {chunk: 20})
     this.logger.debug("Update Cricket Avg. Fantasy Score: FINISHED")
