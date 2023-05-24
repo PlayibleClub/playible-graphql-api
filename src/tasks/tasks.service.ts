@@ -3159,7 +3159,7 @@ export class TasksService {
     }
   }
 
-  //Timeout(1)
+  //@Timeout(1)
   async syncCricketData(){
     this.logger.debug("START CRICKET DATA SYNC")
     const TOURNEY_KEY = 'iplt20_2023' //hardcoded iplt2023 key
@@ -3551,6 +3551,68 @@ export class TasksService {
       //TODO: check how match dates are formatted in backend
     }
   }
+
+  //@Timeout(1)
+  @Interval(4200000)
+  async updateCricketAthleteAvgFantasyScore(){  
+    this.logger.debug("Update Cricket Athlete Avg. Fantasy Score: STARTED")
+    const newStats: CricketAthleteStat[] = []
+    const updateStats: CricketAthleteStat[] = []
+
+    const athletes = await CricketAthlete.find({
+      relations: { stats: { match: true }}
+    })
+
+    if(athletes.length > 0){
+      for (let athlete of athletes){
+        const completedGames = athlete.stats ? athlete.stats.filter((x) => (x.match !== null && x.match !== undefined) && x.match.status === 'completed' && x.type === 'daily') : []
+        
+        if(Array.isArray(completedGames)){
+          const id: string = athlete["playerKey"]
+          let currStat = await CricketAthleteStat.findOne({
+            where: { athlete: { playerKey: id }, type: AthleteStatType.SEASON },
+            relations: { athlete: true, },
+          }) 
+
+          let totalFantasyScore: number = 0
+          if(completedGames.length > 0){
+            for (let i = 0 ; i < completedGames.length; i++){
+              
+                totalFantasyScore = +totalFantasyScore + +completedGames[i].fantasyScore!
+            }
+          } else{
+            totalFantasyScore = 0
+          }
+          if(currStat){ 
+            //update average stats 
+            updateStats.push(CricketAthleteStat.create({
+              id: athlete.id,
+              athlete: athlete,
+              fantasyScore: totalFantasyScore === 0 ? totalFantasyScore = 0 : totalFantasyScore / completedGames.length,
+              type: AthleteStatType.SEASON,
+            }))
+          } else{
+            newStats.push(
+              CricketAthleteStat.create({
+                id: athlete.id,
+                athlete: athlete,
+                fantasyScore: totalFantasyScore === 0 ? totalFantasyScore = 0 : totalFantasyScore / completedGames.length,
+                type: AthleteStatType.SEASON,
+              }))
+          }
+        }
+        else{
+          this.logger.debug("Update Cricket Avg. Fantasy Score: No completed games found")
+        }
+      }
+    } 
+    else{
+      this.logger.debug("Update Cricket Avg. Fantasy Score: No athletes found")
+    }
+    await CricketAthleteStat.save([...newStats, ...updateStats], {chunk: 20})
+    this.logger.debug("Update Cricket Avg. Fantasy Score: FINISHED")
+  }
+
   // //@Timeout(1)
   // async updateCricketAthleteStats(){
   //   //TODO add interval querying to API logic
