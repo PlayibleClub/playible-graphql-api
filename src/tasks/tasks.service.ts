@@ -1819,7 +1819,7 @@ export class TasksService {
   }
 
   
-  //@Interval(300000) // Runs every 5 mins
+  @Interval(300000) // Runs every 5 mins
   async updateNflAthleteStatsPerWeek() {
     this.logger.debug("Update NFL Athlete Stats Per Week: STARTED")
 
@@ -2272,7 +2272,7 @@ export class TasksService {
     }
   }
 
-  //@Interval(900000) // runs every 15 minutes
+  @Interval(900000) // runs every 15 minutes
   async updateMlbAthleteStatsPerSeason(){
     this.logger.debug("Update MLB Athlete Stats (Season): STARTED")
 
@@ -2555,7 +2555,7 @@ export class TasksService {
     
   }
    //@Timeout(1)
-  //@Interval(300000) // Runs every 5 mins
+  @Interval(300000) // Runs every 5 mins
   async updateNbaAthleteStatsPerDay() {
     this.logger.debug("Update NBA Athlete Stats Per Day: STARTED")
 
@@ -3345,7 +3345,7 @@ export class TasksService {
   //   this.logger.debug(`Cricket Athletes: ${athleteCount ? "ALREADY EXISTS" : 'SYNCED'}`)
   // }
 
-  //@Interval(3600000)
+  @Interval(3600000)
   async updateCricketMatches(){
     this.logger.debug("Update Cricket Matches: START")
     //const tourney_key_2022 = "iplt20_2023" // for testing
@@ -3451,7 +3451,7 @@ export class TasksService {
   //   this.logger.debug("Update Cricket Match: FINISHED")
   // }
 
-  //@Interval(3900000)
+  @Interval(3900000)
   async updateCricketAthleteStats(){
     this.logger.debug("Update Cricket Athlete Stat: STARTED")
 
@@ -3552,7 +3552,8 @@ export class TasksService {
     }
   }
 
-  @Timeout(1)
+  //@Timeout(1)
+  @Interval(4200000)
   async updateCricketAthleteAvgFantasyScore(){  
     this.logger.debug("Update Cricket Athlete Avg. Fantasy Score: STARTED")
     const newStats: CricketAthleteStat[] = []
@@ -3566,7 +3567,7 @@ export class TasksService {
       for (let athlete of athletes){
         const completedGames = athlete.stats ? athlete.stats.filter((x) => (x.match !== null && x.match !== undefined) && x.match.status === 'completed' && x.type === 'daily') : []
         
-        if(completedGames.length > 0 && Array.isArray(completedGames)){
+        if(Array.isArray(completedGames)){
           const id: string = athlete["playerKey"]
           let currStat = await CricketAthleteStat.findOne({
             where: { athlete: { playerKey: id }, type: AthleteStatType.SEASON },
@@ -3574,23 +3575,20 @@ export class TasksService {
           }) 
 
           let totalFantasyScore: number = 0
-          this.logger.debug("athlete: " + athlete.name)
-          for (let i = 0 ; i < completedGames.length; i++){
-            
-            //this.logger.debug("fantasy score games:", completedGames[i].fantasyScore)
-            //totalFantasyScore += completedGames[i].fantasyScore !== undefined ? completedGames[i].fantasyScore! : 0
-            if(completedGames[i].fantasyScore !== undefined){
-              totalFantasyScore = +totalFantasyScore + +completedGames[i].fantasyScore!
+          if(completedGames.length > 0){
+            for (let i = 0 ; i < completedGames.length; i++){
+              
+                totalFantasyScore = +totalFantasyScore + +completedGames[i].fantasyScore!
             }
+          } else{
+            totalFantasyScore = 0
           }
-          this.logger.debug("length: " + completedGames.length)
-          this.logger.debug(totalFantasyScore)
           if(currStat){ 
             //update average stats 
             updateStats.push(CricketAthleteStat.create({
               id: athlete.id,
               athlete: athlete,
-              fantasyScore: totalFantasyScore / completedGames.length,
+              fantasyScore: totalFantasyScore === 0 ? totalFantasyScore = 0 : totalFantasyScore / completedGames.length,
               type: AthleteStatType.SEASON,
             }))
           } else{
@@ -3598,7 +3596,7 @@ export class TasksService {
               CricketAthleteStat.create({
                 id: athlete.id,
                 athlete: athlete,
-                fantasyScore: totalFantasyScore/completedGames.length,
+                fantasyScore: totalFantasyScore === 0 ? totalFantasyScore = 0 : totalFantasyScore / completedGames.length,
                 type: AthleteStatType.SEASON,
               }))
           }
