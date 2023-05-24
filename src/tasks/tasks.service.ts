@@ -1646,7 +1646,7 @@ export class TasksService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
 
-  @Timeout(450000)
+  //@Timeout(450000)
   async generateAthleteCricketAssetsLocked(){
     this.logger.debug("Generate Athlete Cricket Assets Locked: STARTED")
 
@@ -3585,16 +3585,16 @@ export class TasksService {
           }
           if(currStat){ 
             //update average stats 
+            //TODO fix tables since primary id on different tables were replaced 
             updateStats.push(CricketAthleteStat.create({
-              id: athlete.id,
-              athlete: athlete,
-              fantasyScore: totalFantasyScore === 0 ? totalFantasyScore = 0 : totalFantasyScore / completedGames.length,
+              id: currStat.id,
+              athlete: currStat.athlete,
+              fantasyScore: currStat.fantasyScore,
               type: AthleteStatType.SEASON,
             }))
           } else{
             newStats.push(
               CricketAthleteStat.create({
-                id: athlete.id,
                 athlete: athlete,
                 fantasyScore: totalFantasyScore === 0 ? totalFantasyScore = 0 : totalFantasyScore / completedGames.length,
                 type: AthleteStatType.SEASON,

@@ -100,11 +100,8 @@ export class CricketAthleteResolver {
       case AthleteSortOptions.SCORE:
         order = {
           stats: {
-            tournament_points: "desc",
-            match: {
-              start_at: "desc"
-            }
-          }
+            fantasyScore: "desc",
+          },
         }
         break
     }
