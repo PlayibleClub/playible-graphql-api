@@ -3564,34 +3564,36 @@ export class TasksService {
 
     if(athletes.length > 0){
       for (let athlete of athletes){
-      const completedGames = athlete.stats ? athlete.stats.filter((x) => (x.match !== undefined) && (x.match !==null) && x.match.status === 'completed') : []
-      
+        const completedGames = athlete.stats ? athlete.stats.filter((x) => (x.match !== null && x.match !== undefined) && x.match.status === 'completed' && x.type === 'daily') : []
+        
         if(completedGames.length > 0 && Array.isArray(completedGames)){
-          this.logger.debug('completedGames',completedGames)
           const id: string = athlete["playerKey"]
           let currStat = await CricketAthleteStat.findOne({
             where: { athlete: { playerKey: id }, type: AthleteStatType.SEASON },
             relations: { athlete: true, },
           }) 
 
-          let totalFantasyScore = 0
-
+          let totalFantasyScore: number = 0
+          this.logger.debug("athlete: " + athlete.name)
           for (let i = 0 ; i < completedGames.length; i++){
-            this.logger.debug("fantasy score games:",completedGames[i].fantasyScore)
-            //TotalFantasyScore += completedGames[i].fantasyScore !== undefined ? completedGames[i].fantasyScore! : 0
-            totalFantasyScore += completedGames[i].fantasyScore || 0
+            
+            //this.logger.debug("fantasy score games:", completedGames[i].fantasyScore)
+            //totalFantasyScore += completedGames[i].fantasyScore !== undefined ? completedGames[i].fantasyScore! : 0
+            if(completedGames[i].fantasyScore !== undefined){
+              totalFantasyScore = +totalFantasyScore + +completedGames[i].fantasyScore!
+            }
           }
-
-          if(currStat){
+          this.logger.debug("length: " + completedGames.length)
+          this.logger.debug(totalFantasyScore)
+          if(currStat){ 
             //update average stats 
             updateStats.push(CricketAthleteStat.create({
               id: athlete.id,
               athlete: athlete,
-              fantasyScore: totalFantasyScore/completedGames.length,
+              fantasyScore: totalFantasyScore / completedGames.length,
               type: AthleteStatType.SEASON,
             }))
-          }
-          else {
+          } else{
             newStats.push(
               CricketAthleteStat.create({
                 id: athlete.id,
