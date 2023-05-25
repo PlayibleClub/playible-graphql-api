@@ -1362,7 +1362,8 @@ export class TasksService {
     this.logger.debug("Generate Athlete MLB Assets Promo: FINISHED")
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
-  @Timeout(300000)
+  
+  //@Timeout(300000)
   async generateAthleteCricketAssetsPromo(){
     this.logger.debug("Generate Athlete Cricket Assets Promo: STARTED")
 
