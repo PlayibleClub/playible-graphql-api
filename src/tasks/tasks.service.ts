@@ -2405,7 +2405,8 @@ export class TasksService {
     
   }
 
-  @Interval(300000) // runs every 5 minutes
+  @Timeout(1)
+  //@Interval(300000) // runs every 5 minutes
   async updateMlbAthleteStatsPerDay(){
     this.logger.debug("Update MLB Athlete Stats Per Day: STARTED")
     
@@ -2422,7 +2423,7 @@ export class TasksService {
 
       if (timeFrame){
         const season = timeFrame.ApiSeason
-        const dateFormat = moment().tz("America/New_York").subtract(3, "hours").format("YYYY-MMM-DD").toUpperCase()
+        const dateFormat = moment().tz("America/New_York").subtract(1, "day").format("YYYY-MMM-DD").toUpperCase()
   
         this.logger.debug("MLB - " +dateFormat)
   
@@ -2554,8 +2555,8 @@ export class TasksService {
     }
     
   }
-   //@Timeout(1)
-  @Interval(300000) // Runs every 5 mins
+  @Timeout(1)
+  //@Interval(300000) // Runs every 5 mins
   async updateNbaAthleteStatsPerDay() {
     this.logger.debug("Update NBA Athlete Stats Per Day: STARTED")
 
@@ -2566,7 +2567,7 @@ export class TasksService {
 
       if (timeFrame) {
         const season = timeFrame.ApiSeason
-        const dateFormat = moment().tz("America/New_York").subtract(3, "hours").format("YYYY-MMM-DD").toUpperCase()
+        const dateFormat = moment().tz("America/New_York").subtract(1, "day").format("YYYY-MMM-DD").toUpperCase()
 
         this.logger.debug(dateFormat)
 
@@ -2798,7 +2799,7 @@ export class TasksService {
             this.logger.debug("NBA Player Game by Date API: SPORTS DATA ERROR")
           }
 
-          if (timesRun === 3) {
+          if (timesRun === 1) {
             clearInterval(interval)
           }
         }, 300000)
