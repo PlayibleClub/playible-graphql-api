@@ -16,6 +16,10 @@ export class GameTeam extends BaseEntity {
   @Column({ type: "varchar", length: 155 })
   name!: string
 
+  @Field(() => String)
+  @Column({ type: "varchar", length: 155})
+  near_address!: string
+
   @Field(() => Number, { defaultValue: 0 })
   @Column({ type: "numeric", default: 0 })
   fantasyScore: number = 0
@@ -24,9 +28,9 @@ export class GameTeam extends BaseEntity {
   @ManyToOne(() => Game, (game) => game.teams)
   game!: Relation<Game>
 
-  @Field(() => Account)
-  @ManyToOne(() => Account, (account) => account.teams)
-  account!: Relation<Account>
+  // @Field(() => Account)
+  // @ManyToOne(() => Account, (account) => account.teams)
+  // account!: Relation<Account>
 
   @Field(() => [GameTeamAthlete])
   @OneToMany(() => GameTeamAthlete, (gameTeamAthlete) => gameTeamAthlete.gameTeam, {
