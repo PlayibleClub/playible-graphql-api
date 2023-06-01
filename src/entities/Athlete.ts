@@ -50,6 +50,10 @@ export class Athlete extends BaseEntity {
   @Field(() => String, { nullable: true })
   @Column({ type: "text", nullable: true })
   isInjured?: string
+
+  @Field(() => String, { nullable: true })
+  @Column({ type: "text", nullable: true })
+  playerHeadshot?: string
  
   @Field(() => String, { nullable: true })
   @Column({ type: "text", nullable: true })

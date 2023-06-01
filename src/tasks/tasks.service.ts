@@ -503,7 +503,7 @@ export class TasksService {
 
     this.logger.debug(`NFL Athletes Data: ${athletesCount ? "DID NOT SYNC" : "SYNCED SUCCESSFULLY"}`)
   }
-
+  
   //@Timeout(1)
   async syncNbaData() {
     const teamsCount = await Team.count({
@@ -1444,6 +1444,88 @@ export class TasksService {
     this.logger.debug("Generate Athlete Cricket Assets Promo: FINISHED")
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
+
+  //@Timeout(1)
+  //@Interval(86400000) //runs every 1 day
+  async updateNflAthleteHeadshots(){
+    this.logger.debug("Update Athlete NFL Headshots: STARTED")
+
+    const {data, status} = await axios.get(`${process.env.SPORTS_DATA_URL}nfl/headshots/json/Headshots?key=${process.env.SPORTS_DATA_NFL_KEY}`)
+
+    if (status === 200){
+      const updateAthlete: Athlete[] = []
+      for (let athlete of data){
+        const apiId: number = athlete["PlayerID"]
+        const curAthlete = await Athlete.findOne({
+          where: { apiId: apiId },
+        })
+
+        if (curAthlete){
+          curAthlete.playerHeadshot = athlete["PreferredHostedHeadshotUrl"]
+          updateAthlete.push(curAthlete)
+        } 
+      }
+      await Athlete.save(updateAthlete, {chunk: 20}) 
+      this.logger.debug("Update Athlete NFL Headshots: FINISHED")
+    } else{
+      this.logger.error("NFL Athlete Headshot Data: SPORTS DATA ERROR")
+    }
+  }
+
+  //@Timeout(1)
+  //@Interval(86400000) //runs every 1 day
+  async updateMlbAthleteHeadshots(){
+    this.logger.debug("Update Athlete MLB Headshots: STARTED")
+
+    const {data, status} = await axios.get(`${process.env.SPORTS_DATA_URL}mlb/headshots/json/Headshots?key=${process.env.SPORTS_DATA_MLB_KEY}`)
+
+    if (status === 200){
+      const updateAthlete: Athlete[] = []
+      for (let athlete of data){
+        const apiId: number = athlete["PlayerID"]
+        const curAthlete = await Athlete.findOne({
+          where: { apiId: apiId },
+        })
+
+        if (curAthlete){
+          curAthlete.playerHeadshot = athlete["PreferredHostedHeadshotUrl"]
+          updateAthlete.push(curAthlete)
+        } 
+      }
+      await Athlete.save(updateAthlete, {chunk: 20}) 
+      this.logger.debug("Update Athlete MLB Headshots: FINISHED")
+    } else{
+      this.logger.error("MLB Athlete Headshot Data: SPORTS DATA ERROR")
+    }
+  }
+
+  //@Timeout(1)
+  //@Interval(86400000) //runs every 1 day
+  async updateNbaAthleteHeadshots(){
+    this.logger.debug("Update Athlete NBA Headshots: STARTED")
+
+    const {data, status} = await axios.get(`${process.env.SPORTS_DATA_URL}nba/headshots/json/Headshots?key=${process.env.SPORTS_DATA_NBA_KEY}`)
+
+    if (status === 200){
+      const updateAthlete: Athlete[] = []
+      for (let athlete of data){
+        const apiId: number = athlete["PlayerID"]
+        const curAthlete = await Athlete.findOne({
+          where: { apiId: apiId },
+        })
+
+        if (curAthlete){
+          curAthlete.playerHeadshot = athlete["PreferredHostedHeadshotUrl"]
+          updateAthlete.push(curAthlete)
+        } 
+      }
+      await Athlete.save(updateAthlete, {chunk: 20}) 
+      this.logger.debug("Update Athlete NBA Headshots: FINISHED")
+    } else{
+      this.logger.error("NBA Athlete Headshot Data: SPORTS DATA ERROR")
+    }
+  }
+
   // @Timeout(1)
   async generateAthleteNflAssetsLocked() {
     this.logger.debug("Generate Athlete NFL Assets Locked: STARTED")
