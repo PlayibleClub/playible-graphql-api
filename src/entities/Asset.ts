@@ -23,9 +23,9 @@ export class Asset extends BaseEntity {
   @ManyToOne(() => Collection, (collection) => collection.assets)
   collection!: Relation<Collection>
 
-  @Field(() => [GameTeamAthlete])
-  @OneToMany(() => GameTeamAthlete, (gameTeamAthlete) => gameTeamAthlete.asset, {
-    cascade: true,
-  })
-  gameTeamAthletes!: Relation<GameTeamAthlete>[]
+  // @Field(() => [GameTeamAthlete])
+  // @OneToMany(() => GameTeamAthlete, (gameTeamAthlete) => gameTeamAthlete.asset, {
+  //   cascade: true,
+  // })
+  // gameTeamAthletes!: Relation<GameTeamAthlete>[]
 }

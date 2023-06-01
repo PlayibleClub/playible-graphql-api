@@ -18,7 +18,7 @@ export class GameTeam extends BaseEntity {
 
   @Field(() => String)
   @Column({ type: "varchar", length: 155})
-  near_address!: string
+  wallet_address!: string
 
   @Field(() => Number, { defaultValue: 0 })
   @Column({ type: "numeric", default: 0 })
@@ -37,4 +37,6 @@ export class GameTeam extends BaseEntity {
     cascade: true,
   })
   athletes!: Relation<GameTeamAthlete>[]
+
+
 }

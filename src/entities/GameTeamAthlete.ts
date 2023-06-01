@@ -16,9 +16,9 @@ export class GameTeamAthlete extends BaseEntity {
   @ManyToOne(() => GameTeam, (team) => team.athletes)
   gameTeam!: Relation<GameTeam>
 
-  @Field(() => Asset)
-  @ManyToOne(() => Asset, (asset) => asset.gameTeamAthletes)
-  asset!: Relation<Asset>
+  // @Field(() => Asset)
+  // @ManyToOne(() => Asset, (asset) => asset.gameTeamAthletes)
+  // asset!: Relation<Asset>
 
   @Field(() => Athlete)
   @ManyToOne(() => Athlete, (athlete) => athlete.gameTeamAthletes)

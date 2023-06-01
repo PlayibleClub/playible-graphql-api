@@ -36,10 +36,10 @@ export class GameResolver {
       where: { id },
       relations: {
         teams: {
-          account: true,
+          //account: true,
           athletes: {
             athlete: { team: true, stats: true },
-            asset: { collection: true },
+            //asset: { collection: true },
           },
         },
       },
@@ -125,8 +125,8 @@ export class GameResolver {
       where: { id: game.id },
       relations: {
         teams: {
-          athletes: { asset: true, athlete: { team: true, stats: true } },
-          account: true,
+          athletes: { athlete: { team: true, stats: true } },
+          //account: true,
         },
       },
     })
@@ -185,7 +185,7 @@ export class GameResolver {
       let gameTeam = await GameTeam.create({
         name,
         game,
-        account,
+        //account,
       }).save()
 
       for (let athlete of athletes) {
@@ -213,7 +213,7 @@ export class GameResolver {
 
         await GameTeamAthlete.create({
           gameTeam,
-          asset,
+          //asset,
           athlete: curAthlete,
         }).save()
       }
@@ -222,10 +222,10 @@ export class GameResolver {
         where: { id: gameTeam.id },
         relations: {
           game: true,
-          account: true,
+          //account: true,
           athletes: {
             athlete: { team: true, stats: true },
-            asset: { collection: true },
+            //asset: { collection: true },
           },
         },
       })
