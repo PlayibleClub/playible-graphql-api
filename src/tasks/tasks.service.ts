@@ -503,7 +503,7 @@ export class TasksService {
 
     this.logger.debug(`NFL Athletes Data: ${athletesCount ? "DID NOT SYNC" : "SYNCED SUCCESSFULLY"}`)
   }
-
+  
   //@Timeout(1)
   async syncNbaData() {
     const teamsCount = await Team.count({
@@ -1443,6 +1443,88 @@ export class TasksService {
     this.logger.debug("Generate Athlete Cricket Assets Promo: FINISHED")
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
+
+  @Timeout(1)
+  //@Interval(86400000) //runs every 1 day
+  async updateNflAthleteHeadshots(){
+    this.logger.debug("Update Athlete NFL Headshots: STARTED")
+
+    const {data, status} = await axios.get(`${process.env.SPORTS_DATA_URL}nfl/headshots/json/Headshots?key=${process.env.SPORTS_DATA_NFL_KEY}`)
+
+    if (status === 200){
+      const updateAthlete: Athlete[] = []
+      for (let athlete of data){
+        const apiId: number = athlete["PlayerID"]
+        const curAthlete = await Athlete.findOne({
+          where: { apiId: apiId },
+        })
+
+        if (curAthlete){
+          curAthlete.playerHeadshot = athlete["PreferredHostedHeadshotUrl"]
+          updateAthlete.push(curAthlete)
+        } 
+      }
+      await Athlete.save(updateAthlete, {chunk: 20}) 
+      this.logger.debug("Update Athlete NFL Headshots: FINISHED")
+    } else{
+      this.logger.error("NFL Athlete Headshot Data: SPORTS DATA ERROR")
+    }
+  }
+
+  @Timeout(1)
+  //@Interval(86400000) //runs every 1 day
+  async updateMlbAthleteHeadshots(){
+    this.logger.debug("Update Athlete MLB Headshots: STARTED")
+
+    const {data, status} = await axios.get(`${process.env.SPORTS_DATA_URL}mlb/headshots/json/Headshots?key=${process.env.SPORTS_DATA_MLB_KEY}`)
+
+    if (status === 200){
+      const updateAthlete: Athlete[] = []
+      for (let athlete of data){
+        const apiId: number = athlete["PlayerID"]
+        const curAthlete = await Athlete.findOne({
+          where: { apiId: apiId },
+        })
+
+        if (curAthlete){
+          curAthlete.playerHeadshot = athlete["PreferredHostedHeadshotUrl"]
+          updateAthlete.push(curAthlete)
+        } 
+      }
+      await Athlete.save(updateAthlete, {chunk: 20}) 
+      this.logger.debug("Update Athlete MLB Headshots: FINISHED")
+    } else{
+      this.logger.error("MLB Athlete Headshot Data: SPORTS DATA ERROR")
+    }
+  }
+
+  @Timeout(1)
+  //@Interval(86400000) //runs every 1 day
+  async updateNbaAthleteHeadshots(){
+    this.logger.debug("Update Athlete NBA Headshots: STARTED")
+
+    const {data, status} = await axios.get(`${process.env.SPORTS_DATA_URL}nba/headshots/json/Headshots?key=${process.env.SPORTS_DATA_NBA_KEY}`)
+
+    if (status === 200){
+      const updateAthlete: Athlete[] = []
+      for (let athlete of data){
+        const apiId: number = athlete["PlayerID"]
+        const curAthlete = await Athlete.findOne({
+          where: { apiId: apiId },
+        })
+
+        if (curAthlete){
+          curAthlete.playerHeadshot = athlete["PreferredHostedHeadshotUrl"]
+          updateAthlete.push(curAthlete)
+        } 
+      }
+      await Athlete.save(updateAthlete, {chunk: 20}) 
+      this.logger.debug("Update Athlete NBA Headshots: FINISHED")
+    } else{
+      this.logger.error("NBA Athlete Headshot Data: SPORTS DATA ERROR")
+    }
+  }
+
   // @Timeout(1)
   async generateAthleteNflAssetsLocked() {
     this.logger.debug("Generate Athlete NFL Assets Locked: STARTED")
@@ -3346,7 +3428,7 @@ export class TasksService {
   //   this.logger.debug(`Cricket Athletes: ${athleteCount ? "ALREADY EXISTS" : 'SYNCED'}`)
   // }
 
-  @Interval(3600000)
+  //@Interval(3600000)
   async updateCricketMatches(){
     this.logger.debug("Update Cricket Matches: START")
     //const tourney_key_2022 = "iplt20_2023" // for testing
@@ -3452,7 +3534,7 @@ export class TasksService {
   //   this.logger.debug("Update Cricket Match: FINISHED")
   // }
 
-  @Interval(3900000)
+  //@Interval(3900000)
   async updateCricketAthleteStats(){
     this.logger.debug("Update Cricket Athlete Stat: STARTED")
 
@@ -3552,6 +3634,68 @@ export class TasksService {
       //TODO: check how match dates are formatted in backend
     }
   }
+
+  //@Timeout(1)
+  //@Interval(4200000)
+  async updateCricketAthleteAvgFantasyScore(){  
+    this.logger.debug("Update Cricket Athlete Avg. Fantasy Score: STARTED")
+    const newStats: CricketAthleteStat[] = []
+    const updateStats: CricketAthleteStat[] = []
+
+    const athletes = await CricketAthlete.find({
+      relations: { stats: { match: true }}
+    })
+
+    if(athletes.length > 0){
+      for (let athlete of athletes){
+        const completedGames = athlete.stats ? athlete.stats.filter((x) => (x.match !== null && x.match !== undefined) && x.match.status === 'completed' && x.type === 'daily') : []
+        
+        if(Array.isArray(completedGames)){
+          const id: string = athlete["playerKey"]
+          let currStat = await CricketAthleteStat.findOne({
+            where: { athlete: { playerKey: id }, type: AthleteStatType.SEASON },
+            relations: { athlete: true, },
+          }) 
+
+          let totalFantasyScore: number = 0
+          if(completedGames.length > 0){
+            for (let i = 0 ; i < completedGames.length; i++){
+              
+                totalFantasyScore = +totalFantasyScore + +completedGames[i].fantasyScore!
+            }
+          } else{
+            totalFantasyScore = 0
+          }
+          if(currStat){ 
+            //update average stats 
+            //TODO fix tables since primary id on different tables were replaced 
+            updateStats.push(CricketAthleteStat.create({
+              id: currStat.id,
+              athlete: currStat.athlete,
+              fantasyScore: currStat.fantasyScore,
+              type: AthleteStatType.SEASON,
+            }))
+          } else{
+            newStats.push(
+              CricketAthleteStat.create({
+                athlete: athlete,
+                fantasyScore: totalFantasyScore === 0 ? totalFantasyScore = 0 : totalFantasyScore / completedGames.length,
+                type: AthleteStatType.SEASON,
+              }))
+          }
+        }
+        else{
+          this.logger.debug("Update Cricket Avg. Fantasy Score: No completed games found")
+        }
+      }
+    } 
+    else{
+      this.logger.debug("Update Cricket Avg. Fantasy Score: No athletes found")
+    }
+    await CricketAthleteStat.save([...newStats, ...updateStats], {chunk: 20})
+    this.logger.debug("Update Cricket Avg. Fantasy Score: FINISHED")
+  }
+
   // //@Timeout(1)
   // async updateCricketAthleteStats(){
   //   //TODO add interval querying to API logic
