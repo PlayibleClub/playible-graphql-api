@@ -3428,7 +3428,7 @@ export class TasksService {
   //   this.logger.debug(`Cricket Athletes: ${athleteCount ? "ALREADY EXISTS" : 'SYNCED'}`)
   // }
 
-  @Interval(3600000)
+  //@Interval(3600000)
   async updateCricketMatches(){
     this.logger.debug("Update Cricket Matches: START")
     //const tourney_key_2022 = "iplt20_2023" // for testing
@@ -3534,7 +3534,7 @@ export class TasksService {
   //   this.logger.debug("Update Cricket Match: FINISHED")
   // }
 
-  @Interval(3900000)
+  //@Interval(3900000)
   async updateCricketAthleteStats(){
     this.logger.debug("Update Cricket Athlete Stat: STARTED")
 
@@ -3636,7 +3636,7 @@ export class TasksService {
   }
 
   //@Timeout(1)
-  @Interval(4200000)
+  //@Interval(4200000)
   async updateCricketAthleteAvgFantasyScore(){  
     this.logger.debug("Update Cricket Athlete Avg. Fantasy Score: STARTED")
     const newStats: CricketAthleteStat[] = []
