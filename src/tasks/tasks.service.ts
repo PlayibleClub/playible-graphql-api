@@ -1445,7 +1445,7 @@ export class TasksService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
 
-  //@Timeout(1)
+  @Timeout(1)
   //@Interval(86400000) //runs every 1 day
   async updateNflAthleteHeadshots(){
     this.logger.debug("Update Athlete NFL Headshots: STARTED")
@@ -1472,7 +1472,7 @@ export class TasksService {
     }
   }
 
-  //@Timeout(1)
+  @Timeout(1)
   //@Interval(86400000) //runs every 1 day
   async updateMlbAthleteHeadshots(){
     this.logger.debug("Update Athlete MLB Headshots: STARTED")
@@ -1499,7 +1499,7 @@ export class TasksService {
     }
   }
 
-  //@Timeout(1)
+  @Timeout(1)
   //@Interval(86400000) //runs every 1 day
   async updateNbaAthleteHeadshots(){
     this.logger.debug("Update Athlete NBA Headshots: STARTED")
