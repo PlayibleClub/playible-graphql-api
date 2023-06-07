@@ -6,6 +6,7 @@ import fs from "fs"
 import { LessThanOrEqual, MoreThanOrEqual, Equal, Not, In } from "typeorm"
 import convert from "xml-js"
 import moment from 'moment-timezone'
+import WebSocket from 'ws'
 
 import { Athlete } from "../entities/Athlete"
 import { AthleteStat } from "../entities/AthleteStat"
@@ -3766,5 +3767,31 @@ export class TasksService {
       await CricketAthleteStat.save([...newStats, ...updateStats], { chunk: 20 })
       this.logger.debug("Update Cricket Athlete Stat (Season): FINISHED")
     }
+  }
+
+  @Timeout(1)
+  async runNearMainnetWebSocketListener(){
+    const ws = new WebSocket('wss://events.near.stream/ws')
+
+    this.logger.debug("test");
+    ws.on('open', function open(){
+      ws.send(JSON.stringify({
+        secret: 'secret',
+        filter: [
+          {
+            "account_id": "nft.nearapps.near",
+            "status": "SUCCESS",
+            "event": {
+              "standard": "nep141",
+              "event": "nft_mint",
+            }
+          }
+        ]
+      }))
+    })
+
+    ws.on("message", function incoming(data) {
+      Logger.debug('Received: ' + data);
+    })
   }
 }
