@@ -39,6 +39,7 @@
     "@sentry/node": "^7.4.1",
     "@sentry/tracing": "^7.4.1",
     "@types/cron": "^2.0.0",
+    "@types/ws": "^8.5.4",
     "apollo-server-express": "^3.8.2",
     "argon2": "^0.28.5",
     "aws-sdk": "^2.1153.0",
