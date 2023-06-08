@@ -3771,27 +3771,41 @@ export class TasksService {
 
   @Timeout(1)
   async runNearMainnetWebSocketListener(){
-    const ws = new WebSocket('wss://events.near.stream/ws')
+    
+    let reconnectTimeout: ReturnType<typeof setTimeout>
+    function listenToMainnet(){
+      const scheduleReconnect = (timeout: number) => {
+        if(reconnectTimeout){
+          clearTimeout(reconnectTimeout)
+          
+        }
+      }
+      const ws = new WebSocket('wss://events.near.stream/ws')
 
-    this.logger.debug("test");
-    ws.on('open', function open(){
-      ws.send(JSON.stringify({
-        secret: 'secret',
-        filter: [
-          {
-            "account_id": "nft.nearapps.near",
-            "status": "SUCCESS",
-            "event": {
-              "standard": "nep141",
-              "event": "nft_mint",
+      Logger.debug("test");
+      ws.on('open', function open(){
+        ws.send(JSON.stringify({
+          secret: 'secret',
+          filter: [
+            {
+              "account_id": "nft.nearapps.near",
+              "event": {
+                "standard": "nep171",
+                "event": "nft_mint",
+              }
             }
-          }
-        ]
-      }))
-    })
+          ],
+          fetch_past_events: 20,
+        }))
+      })
 
-    ws.on("message", function incoming(data) {
-      Logger.debug('Received: ' + data);
-    })
+      ws.on("message", function incoming(data) {
+        Logger.debug(data);
+      })
+    // ws.on("error", function error(err) {
+    //   Logger.debug(err)
+    // })
+    }
+    
   }
 }

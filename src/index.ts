@@ -6,6 +6,7 @@ import cors from "cors"
 import "dotenv-safe/config"
 import express, { Request, Response } from "express"
 import session from "express-session"
+import WebSocket from 'ws'
 import { createClient } from "redis"
 import { AuthChecker, buildSchema } from "type-graphql"
 
@@ -142,7 +143,32 @@ const main = async () => {
   nest.listen(8000, () => {
     console.log("nest started at localhost:8001")
   })
+
+  //NEAR mainnet websocket
+  const ws = new WebSocket('wss://events.near.stream/ws')
+  ws.on('open', function open(){
+    ws.send(JSON.stringify({
+      secret: 'secret',
+      filter: [
+        {
+          "account_id": "nft.nearapps.near",
+          "event": {
+            "standard": "nep171",
+            "event": "nft_mint",
+          }
+        }
+      ],
+      fetch_past_events: 20,
+    }))
+  })
+
+  ws.on("message", function incoming(data) {
+    console.log("Data received: %s", data)
+  })
 }
+
+
+
 
 main().catch((err) => {
   console.log(err)
