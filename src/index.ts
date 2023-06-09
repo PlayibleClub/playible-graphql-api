@@ -12,7 +12,7 @@ import { AuthChecker, buildSchema } from "type-graphql"
 
 import { NestFactory } from "@nestjs/core"
 
-import { ContextType } from "@nestjs/common"
+import { ContextType, Logger } from "@nestjs/common"
 import { AppModule } from "./app.module"
 import { __prod__ } from "./constants"
 import { AppDataSource } from "./utils/db"
@@ -147,23 +147,34 @@ const main = async () => {
   //NEAR mainnet websocket
   const ws = new WebSocket('wss://events.near.stream/ws')
   ws.on('open', function open(){
+    console.log("test")
     ws.send(JSON.stringify({
       secret: 'secret',
       filter: [
         {
-          "account_id": "nft.nearapps.near",
+          "status": "SUCCESS",
           "event": {
             "standard": "nep171",
-            "event": "nft_mint",
+            
           }
         }
       ],
       fetch_past_events: 20,
+      
     }))
   })
 
   ws.on("message", function incoming(data) {
-    console.log("Data received: %s", data)
+    const util = require("util")
+
+    const logger = new Logger("WEBSOCKET")
+    logger.debug("MESSAGE RECEIVED")
+    const msg = JSON.parse(data.toString())
+    console.log(util.inspect(msg, false, null, true))
+  })
+
+  ws.on("close", function close(){
+    console.log("Connection closed")
   })
 }
 
