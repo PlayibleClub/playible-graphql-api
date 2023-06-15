@@ -145,37 +145,46 @@ const main = async () => {
   })
 
   //NEAR mainnet websocket
-  const ws = new WebSocket('wss://events.near.stream/ws')
-  ws.on('open', function open(){
-    console.log("test")
-    ws.send(JSON.stringify({
-      secret: 'secret',
-      filter: [
-        {
-          "status": "SUCCESS",
-          "event": {
-            "standard": "nep171",
-            
+
+  
+  function listenToMainnet(){
+    const ws = new WebSocket('wss://events.near.stream/ws')
+    ws.on('open', function open(){
+      console.log("test")
+      ws.send(JSON.stringify({
+        secret: 'secret',
+        filter: [
+          {
+            account_id: "game.baseball.playible.near",
+            event: {
+              "event": "lineup_submission_result",
+              
+            }
+          
           }
-        }
-      ],
-      fetch_past_events: 20,
-      
-    }))
-  })
-
-  ws.on("message", function incoming(data) {
-    const util = require("util")
-
-    const logger = new Logger("WEBSOCKET")
-    logger.debug("MESSAGE RECEIVED")
-    const msg = JSON.parse(data.toString())
-    console.log(util.inspect(msg, false, null, true))
-  })
-
-  ws.on("close", function close(){
-    console.log("Connection closed")
-  })
+        ],
+        fetch_past_events: 5,
+        
+      }))
+    })
+  
+    ws.on("message", function incoming(data) {
+      const util = require("util")
+  
+      const logger = new Logger("WEBSOCKET")
+      logger.debug("MESSAGE RECEIVED")
+      const msg = JSON.parse(data.toString())
+      console.log(util.inspect(msg, false, null, true))
+    })
+    ws.on("close", function close(){
+      console.log("Connection closed")
+      console.log("retrying connection...")
+      setTimeout(() => listenToMainnet(), 1000)
+    })
+  }
+  
+  listenToMainnet()
+  
 }
 
 
