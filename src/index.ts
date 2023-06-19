@@ -157,14 +157,21 @@ const main = async () => {
           {
             account_id: "game.baseball.playible.near",
             event: {
-              "event": "lineup_submission_result",
-              
+              "event": "add_game",
+              "standard": "game",
             }
-          
+            
+          },
+          {
+            account_id: "game.baseball.playible.near",
+            event: {
+              "event": "lineup_submission_result",
+              "standard": "game",
+            }
           }
         ],
-        fetch_past_events: 5,
         
+        fetch_past_events: 10,
       }))
     })
   
@@ -174,7 +181,9 @@ const main = async () => {
       const logger = new Logger("WEBSOCKET")
       logger.debug("MESSAGE RECEIVED")
       const msg = JSON.parse(data.toString())
+      //console.log(msg.events[0].predecessor_id);
       console.log(util.inspect(msg, false, null, true))
+      //console.log(msg.events[0].event.data[0].game_id);
     })
     ws.on("close", function close(){
       console.log("Connection closed")
@@ -182,9 +191,8 @@ const main = async () => {
       setTimeout(() => listenToMainnet(), 1000)
     })
   }
-  
   listenToMainnet()
-  
+
 }
 
 
