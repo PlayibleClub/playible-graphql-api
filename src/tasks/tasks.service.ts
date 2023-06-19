@@ -3799,16 +3799,51 @@ export class TasksService {
         }))
       })
     
-      ws.on("message", function incoming(data) {
+      ws.on("message", async function incoming(data) {
         const util = require("util")
     
         const logger = new Logger("WEBSOCKET")
         logger.debug("MESSAGE RECEIVED")
         const msg = JSON.parse(data.toString())
         //console.log(msg.events[0].predecessor_id);
-        //console.log(util.inspect(msg, false, null, true))
+        console.log(util.inspect(msg, false, null, true))
         console.log(msg.events.length);
         //console.log(msg.events[0].event.data[0].game_id);
+        if(msg.events.length > 0){
+          
+          for(let event of msg.events){
+            if(event.event.event === 'lineup_submission_result'){
+              console.log("lineup submission")
+
+              const gameTeam = await GameTeam.findOne({
+                where: {
+                  game: {id: event.event.data[0].game_id},
+                  name: event.event.data[0].team_name,
+                },
+                
+              })
+
+              if(gameTeam){ //team submission already exists
+
+              } else{
+                const game = await Game.findOne({
+                  where: { id: event.event.data[0].game_id}
+                })
+                if(game){ //add lineup processing
+                  GameTeam.create({
+                    game: game,
+                    name: event.event.data[0].team_name,
+                    wallet_address: event.event.data[0].signer,
+                  })
+                }
+                
+              }
+            }
+            else if (event.event.event === 'add_game'){
+
+            }
+          }
+        }
       })
       ws.on("close", function close(){
         console.log("Connection closed")
