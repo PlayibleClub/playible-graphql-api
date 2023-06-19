@@ -3770,42 +3770,53 @@ export class TasksService {
   }
 
   @Timeout(1)
-  async runNearMainnetWebSocketListener(){
-    
-    let reconnectTimeout: ReturnType<typeof setTimeout>
+  async runNearMainnetBaseballWebSocketListener(){
     function listenToMainnet(){
-      const scheduleReconnect = (timeout: number) => {
-        if(reconnectTimeout){
-          clearTimeout(reconnectTimeout)
-          
-        }
-      }
       const ws = new WebSocket('wss://events.near.stream/ws')
-
-      Logger.debug("test");
       ws.on('open', function open(){
+        console.log("test")
         ws.send(JSON.stringify({
           secret: 'secret',
           filter: [
             {
-              "account_id": "nft.nearapps.near",
-              "event": {
-                "standard": "nep171",
-                "event": "nft_mint",
+              account_id: "game.baseball.playible.near",
+              event: {
+                "event": "add_game",
+                "standard": "game",
               }
-            }
+              
+            },
+            {
+              account_id: "game.baseball.playible.near",
+              event: {
+                "event": "lineup_submission_result",
+                "standard": "game",
+              }
+            },
           ],
-          fetch_past_events: 20,
+          
+          fetch_past_events: 15, //capped at 15?
         }))
       })
-
+    
       ws.on("message", function incoming(data) {
-        Logger.debug(data);
+        const util = require("util")
+    
+        const logger = new Logger("WEBSOCKET")
+        logger.debug("MESSAGE RECEIVED")
+        const msg = JSON.parse(data.toString())
+        //console.log(msg.events[0].predecessor_id);
+        //console.log(util.inspect(msg, false, null, true))
+        console.log(msg.events.length);
+        //console.log(msg.events[0].event.data[0].game_id);
       })
-    // ws.on("error", function error(err) {
-    //   Logger.debug(err)
-    // })
+      ws.on("close", function close(){
+        console.log("Connection closed")
+        console.log("retrying connection...")
+        setTimeout(() => listenToMainnet(), 1000)
+      })
     }
     
+    listenToMainnet()
   }
 }

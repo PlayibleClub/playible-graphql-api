@@ -147,51 +147,51 @@ const main = async () => {
   //NEAR mainnet websocket
 
   
-  function listenToMainnet(){
-    const ws = new WebSocket('wss://events.near.stream/ws')
-    ws.on('open', function open(){
-      console.log("test")
-      ws.send(JSON.stringify({
-        secret: 'secret',
-        filter: [
-          {
-            account_id: "game.baseball.playible.near",
-            event: {
-              "event": "add_game",
-              "standard": "game",
-            }
+  // function listenToMainnet(){
+  //   const ws = new WebSocket('wss://events.near.stream/ws')
+  //   ws.on('open', function open(){
+  //     console.log("test")
+  //     ws.send(JSON.stringify({
+  //       secret: 'secret',
+  //       filter: [
+  //         {
+  //           account_id: "game.baseball.playible.near",
+  //           event: {
+  //             "event": "add_game",
+  //             "standard": "game",
+  //           }
             
-          },
-          {
-            account_id: "game.baseball.playible.near",
-            event: {
-              "event": "lineup_submission_result",
-              "standard": "game",
-            }
-          }
-        ],
+  //         },
+  //         {
+  //           account_id: "game.baseball.playible.near",
+  //           event: {
+  //             "event": "lineup_submission_result",
+  //             "standard": "game",
+  //           }
+  //         }
+  //       ],
         
-        fetch_past_events: 10,
-      }))
-    })
+  //       fetch_past_events: 10,
+  //     }))
+  //   })
   
-    ws.on("message", function incoming(data) {
-      const util = require("util")
+  //   ws.on("message", function incoming(data) {
+  //     const util = require("util")
   
-      const logger = new Logger("WEBSOCKET")
-      logger.debug("MESSAGE RECEIVED")
-      const msg = JSON.parse(data.toString())
-      //console.log(msg.events[0].predecessor_id);
-      console.log(util.inspect(msg, false, null, true))
-      //console.log(msg.events[0].event.data[0].game_id);
-    })
-    ws.on("close", function close(){
-      console.log("Connection closed")
-      console.log("retrying connection...")
-      setTimeout(() => listenToMainnet(), 1000)
-    })
-  }
-  listenToMainnet()
+  //     const logger = new Logger("WEBSOCKET")
+  //     logger.debug("MESSAGE RECEIVED")
+  //     const msg = JSON.parse(data.toString())
+  //     //console.log(msg.events[0].predecessor_id);
+  //     console.log(util.inspect(msg, false, null, true))
+  //     //console.log(msg.events[0].event.data[0].game_id);
+  //   })
+  //   ws.on("close", function close(){
+  //     console.log("Connection closed")
+  //     console.log("retrying connection...")
+  //     setTimeout(() => listenToMainnet(), 1000)
+  //   })
+  // }
+  // listenToMainnet()
 
 }
 
