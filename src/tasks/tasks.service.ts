@@ -3830,11 +3830,25 @@ export class TasksService {
                   where: { id: event.event.data[0].game_id}
                 })
                 if(game){ //add lineup processing
-                  GameTeam.create({
-                    game: game,
-                    name: event.event.data[0].team_name,
-                    wallet_address: event.event.data[0].signer,
-                  })
+                  // GameTeam.create({
+                  //   game: game,
+                  //   name: event.event.data[0].team_name, //add sportType
+                  //   wallet_address: event.event.data[0].signer,
+                  // }).save()
+
+                  const lineup = event.event.data[0].lineup
+                  //get the apiId
+                  for(let athlete of lineup){
+                    let token_id = athlete
+                    let apiId = ""
+                    if(athlete.includes("PR") || athlete.includes("SB")){
+                      token_id = token_id.split("_")[1]
+                    }
+                    apiId = token_id.split("CR")[0]
+                    console.log(apiId)
+
+                    //get the athlete, add to gameteamathlete
+                  }
                 }
                 
               }
