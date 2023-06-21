@@ -109,14 +109,13 @@ export class GameResolver {
   @Mutation(() => Game)
   async createGame(
     @Arg("args")
-    { name, description, startTime, endTime, duration, prize, sport }: CreateGameArgs
+    { name, description, startTime, endTime, prize, sport }: CreateGameArgs
   ): Promise<Game> {
     const game = await Game.create({
       name,
       description,
       startTime,
       endTime,
-      duration,
       prize,
       sport,
     }).save()
