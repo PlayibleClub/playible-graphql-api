@@ -3796,7 +3796,7 @@ export class TasksService {
             },
           ],
           
-          fetch_past_events: 15, //capped at 15?
+          fetch_past_events: 1, //capped at 15?
         }))
       })
     
@@ -3818,54 +3818,75 @@ export class TasksService {
 
               const gameTeam = await GameTeam.findOne({
                 where: {
-                  game: {id: event.event.data[0].game_id},
+                  game: {
+                    gameId: event.event.data[0].game_id, 
+                    sport: SportType.MLB
+                  },
                   name: event.event.data[0].team_name,
+                  wallet_address: event.event.data[0].signer,
                 },
                 
               })
 
               if(gameTeam){ //team submission already exists
-
+                Logger.debug("This team already exists")
               } else{
                 const game = await Game.findOne({
-                  where: { id: event.event.data[0].game_id}
+                  where: { 
+                    gameId: event.event.data[0].game_id, 
+                    sport: SportType.MLB
+                  }
                 })
                 if(game){ //add lineup processing
+                  // try{
+                  //   GameTeam.create({
+                  //     game: game,
+                  //     name: event.event.data[0].team_name, //add sportType
+                  //     wallet_address: event.event.data[0].signer,
+                  //   }).save()
+                    
+                  // } catch(e){
+                  //   Logger.error(e)
+                  // }
                   GameTeam.create({
                     game: game,
-                    name: event.event.data[0].team_name, //add sportType
+                    name: event.event.data[0].team_name,
                     wallet_address: event.event.data[0].signer,
-                  }).save()
+                  }).save().then(async (newTeam) => {
+                    const lineup = event.event.data[0].lineup
+                    //get the apiId
+                    
+                    for(let token_id of lineup){
+                      let apiId = ""
+                      if(token_id.includes("PR") || token_id.includes("SB")){
+                        token_id = token_id.split("_")[1]
+                      }
+                      apiId = token_id.split("CR")[0]
+                      console.log(apiId)
 
-                  const lineup = event.event.data[0].lineup
-                  //get the apiId
-                  const gameTeam = await GameTeam.findOneOrFail({
-                    where: {
-                      name: event.event.data[0].team_name, 
-                      wallet_address: event.event.data[0].signer,
+                      const athlete = await Athlete.findOne({
+                        where: {apiId: parseInt(apiId)}
+                      })
+                      if(athlete){
+                        try{
+                          GameTeamAthlete.create({
+                            gameTeam: newTeam,
+                            athlete: athlete,
+                          }).save()
+
+                          Logger.debug("Added athlete " + apiId + " to lineup")
+                        }
+                        catch(e){
+                          Logger.error(e)
+                        }
+                        
+                      } else{
+                        Logger.error("ERROR athlete apiId not found, disregarding...")
+                      }
+                      //get the athlete, add to gameteamathlete
                     }
                   })
-                  for(let token_id of lineup){
-                    let apiId = ""
-                    if(token_id.includes("PR") || token_id.includes("SB")){
-                      token_id = token_id.split("_")[1]
-                    }
-                    apiId = token_id.split("CR")[0]
-                    console.log(apiId)
-
-                    const athlete = await Athlete.findOne({
-                      where: {apiId: parseInt(apiId)}
-                    })
-                    if(athlete){
-                      GameTeamAthlete.create({
-                        gameTeam: gameTeam,
-                        athlete: athlete,
-                      }).save()
-                    } else{
-                      Logger.error("ERROR athlete apiId not found, disregarding...")
-                    }
-                    //get the athlete, add to gameteamathlete
-                  }
+                  
                 }
                 
               }
