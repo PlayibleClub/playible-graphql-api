@@ -21,7 +21,7 @@ export class Game extends BaseEntity {
 
   @Field(() => String, { nullable: true })
   @Column({ type: "text", nullable: true })
-  description?: string
+  description?: string // status?
 
   @Field(() => Date)
   @Column({ type: "timestamptz" })

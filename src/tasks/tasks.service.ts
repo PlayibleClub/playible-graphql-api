@@ -3906,4 +3906,34 @@ export class TasksService {
     
     listenToMainnet()
   }
+
+  @Timeout(1)
+  async updateGameTeamFantasyScores(){
+
+    const games = await Game.find({
+      where: {description: 'on-going'}
+    })
+
+    if(games){
+      for(let game of games){
+        for(let team of game.teams){
+          
+          for(let teamAthlete of team.athletes){
+            let athlete = teamAthlete.athlete
+
+            athlete.stats = athlete.stats.filter((stat) => stat.gameDate && 
+              moment(stat.gameDate).unix() >= moment(game.startTime).unix() && moment(stat.gameDate).unix() <= moment(game.endTime).unix())
+            
+            const totalFantasyScore = athlete.stats.reduce(
+              (accumulator, currentValue) => accumulator + (currentValue.fantasyScore && currentValue.fantasyScore || 0) ,
+              0,
+            )
+
+          }
+        }
+      }
+    } else{
+      this.logger.debug("No active games found");
+    }
+  }
 }
