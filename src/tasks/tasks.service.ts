@@ -3,7 +3,7 @@ import { Cron, Interval, Timeout } from "@nestjs/schedule"
 import S3 from "aws-sdk/clients/s3"
 import axios from "axios"
 import fs from "fs"
-import { LessThanOrEqual, MoreThanOrEqual, Equal, Not, In } from "typeorm"
+import { LessThanOrEqual, MoreThanOrEqual, Equal, Not, In, QueryBuilder } from "typeorm"
 import convert from "xml-js"
 import moment from 'moment-timezone'
 import WebSocket from 'ws'
@@ -27,6 +27,7 @@ import { ATHLETE_MLB_BASE_ANIMATION, ATHLETE_MLB_BASE_IMG, ATHLETE_MLB_IMG } fro
 import { AthleteStatType, SportType } from "../utils/types"
 import { CricketTeamInterface, CricketAthleteInterface, CricketPointsBreakup } from '../interfaces/Cricket'
 import { NFL_ATHLETE_IDS, NBA_ATHLETE_IDS, NBA_ATHLETE_PROMO_IDS, MLB_ATHLETE_IDS, MLB_ATHLETE_PROMO_IDS, IPL2023_ATHLETE_IDS } from "./../utils/athlete-ids"
+import { AppDataSource } from "../utils/db"
 
 import e from "express"
 
@@ -3770,7 +3771,7 @@ export class TasksService {
     }
   }
 
-  @Timeout(1)
+  //@Timeout(1)
   async runNearMainnetBaseballWebSocketListener(){
     function listenToMainnet(){
       const ws = new WebSocket('wss://events.near.stream/ws')
@@ -3848,44 +3849,59 @@ export class TasksService {
                   // } catch(e){
                   //   Logger.error(e)
                   // }
-                  GameTeam.create({
+                  // GameTeam.create({
+                  //   game: game,
+                  //   name: event.event.data[0].team_name,
+                  //   wallet_address: event.event.data[0].signer,
+                  // }).save().then(async (newTeam) => {
+                    
+                  // })
+                  await GameTeam.create({
                     game: game,
                     name: event.event.data[0].team_name,
                     wallet_address: event.event.data[0].signer,
-                  }).save().then(async (newTeam) => {
-                    const lineup = event.event.data[0].lineup
+                  }).save()
+
+                  const lineup = event.event.data[0].lineup
                     //get the apiId
-                    
-                    for(let token_id of lineup){
-                      let apiId = ""
-                      if(token_id.includes("PR") || token_id.includes("SB")){
-                        token_id = token_id.split("_")[1]
-                      }
-                      apiId = token_id.split("CR")[0]
-                      console.log(apiId)
-
-                      const athlete = await Athlete.findOne({
-                        where: {apiId: parseInt(apiId)}
-                      })
-                      if(athlete){
-                        try{
-                          GameTeamAthlete.create({
-                            gameTeam: newTeam,
-                            athlete: athlete,
-                          }).save()
-
-                          Logger.debug("Added athlete " + apiId + " to lineup")
-                        }
-                        catch(e){
-                          Logger.error(e)
-                        }
-                        
-                      } else{
-                        Logger.error("ERROR athlete apiId not found, disregarding...")
-                      }
-                      //get the athlete, add to gameteamathlete
+                  const currGameTeam = await GameTeam.findOneOrFail({
+                    where: { 
+                      game: {
+                        gameId: event.event.data[0].gameId
+                      }, 
+                      name: event.event.data[0].team_name, 
+                      wallet_address: event.event.data[0].signer
                     }
                   })
+                  for(let token_id of lineup){
+                    let apiId = ""
+                    if(token_id.includes("PR") || token_id.includes("SB")){
+                      token_id = token_id.split("_")[1]
+                    }
+                    apiId = token_id.split("CR")[0]
+                    console.log(apiId)
+
+                    const athlete = await Athlete.findOne({
+                      where: {apiId: parseInt(apiId)}
+                    })
+                    if(athlete){
+                      try{
+                        GameTeamAthlete.create({
+                          gameTeam: currGameTeam,
+                          athlete: athlete,
+                        }).save()
+
+                        Logger.debug("Added athlete " + apiId + " to lineup")
+                      }
+                      catch(e){
+                        Logger.error(e)
+                      }
+                      
+                    } else{
+                      Logger.error("ERROR athlete apiId not found, disregarding...")
+                    }
+                    //get the athlete, add to gameteamathlete
+                  }
                   
                 }
                 
@@ -3907,7 +3923,7 @@ export class TasksService {
     listenToMainnet()
   }
 
-  @Timeout(1)
+  //@Timeout(1)
   async updateGameTeamFantasyScores(){
 
     const games = await Game.find({
@@ -3916,24 +3932,72 @@ export class TasksService {
 
     if(games){
       for(let game of games){
+        let teamUpdate: GameTeam[] = []
         for(let team of game.teams){
           
+          let teamFantasyScore = 0
           for(let teamAthlete of team.athletes){
             let athlete = teamAthlete.athlete
 
             athlete.stats = athlete.stats.filter((stat) => stat.gameDate && 
               moment(stat.gameDate).unix() >= moment(game.startTime).unix() && moment(stat.gameDate).unix() <= moment(game.endTime).unix())
             
-            const totalFantasyScore = athlete.stats.reduce(
+            const totalAthleteFantasyScore = athlete.stats.reduce(
               (accumulator, currentValue) => accumulator + (currentValue.fantasyScore && currentValue.fantasyScore || 0) ,
               0,
-            )
-
+            ) / athlete.stats.length
+            teamFantasyScore += totalAthleteFantasyScore
+            
           }
+          team.fantasyScore = teamFantasyScore
+          teamUpdate.push(team)
         }
+        await GameTeam.save([...teamUpdate], {chunk: 20})
       }
     } else{
       this.logger.debug("No active games found");
     }
+  }
+  
+  @Timeout(1)
+  async updateGameTeamFantasyScoreQueryBuilder(){
+
+    // const athletesToUpdate = await AppDataSource.createQueryBuilder().select("gt").from(GameTeam, "gt")
+    //   .leftJoinAndSelect("gt.athletes", "athletes").leftJoinAndSelect("athletes.athlete", "athlete").getOne()
+    // const athletesToUpdate = await AppDataSource.createQueryBuilder().select("gta").from(GameTeamAthlete, "gta").leftJoinAndSelect("gta.athlete", "athlete").leftJoinAndSelect("athlete.stats", "stat")
+    // this.logger.debug(JSON.stringify(athletesToUpdate))
+    // this.logger.debug(athletesToUpdate?.athletes)
+    const athletesToUpdate = await AppDataSource.createQueryBuilder().select("gt").from(GameTeam, "gt").leftJoin("gt.game", "game").getOneOrFail()
+    console.log(athletesToUpdate.athletes[0].id)
+    /*
+    select game_team left join game, loop through game_team
+    select game entity based on game_team gameId, for getting time and updating of status
+    loop through game_team athletes
+    */
+
+    // const teams = await GameTeam.find({
+    //   where: {
+    //     game: {description: 'on-going'}
+    //   }
+    // })
+    
+    // if (teams){
+    //   let teamUpdate: GameTeam[] = []
+    //   for(let team of teams){
+    //     let teamFantasyScore = 0
+    //     for(let teamAthlete of team.athletes){
+    //       let athlete = teamAthlete.athlete
+
+    //       athlete.stats = athlete.stats.filter((stat) => stat.gameDate && 
+    //         moment(stat.gameDate).unix() >= moment(team.game.startTime).unix() && moment(stat.gameDate).unix() <= moment(team.game.endTime).unix())
+          
+    //       const totalAthleteFantasyScore = athlete.stats.reduce(
+    //         (accumulator, currentValue) => accumulator + (currentValue.fantasyScore && currentValue.fantasyScore || 0) ,
+    //         0,
+    //       ) / athlete.stats.length
+    //       teamFantasyScore += totalAthleteFantasyScore
+    //     }
+    //   }
+    // }
   }
 }
