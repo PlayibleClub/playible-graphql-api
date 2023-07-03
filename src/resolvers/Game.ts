@@ -10,8 +10,8 @@ import { GameTeamAthlete } from "../entities/GameTeamAthlete"
 
 import { LessThanOrEqual, MoreThan, MoreThanOrEqual } from "typeorm"
 import { CreateGameArgs, CreateTeamArgs, GetGameArgs } from "../args/GameArgs"
-import { GameTab } from "../utils/types"
-
+import { GameTab, SportType } from "../utils/types"
+import moment from "moment-timezone"
 @ObjectType()
 class GameResponse {
   @Field()
@@ -103,6 +103,43 @@ export class GameResolver {
       },
     })
     return { data, count }
+  }
+
+  @Query(() => [GameTeam])
+  async getLeaderboard(
+    @Arg("gameId") gameId: number,
+    @Arg("sport") sport: SportType,
+  ): Promise<GameTeam[]> {
+    const teams = await GameTeam.find({
+      where: {
+        game: {
+          gameId: gameId,
+          sport: sport,
+        },
+        
+      },
+      relations: {
+        game: true
+      }
+    })
+
+    for(let team of teams){
+      let teamFantasyScore = 0
+      for(let teamAthlete of team.athletes){
+        let athlete = teamAthlete.athlete
+
+        athlete.stats = athlete.stats.filter((stat) => stat.gameDate && 
+          moment(stat.gameDate).unix() >= moment(team.game.startTime).unix() && moment(stat.gameDate).unix() <= moment(team.game.endTime).unix())
+          
+        const totalAthleteFantasyScore = athlete.stats.reduce(
+          (accumulator, currentValue) => accumulator + (currentValue.fantasyScore && currentValue.fantasyScore || 0) ,
+          0,
+        ) / athlete.stats.length
+        teamFantasyScore += totalAthleteFantasyScore
+      }
+      team.fantasyScore = teamFantasyScore
+    }
+    return teams
   }
 
   @Authorized("ADMIN")
