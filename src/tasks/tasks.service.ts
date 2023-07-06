@@ -2813,6 +2813,152 @@ export class TasksService {
     }
   }
 
+  async updateMlbAthleteStatsPerDayLoop(){
+    this.logger.debug("Update MLB Athlete Stats: Started")
+
+    const timeFrames = await axios.get(
+      `${process.env.SPORTS_DATA_URL}mlb/scores/json/CurrentSeason?key=${process.env.SPORTS_DATA_MLB_KEY}`
+    )
+    if (timeFrames.status === 200){
+      const timeFrame = timeFrames.data
+
+      if (timeFrame){
+        let timesRun = 0
+        let interval = setInterval(async () => {
+          timesRun+= 1
+          const season = timeFrame.ApiSeason
+          const date = moment().tz("America/New_York").subtract(timesRun, "day").toDate()
+          const dateFormat = moment(date).format("YYYY-MMM-DD").toUpperCase()
+          this.logger.debug(dateFormat)
+
+          const { data, status } = await axios.get(
+            `${process.env.SPORTS_DATA_URL}`
+          )
+
+          if (status === 200 && Object.keys(data).length !== 0){
+            const newStats: AthleteStat[] = []
+            const updateStats: AthleteStat[] = []
+  
+            for (let athleteStat of data){
+              const apiId: number = athleteStat["PlayerID"]
+              const curStat = await AthleteStat.findOne({
+                where: {
+                  statId: athleteStat["StatID"],
+                },
+                relations:{
+                  athlete: true,
+                }
+              })
+    
+              const opponent = await Team.findOne({
+                where: { apiId: athleteStat["GlobalOpponentID"]},
+              })
+    
+              const apiDate = moment.tz(athleteStat["DateTime"], "America/New_York")
+              const utcDate = apiDate.utc().format()
+    
+              if (curStat){
+                curStat.fantasyScore = athleteStat["FantasyPointsDraftKings"]
+                curStat.atBats = athleteStat["AtBats"]
+                curStat.runs = athleteStat["Runs"]
+                curStat.hits = athleteStat["Hits"]
+                curStat.singles = athleteStat["Singles"]
+                curStat.doubles = athleteStat["Doubles"]
+                curStat.triples = athleteStat["Triples"]
+                curStat.homeRuns = athleteStat["HomeRuns"]
+                curStat.runsBattedIn = athleteStat["RunsBattedIn"]
+                curStat.battingAverage = athleteStat["BattingAverage"]
+                curStat.strikeouts = athleteStat["Strikeouts"]
+                curStat.walks = athleteStat["Walks"]
+                curStat.caughtStealing = athleteStat["CaughtStealing"]
+                curStat.onBasePercentage = athleteStat["OnBasePercentage"]
+                curStat.sluggingPercentage = athleteStat["SluggingPercentage"]
+                curStat.onBasePlusSlugging = athleteStat["OnBasePlusSlugging"]
+                curStat.wins = athleteStat["Wins"]
+                curStat.losses = athleteStat["Losses"]
+                curStat.earnedRunAverage = athleteStat["EarnedRunAverage"]
+                curStat.hitByPitch = athleteStat["HitByPitch"]
+                curStat.stolenBases = athleteStat["StolenBases"]
+                curStat.walksHitsPerInningsPitched = athleteStat["WalksHitsPerInningsPitched"]
+                curStat.pitchingBattingAverageAgainst = athleteStat["PitchingBattingAverageAgainst"]
+                curStat.pitchingHits = athleteStat["PitchingHits"]
+                curStat.pitchingRuns = athleteStat["PitchingRuns"]
+                curStat.pitchingEarnedRuns = athleteStat["PitchingEarnedRuns"]
+                curStat.pitchingWalks = athleteStat["PitchingWalks"]
+                curStat.pitchingHomeRuns = athleteStat["PitchingHomeRuns"]
+                curStat.pitchingStrikeouts = athleteStat["PitchingStrikeouts"]
+                curStat.pitchingCompleteGames = athleteStat["PitchingCompleteGames"]
+                curStat.pitchingShutouts = athleteStat["PitchingShutOuts"]
+                curStat.pitchingNoHitters = athleteStat["PitchingNoHitters"]
+                curStat.played = athleteStat["Games"]
+                curStat.gameDate = athleteStat["DateTime"] !== null ? new Date(utcDate) : athleteStat["DateTime"]
+                updateStats.push(curStat)
+              } else{
+                const curAthlete = await Athlete.findOne({
+                  where: { apiId}
+                })
+    
+                if (curAthlete){
+                  newStats.push(
+                    AthleteStat.create({
+                      athlete: curAthlete,
+                      season: season,
+                      opponent: opponent,
+                      gameDate: athleteStat["DateTime"] !== null ? new Date(utcDate) : athleteStat["DateTime"],
+                      type: AthleteStatType.DAILY,
+                      statId: athleteStat["StatID"],
+                      position: athleteStat["Position"],
+                      played: athleteStat["Games"],
+                      fantasyScore: athleteStat["FantasyPointsDraftKings"],
+                      atBats: athleteStat["AtBats"],
+                      runs: athleteStat["Runs"],
+                      hits: athleteStat["Hits"],
+                      singles: athleteStat["Singles"],
+                      doubles: athleteStat["Doubles"],
+                      triples: athleteStat["Triples"],
+                      homeRuns: athleteStat["HomeRuns"],
+                      runsBattedIn: athleteStat["RunsBattedIn"],
+                      battingAverage: athleteStat["BattingAverage"],
+                      strikeouts: athleteStat["Strikeouts"],
+                      walks: athleteStat["Walks"],
+                      caughtStealing: athleteStat["CaughtStealing"],
+                      onBasePercentage: athleteStat["OnBasePercentage"],
+                      sluggingPercentage: athleteStat["SluggingPercentage"],
+                      wins: athleteStat["Wins"],
+                      losses: athleteStat["Losses"],
+                      earnedRunAverage: athleteStat["EarnedRunAverage"],
+                      hitByPitch: athleteStat["HitByPitch"],
+                      stolenBases: athleteStat["StolenBases"],
+                      walksHitsPerInningsPitched: athleteStat["WalksHitsPerInningsPitched"],
+                      pitchingBattingAverageAgainst: athleteStat["PitchingBattingAverageAgainst"],
+                      pitchingHits: athleteStat["PitchingHits"],
+                      pitchingRuns: athleteStat["PitchingRuns"],
+                      pitchingEarnedRuns: athleteStat["PitchingEarnedRuns"],
+                      pitchingWalks: athleteStat["PitchingWalks"],
+                      pitchingHomeRuns: athleteStat["PitchingHomeRuns"],
+                      pitchingStrikeouts: athleteStat["PitchingStrikeouts"],
+                      pitchingCompleteGames: athleteStat["PitchingCompleteGames"],
+                      pitchingShutouts: athleteStat["PitchingShutOuts"],
+                      pitchingNoHitters: athleteStat["PitchingNoHitters"],
+    
+                    })
+                  )
+                }
+              }
+            }
+    
+            await AthleteStat.save([...newStats, ...updateStats], { chunk: 20 })
+            this.logger.debug("Update MLB Athlete Stats (Daily)(Loop): FINISHED")
+          } else {
+            this.logger.debug("Update MLB Athlete Stats (Daily)(Loop): SPORTS DATA ERROR")
+            if(Object.keys(data).length === 0) {
+              this.logger.debug("Update MLB Athlete Stats (Daily)(Loop): EMPTY DATA RESPONSE")
+            }
+          }
+        })
+      }
+    }
+  }
   //@Timeout(1)
   async getInitialNflTimeframe (){
 
