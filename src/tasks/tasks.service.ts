@@ -29,6 +29,7 @@ import { CricketTeamInterface, CricketAthleteInterface, CricketPointsBreakup } f
 import { NFL_ATHLETE_IDS, NBA_ATHLETE_IDS, NBA_ATHLETE_PROMO_IDS, MLB_ATHLETE_IDS, MLB_ATHLETE_PROMO_IDS, IPL2023_ATHLETE_IDS } from "./../utils/athlete-ids"
 import { AppDataSource } from "../utils/db"
 
+import lineupSubmission from '../utils/test-jsons/lineup_submission_add_game_result.json'
 import e from "express"
 
 @Injectable()
@@ -3796,8 +3797,7 @@ export class TasksService {
               }
             },
           ],
-          
-          fetch_past_events: 1, //capped at 15?
+          fetch_past_events: 10//capped at 15?
         }))
       })
     
@@ -3808,7 +3808,8 @@ export class TasksService {
         logger.debug("MESSAGE RECEIVED")
         const msg = JSON.parse(data.toString())
         //console.log(msg.events[0].predecessor_id);
-        console.log(util.inspect(msg, false, null, true))
+        //console.log(util.inspect(msg, false, null, true))
+        console.log(data.toString())
         console.log(msg.events.length);
         //console.log(msg.events[0].event.data[0].game_id);
         if(msg.events.length > 0){
@@ -3903,12 +3904,36 @@ export class TasksService {
                     //get the athlete, add to gameteamathlete
                   }
                   
+                } else{
+                  Logger.error("Game does not exist.")
                 }
                 
               }
             }
             else if (event.event.event === 'add_game'){
+              console.log("add game")
+              
+              const game = await Game.findOne({
+                where: {
+                  gameId: event.event.data[0].game_id,
+                  sport: SportType.MLB,
+                }
+              })
+              if(game){
+                Logger.error("Game " + event.event.data[0].game_id + " already exists")
+              }
+              else {
+                await Game.create({
+                  gameId: event.event.data[0].game_id,
+                  name: "Game " + event.event.data[0].game_id, 
+                  description: 'on-going',
+                  startTime: moment(event.event.data[0].game_time_start),
+                  endTime: moment(event.event.data[0].game_time_end),
+                  sport: SportType.MLB
+                }).save()
 
+                Logger.debug("Game " + event.event.data[0].game_id + " created for " + SportType.MLB)
+              }
             }
           }
         }
@@ -3921,6 +3946,139 @@ export class TasksService {
     }
     
     listenToMainnet()
+  }
+
+  @Timeout(1)
+  async jsonBaseballWebsocketTest(){
+    //
+    const fs = require('fs')
+    const msg = JSON.parse(fs.readFileSync('./src/utils/test-jsons/lineup_submission_add_game_result.txt'))
+    console.log(msg)
+    if(msg.events.length > 0){
+          
+      for(let event of msg.events){
+        if(event.event.event === 'lineup_submission_result'){
+          console.log("lineup submission")
+
+          const gameTeam = await GameTeam.findOne({
+            where: {
+              game: {
+                gameId: event.event.data[0].game_id, 
+                sport: SportType.MLB
+              },
+              name: event.event.data[0].team_name,
+              wallet_address: event.event.data[0].signer,
+            },
+            
+          })
+
+          if(gameTeam){ //team submission already exists
+            Logger.debug("This team already exists")
+          } else{
+            const game = await Game.findOne({
+              where: { 
+                gameId: event.event.data[0].game_id, 
+                sport: SportType.MLB
+              }
+            })
+            if(game){ //add lineup processing
+              // try{
+              //   GameTeam.create({
+              //     game: game,
+              //     name: event.event.data[0].team_name, //add sportType
+              //     wallet_address: event.event.data[0].signer,
+              //   }).save()
+                
+              // } catch(e){
+              //   Logger.error(e)
+              // }
+              // GameTeam.create({
+              //   game: game,
+              //   name: event.event.data[0].team_name,
+              //   wallet_address: event.event.data[0].signer,
+              // }).save().then(async (newTeam) => {
+                
+              // })
+              await GameTeam.create({
+                game: game,
+                name: event.event.data[0].team_name,
+                wallet_address: event.event.data[0].signer,
+              }).save()
+
+              const lineup = event.event.data[0].lineup
+                //get the apiId
+              const currGameTeam = await GameTeam.findOneOrFail({
+                where: { 
+                  game: {
+                    gameId: event.event.data[0].gameId
+                  }, 
+                  name: event.event.data[0].team_name, 
+                  wallet_address: event.event.data[0].signer
+                }
+              })
+              for(let token_id of lineup){
+                let apiId = ""
+                if(token_id.includes("PR") || token_id.includes("SB")){
+                  token_id = token_id.split("_")[1]
+                }
+                apiId = token_id.split("CR")[0]
+                console.log(apiId)
+
+                const athlete = await Athlete.findOne({
+                  where: {apiId: parseInt(apiId)}
+                })
+                if(athlete){
+                  try{
+                    GameTeamAthlete.create({
+                      gameTeam: currGameTeam,
+                      athlete: athlete,
+                    }).save()
+
+                    Logger.debug("Added athlete " + apiId + " to lineup")
+                  }
+                  catch(e){
+                    Logger.error(e)
+                  }
+                  
+                } else{
+                  Logger.error("ERROR athlete apiId not found, disregarding...")
+                }
+                //get the athlete, add to gameteamathlete
+              }
+              
+            } else{
+              Logger.error("Game does not exist.")
+            }
+            
+          }
+        }
+        else if (event.event.event === 'add_game'){
+          console.log("add game")
+          
+          const game = await Game.findOne({
+            where: {
+              gameId: event.event.data[0].game_id,
+              sport: SportType.MLB,
+            }
+          })
+          if(game){
+            Logger.error("Game " + event.event.data[0].game_id + " already exists")
+          }
+          else {
+            await Game.create({
+              gameId: event.event.data[0].game_id,
+              name: "Game " + event.event.data[0].game_id, 
+              description: 'on-going',
+              startTime: moment(event.event.data[0].game_time_start),
+              endTime: moment(event.event.data[0].game_time_end),
+              sport: SportType.MLB
+            }).save()
+
+            Logger.debug("Game " + event.event.data[0].game_id + " created for " + SportType.MLB)
+          }
+        }
+      }
+    }
   }
 
   //@Timeout(1)
@@ -3959,7 +4117,7 @@ export class TasksService {
     }
   }
   
-  @Timeout(1)
+  //@Timeout(1)
   async updateGameTeamFantasyScoreQueryBuilder(){
 
     // const athletesToUpdate = await AppDataSource.createQueryBuilder().select("gt").from(GameTeam, "gt")
@@ -3967,8 +4125,28 @@ export class TasksService {
     // const athletesToUpdate = await AppDataSource.createQueryBuilder().select("gta").from(GameTeamAthlete, "gta").leftJoinAndSelect("gta.athlete", "athlete").leftJoinAndSelect("athlete.stats", "stat")
     // this.logger.debug(JSON.stringify(athletesToUpdate))
     // this.logger.debug(athletesToUpdate?.athletes)
-    const athletesToUpdate = await AppDataSource.createQueryBuilder().select("gt").from(GameTeam, "gt").leftJoin("gt.game", "game").getOneOrFail()
-    console.log(athletesToUpdate.athletes[0].id)
+    interface TeamUpdate {
+      teamId: number;
+      totalFantasyScore: number;
+    }
+    let currTeamId = -1
+
+    const athletesToUpdate = await AppDataSource.createQueryBuilder()
+      .select("gta").from(GameTeamAthlete, "gta").leftJoinAndSelect("gta.gameTeam", "team")
+      .leftJoinAndSelect("team.game", "game").where("game.description = :description", {description: "on-going"}).getRawMany()
+    const test = await AppDataSource.createQueryBuilder().select("gt").from(GameTeam, "gt").leftJoinAndSelect("gt.athletes", "athletes").leftJoinAndSelect("athletes.athlete", "athlete").leftJoinAndSelect("athlete.stats", "stats").getOne()
+    console.log(test?.athletes[0].athlete.stats[1].fantasyScore)
+    // let updateTeam: TeamUpdate[] = []
+    // for(let athlete of athletesToUpdate){
+    //   if(currTeamId === -1){
+    //     currTeamId = athlete.gta_gameTeamId
+    //   }
+    //   console.log(athlete.game_endTime)
+    //   const athleteStats = await AppDataSource.createQueryBuilder().select("stats").from(AthleteStat, "stats")
+    //     .where("stats.gameDate <= :gameDate", {gameDate: athlete.game_startTime})
+    //     .andWhere("stats.gameDate >= :gameDate", {gameDate: athlete.game_endTime}).getRawMany()
+    //   console.log(athleteStats)
+    // }
     /*
     select game_team left join game, loop through game_team
     select game entity based on game_team gameId, for getting time and updating of status
