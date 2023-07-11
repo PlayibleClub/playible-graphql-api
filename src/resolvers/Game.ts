@@ -3,14 +3,16 @@ import { Arg, Authorized, Field, Mutation, ObjectType, Query, Resolver } from "t
 import { Account } from "../entities/Account"
 import { Asset } from "../entities/Asset"
 import { Athlete } from "../entities/Athlete"
+import { AthleteStat } from '../entities/AthleteStat'
 import { Collection } from "../entities/Collection"
 import { Game } from "../entities/Game"
 import { GameTeam } from "../entities/GameTeam"
 import { GameTeamAthlete } from "../entities/GameTeamAthlete"
 
-import { LessThanOrEqual, MoreThan, MoreThanOrEqual } from "typeorm"
+import { LessThanOrEqual, MoreThan, MoreThanOrEqual, QueryBuilder } from "typeorm"
 import { CreateGameArgs, CreateTeamArgs, GetGameArgs } from "../args/GameArgs"
 import { GameTab, SportType } from "../utils/types"
+import { AppDataSource } from '../utils/db'
 import moment from "moment-timezone"
 @ObjectType()
 class GameResponse {
@@ -119,7 +121,12 @@ export class GameResolver {
         
       },
       relations: {
-        game: true
+        game: true,
+        athletes: {
+          athlete:{
+            stats: true
+          }
+        }
       }
     })
 
@@ -128,18 +135,29 @@ export class GameResolver {
       for(let teamAthlete of team.athletes){
         let athlete = teamAthlete.athlete
 
-        athlete.stats = athlete.stats.filter((stat) => stat.gameDate && 
-          moment(stat.gameDate).unix() >= moment(team.game.startTime).unix() && moment(stat.gameDate).unix() <= moment(team.game.endTime).unix())
-          
-        const totalAthleteFantasyScore = athlete.stats.reduce(
-          (accumulator, currentValue) => accumulator + (currentValue.fantasyScore && currentValue.fantasyScore || 0) ,
-          0,
-        ) / athlete.stats.length
-        teamFantasyScore += totalAthleteFantasyScore
+        // athlete.stats = athlete.stats.filter((stat) => stat.gameDate && 
+        //   moment(stat.gameDate).unix() >= moment(team.game.startTime).unix() && moment(stat.gameDate).unix() <= moment(team.game.endTime).unix())
+        
+        // let totalAthleteFantasyScore = 0
+        // if(athlete.stats.length > 0){
+        //   totalAthleteFantasyScore = athlete.stats.reduce(
+        //     (accumulator, currentValue) => +accumulator + +(currentValue.fantasyScore && currentValue.fantasyScore || 0) ,
+        //     0,
+        //   )
+        // } 
+        
+        const totalAthleteFantasyScore = await AppDataSource.getRepository(AthleteStat).createQueryBuilder("as")
+          .select('SUM(as.fantasyScore)', "sum").where("as.athleteId =:athleteId", {athleteId: athlete.id}).andWhere("as.gameDate >= :startTime", {startTime: team.game.startTime}).andWhere("as.gameDate <= :endTime", {endTime: team.game.endTime}).getRawOne()
+
+        teamFantasyScore = +teamFantasyScore + +totalAthleteFantasyScore.sum
+
+        //teamFantasyScore = +teamFantasyScore + +totalAthleteFantasyScore
       }
       team.fantasyScore = teamFantasyScore
+      
     }
     return teams
+
   }
 
   @Authorized("ADMIN")
