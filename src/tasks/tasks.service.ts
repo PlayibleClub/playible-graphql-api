@@ -209,7 +209,7 @@ export class TasksService {
     this.logger.debug(`MLB Athletes Data: ${athletesCount ? "DID NOT SYNC" : "SYNCED SUCCESSFULLY"}`)
   }
 
-  //@Timeout(1)
+  @Timeout(1)
   async syncMlbData2(){
     const teamCount = await Team.count({
       where: { sport: SportType.MLB},
@@ -770,7 +770,7 @@ export class TasksService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
 
-  //@Timeout(300000)
+  @Timeout(300000)
   async generateAthleteMlbAssets() {
     this.logger.debug("Generate Athlete MLB Assets: STARTED")
 
@@ -998,7 +998,7 @@ export class TasksService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
 
-  //@Timeout(450000)
+  @Timeout(450000)
   async generateAthleteMlbAssetsAnimation() {
     this.logger.debug("Generate Athlete MLB Assets Animation: STARTED")
 
@@ -1294,7 +1294,7 @@ export class TasksService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
 
-  //@Timeout(600000)
+  @Timeout(600000)
   async generateAthleteMlbAssetsPromo() {
     this.logger.debug("Generate Athlete MLB Assets Promo: STARTED")
 
@@ -1444,7 +1444,7 @@ export class TasksService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
 
-  @Timeout(1)
+  //@Timeout(1)
   //@Interval(86400000) //runs every 1 day
   async updateNflAthleteHeadshots(){
     this.logger.debug("Update Athlete NFL Headshots: STARTED")
@@ -1471,7 +1471,7 @@ export class TasksService {
     }
   }
 
-  @Timeout(1)
+  //@Timeout(1)
   //@Interval(86400000) //runs every 1 day
   async updateMlbAthleteHeadshots(){
     this.logger.debug("Update Athlete MLB Headshots: STARTED")
@@ -1498,7 +1498,7 @@ export class TasksService {
     }
   }
 
-  @Timeout(1)
+  //@Timeout(1)
   //@Interval(86400000) //runs every 1 day
   async updateNbaAthleteHeadshots(){
     this.logger.debug("Update Athlete NBA Headshots: STARTED")
@@ -1659,7 +1659,7 @@ export class TasksService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
 
-  //@Timeout(750000)
+  @Timeout(750000)
   async generateAthleteMlbAssetsLocked() {
     this.logger.debug("Generate Athlete MLB Assets Locked: STARTED")
 
