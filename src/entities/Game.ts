@@ -11,6 +11,10 @@ export class Game extends BaseEntity {
   @PrimaryGeneratedColumn()
   id!: number
 
+  @Field(() => Number)
+  @Column({type: "numeric", nullable: false})
+  gameId!: number
+
   @Field(() => String)
   @Column({ type: "varchar", length: 155 })
   name!: string
@@ -27,12 +31,9 @@ export class Game extends BaseEntity {
   @Column({ type: "timestamptz" })
   endTime!: Date
 
-  @Field(() => Int)
-  @Column("integer")
-  duration!: number
 
   @Field(() => Number)
-  @Column({ type: "numeric" })
+  @Column({ type: "numeric" , nullable: true})
   prize!: number
 
   @Field(() => String, { nullable: true })
