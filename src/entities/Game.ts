@@ -11,7 +11,7 @@ export class Game extends BaseEntity {
   @PrimaryGeneratedColumn()
   id!: number
 
-  @Field(() => Number)
+  @Field(() => Number, { nullable: true})
   @Column({type: "numeric", nullable: true})
   gameId?: number
 
