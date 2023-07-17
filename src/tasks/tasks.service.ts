@@ -25,7 +25,7 @@ import { ATHLETE_MLB_BASE_ANIMATION, ATHLETE_MLB_BASE_IMG, ATHLETE_MLB_IMG } fro
 import { AthleteStatType, SportType } from "../utils/types"
 import { CricketTeamInterface, CricketAthleteInterface, CricketPointsBreakup } from '../interfaces/Cricket'
 import { NFL_ATHLETE_IDS, NBA_ATHLETE_IDS, NBA_ATHLETE_PROMO_IDS, MLB_ATHLETE_IDS, MLB_ATHLETE_PROMO_IDS, IPL2023_ATHLETE_IDS } from "./../utils/athlete-ids"
-
+import { computeShoheiOhtaniScores } from "../helpers/Athlete"
 import e from "express"
 
 @Injectable()
@@ -2534,7 +2534,7 @@ export class TasksService {
             const utcDate = apiDate.utc().format()
   
             if (curStat){
-              curStat.fantasyScore = athleteStat["FantasyPointsDraftKings"]
+              curStat.fantasyScore = apiId === 10008667 ? computeShoheiOhtaniScores(athleteStat) : athleteStat["FantasyPointsDraftKings"]
               curStat.atBats = athleteStat["AtBats"]
               curStat.runs = athleteStat["Runs"]
               curStat.hits = athleteStat["Hits"]
@@ -2585,7 +2585,7 @@ export class TasksService {
                     statId: athleteStat["StatID"],
                     position: athleteStat["Position"],
                     played: athleteStat["Games"],
-                    fantasyScore: athleteStat["FantasyPointsDraftKings"],
+                    fantasyScore: apiId === 10008667 ? computeShoheiOhtaniScores(athleteStat) : athleteStat["FantasyPointsDraftKings"],
                     atBats: athleteStat["AtBats"],
                     runs: athleteStat["Runs"],
                     hits: athleteStat["Hits"],
