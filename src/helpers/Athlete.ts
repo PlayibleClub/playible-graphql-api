@@ -12,5 +12,6 @@ export function computeShoheiOhtaniScores(athleteStat: any): number{
   fantasyScore = +fantasyScore + +(athleteStat["Walks"] * 2)
   fantasyScore = +fantasyScore + +(athleteStat["HitByPitch"] * 2)
   fantasyScore = +fantasyScore + +(athleteStat["StolenBases"] * 5)
+  console.log("Ohtani seasonal fantasyscore: " + fantasyScore)
   return fantasyScore
 }
