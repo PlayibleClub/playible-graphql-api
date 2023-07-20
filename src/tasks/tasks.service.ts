@@ -2389,7 +2389,7 @@ export class TasksService {
   
             if (curStat) {
               //updating stats
-              curStat.fantasyScore = (apiId === 10008667 ? computeShoheiOhtaniScores(athleteStat) : athleteStat["FantasyPointsDraftKings"]) / numberOfGames
+              curStat.fantasyScore = athleteStat["FantasyPointsDraftKings"] / numberOfGames
               curStat.atBats = athleteStat["AtBats"] / numberOfGames
               curStat.runs = athleteStat["Runs"] / numberOfGames
               curStat.hits = athleteStat["Hits"] / numberOfGames
@@ -2437,7 +2437,7 @@ export class TasksService {
                     position: athleteStat["Position"],
                     played: athleteStat["Games"],
                     statId: athleteStat["StatID"],
-                    fantasyScore: (apiId === 10008667 ? computeShoheiOhtaniScores(athleteStat) : athleteStat["FantasyPointsDraftKings"]) / numberOfGames,
+                    fantasyScore: athleteStat["FantasyPointsDraftKings"] / numberOfGames,
                     atBats: athleteStat["AtBats"] / numberOfGames,
                     runs: athleteStat["Runs"] / numberOfGames,
                     hits: athleteStat["Hits"] / numberOfGames,
