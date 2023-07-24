@@ -7,7 +7,6 @@ import { LessThanOrEqual, MoreThanOrEqual, Equal, Not, In, QueryBuilder } from "
 import convert from "xml-js"
 import moment from 'moment-timezone'
 import WebSocket from 'ws'
-
 import { Athlete } from "../entities/Athlete"
 import { AthleteStat } from "../entities/AthleteStat"
 import { Game } from "../entities/Game"
@@ -288,7 +287,7 @@ export class TasksService {
         const updateAthlete: Athlete[] = []
         for (let athlete of data){
 
-            if(MLB_ATHLETE_IDS.includes(athlete["PlayerID"])){
+            
               try {
                 const team = await Team.findOne({
                   where: {apiId: athlete["GlobalTeamID"]},
@@ -303,7 +302,7 @@ export class TasksService {
                   if(currAthlete){
                     currAthlete.firstName = athlete["FirstName"]
                     currAthlete.lastName = athlete["LastName"]
-                    currAthlete.position = athlete["Position"]
+                    currAthlete.position = athlete["Position"] !== null ? athlete["Position"] : "N/A"
                     currAthlete.jersey = athlete["Jersey"]
                     currAthlete.isActive = athlete["Status"] === "Active"
                     currAthlete.isInjured = athlete["InjuryStatus"]
@@ -314,7 +313,7 @@ export class TasksService {
                         apiId: athlete["PlayerID"],
                         firstName: athlete["FirstName"],
                         lastName: athlete["LastName"],
-                        position: athlete["Position"],
+                        position: athlete["Position"] !== null ? athlete["Position"] : "N/A",
                         jersey: athlete["Jersey"],
                         team,
                         isActive: athlete["Status"] === "Active",
@@ -327,7 +326,7 @@ export class TasksService {
               } catch(err){
                 this.logger.error(err)
               }
-            }
+            
             
           
           
@@ -705,6 +704,8 @@ export class TasksService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
 
+  async syncNearData(){ //for mainnet only
+  }
   // @Timeout(1)
   async generateAthleteNbaAssets() {
     this.logger.debug("Generate Athlete NBA Assets: STARTED")
@@ -2106,10 +2107,10 @@ export class TasksService {
     this.logger.debug("Update NFL Athlete Stats All Weeks: FINISHED")
   }
 
-  @Cron("55 11 * * *", {
-    name: "updateNflTeamScores",
-    timeZone: "Asia/Manila",
-  })
+  // @Cron("55 11 * * *", {
+  //   name: "updateNflTeamScores",
+  //   timeZone: "Asia/Manila",
+  // })
   async updateNflTeamScores() {
     this.logger.debug("Update NFL Team Scores: STARTED")
 
@@ -2813,6 +2814,7 @@ export class TasksService {
     }
   }
 
+  //@Timeout(1)
   async updateMlbAthleteStatsPerDayLoop(){
     this.logger.debug("Update MLB Athlete Stats: Started")
 
@@ -2832,7 +2834,7 @@ export class TasksService {
           this.logger.debug(dateFormat)
 
           const { data, status } = await axios.get(
-            `${process.env.SPORTS_DATA_URL}`
+            `${process.env.SPORTS_DATA_URL}mlb/stats/json/PlayerGameStatsByDate/${dateFormat}?key=${process.env.SPORTS_DATA_MLB_KEY}`
           )
 
           if (status === 200 && Object.keys(data).length !== 0){
@@ -2955,7 +2957,10 @@ export class TasksService {
               this.logger.debug("Update MLB Athlete Stats (Daily)(Loop): EMPTY DATA RESPONSE")
             }
           }
-        })
+          if (timesRun === 30){
+            clearInterval(interval)
+          }
+        }, 300000)
       }
     }
   }
@@ -4094,7 +4099,7 @@ export class TasksService {
     listenToMainnet()
   }
 
-  @Timeout(1)
+  //@Timeout(1)
   async jsonBaseballWebsocketTest(){
     //
     const fs = require('fs')
@@ -4271,17 +4276,63 @@ export class TasksService {
     // const athletesToUpdate = await AppDataSource.createQueryBuilder().select("gta").from(GameTeamAthlete, "gta").leftJoinAndSelect("gta.athlete", "athlete").leftJoinAndSelect("athlete.stats", "stat")
     // this.logger.debug(JSON.stringify(athletesToUpdate))
     // this.logger.debug(athletesToUpdate?.athletes)
-    interface TeamUpdate {
-      teamId: number;
-      totalFantasyScore: number;
-    }
-    let currTeamId = -1
 
-    const athletesToUpdate = await AppDataSource.createQueryBuilder()
-      .select("gta").from(GameTeamAthlete, "gta").leftJoinAndSelect("gta.gameTeam", "team")
-      .leftJoinAndSelect("team.game", "game").where("game.description = :description", {description: "on-going"}).getRawMany()
-    const test = await AppDataSource.createQueryBuilder().select("gt").from(GameTeam, "gt").leftJoinAndSelect("gt.athletes", "athletes").leftJoinAndSelect("athletes.athlete", "athlete").leftJoinAndSelect("athlete.stats", "stats").getOne()
-    console.log(test?.athletes[0].athlete.stats[1].fantasyScore)
+    const teams = await GameTeam.find({
+      where: {
+        game: {
+          gameId: 30,
+          sport: SportType.MLB,
+        },
+        
+      },
+      relations: {
+        game: true,
+        athletes: {
+          athlete:{
+            stats: true
+          }
+        }
+      }
+    })
+
+    for(let team of teams){
+      let teamFantasyScore = 0
+      for(let teamAthlete of team.athletes){
+        let athlete = teamAthlete.athlete
+
+        // athlete.stats = athlete.stats.filter((stat) => stat.gameDate && 
+        //   moment(stat.gameDate).unix() >= moment(team.game.startTime).unix() && moment(stat.gameDate).unix() <= moment(team.game.endTime).unix())
+        
+        // let totalAthleteFantasyScore = 0
+        // if(athlete.stats.length > 0){
+        //   totalAthleteFantasyScore = athlete.stats.reduce(
+        //     (accumulator, currentValue) => +accumulator + +(currentValue.fantasyScore && currentValue.fantasyScore || 0) ,
+        //     0,
+        //   )
+        // } 
+        
+        const totalAthleteFantasyScore = await AppDataSource.getRepository(AthleteStat).createQueryBuilder("as")
+          .select('SUM(as.fantasyScore)', "sum").where("as.athleteId =:athleteId", {athleteId: athlete.id}).andWhere("as.gameDate >= :startTime", {startTime: team.game.startTime}).andWhere("as.gameDate <= :endTime", {endTime: team.game.endTime}).getRawOne()
+       
+        console.log("ts: " + teamFantasyScore)
+        console.log("total: " + totalAthleteFantasyScore.sum)
+        teamFantasyScore = +teamFantasyScore + +totalAthleteFantasyScore.sum
+      }
+      team.fantasyScore = teamFantasyScore
+      console.log(teamFantasyScore)
+    }
+    //return teams
+    // interface TeamUpdate {
+    //   teamId: number;
+    //   totalFantasyScore: number;
+    // }
+    // let currTeamId = -1
+
+    // const athletesToUpdate = await AppDataSource.createQueryBuilder()
+    //   .select("gta").from(GameTeamAthlete, "gta").leftJoinAndSelect("gta.gameTeam", "team")
+    //   .leftJoinAndSelect("team.game", "game").where("game.description = :description", {description: "on-going"}).getRawMany()
+    // const test = await AppDataSource.createQueryBuilder().select("gt").from(GameTeam, "gt").leftJoinAndSelect("gt.athletes", "athletes").leftJoinAndSelect("athletes.athlete", "athlete").leftJoinAndSelect("athlete.stats", "stats").getOne()
+    // console.log(test?.athletes[0].athlete.stats[1].fantasyScore)
     // let updateTeam: TeamUpdate[] = []
     // for(let athlete of athletesToUpdate){
     //   if(currTeamId === -1){
