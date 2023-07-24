@@ -3,6 +3,7 @@ import { Cron, Interval, Timeout } from "@nestjs/schedule"
 import S3 from "aws-sdk/clients/s3"
 import axios from "axios"
 import fs from "fs"
+import { startStream, types } from 'near-lake-framework'
 import { LessThanOrEqual, MoreThanOrEqual, Equal, Not, In, QueryBuilder } from "typeorm"
 import convert from "xml-js"
 import moment from 'moment-timezone'
@@ -704,7 +705,21 @@ export class TasksService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
 
-  async syncNearData(){ //for mainnet only
+  async syncNearData(){ //for mainnet 
+    const lakeConfig: types.LakeConfig = {
+      //credentials
+      s3BucketName: "near-lake-data-mainnet",
+      s3RegionName: "eu-central-1",
+      startBlockHeight: 5555555,
+    }
+    async function handleStreamerMessage(streamerMessage: types.StreamerMessage): Promise<void>{
+      console.log(`
+      Block #${streamerMessage.block.header.height}
+      Shards: ${streamerMessage.shards.length
+      }`)
+    }
+
+    await startStream(lakeConfig, handleStreamerMessage)
   }
   // @Timeout(1)
   async generateAthleteNbaAssets() {
