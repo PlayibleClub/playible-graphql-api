@@ -705,18 +705,38 @@ export class TasksService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
 
+  @Timeout(1)
   async syncNearData(){ //for mainnet 
     const lakeConfig: types.LakeConfig = {
       //credentials
       s3BucketName: "near-lake-data-mainnet",
       s3RegionName: "eu-central-1",
-      startBlockHeight: 5555555,
+      startBlockHeight: 97239921,
     }
+    let count = 0
     async function handleStreamerMessage(streamerMessage: types.StreamerMessage): Promise<void>{
-      console.log(`
-      Block #${streamerMessage.block.header.height}
-      Shards: ${streamerMessage.shards.length
-      }`)
+      // console.log(`
+      // Block #${streamerMessage.block.header.height}
+      // Shards: ${streamerMessage.shards.length
+      // }`)
+      console.log(count)
+      count = +count + +1
+      for(let shard of streamerMessage.shards){
+        if(shard.chunk !== undefined){
+          // let filteredReceipts = shard.chunk.receipts.filter((x) => x.receiverId === 'game.baseball.playible.near')
+          // for (let receipt of filteredReceipts){
+          //   let method = receipt.receipt.actions[]
+          // }
+          let filteredTrxns = shard.chunk.transactions.filter((x) => x.transaction.receiverId === 'game.baseball.playible.near')
+          for (let transaction of filteredTrxns){
+            console.log("Playible contract found")
+            console.log(JSON.parse(transaction.transaction.actions[0].toString()))
+            const action = JSON.parse(transaction.transaction.actions[0].toString())
+            const args = JSON.parse(Buffer.from(action, 'base64').toString())
+          }
+        }
+      }
+      console.log(``)
     }
 
     await startStream(lakeConfig, handleStreamerMessage)
