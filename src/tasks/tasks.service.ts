@@ -28,6 +28,7 @@ import { AthleteStatType, SportType } from "../utils/types"
 import { CricketTeamInterface, CricketAthleteInterface, CricketPointsBreakup } from '../interfaces/Cricket'
 import { NFL_ATHLETE_IDS, NBA_ATHLETE_IDS, NBA_ATHLETE_PROMO_IDS, MLB_ATHLETE_IDS, MLB_ATHLETE_PROMO_IDS, IPL2023_ATHLETE_IDS } from "./../utils/athlete-ids"
 import { AppDataSource } from "../utils/db"
+import { ReceiptEnum } from "near-lake-framework/dist/types"
 
 import lineupSubmission from '../utils/test-jsons/lineup_submission_add_game_result.json'
 import e from "express"
@@ -711,7 +712,7 @@ export class TasksService {
       //credentials
       s3BucketName: "near-lake-data-mainnet",
       s3RegionName: "eu-central-1",
-      startBlockHeight: 97239921,
+      startBlockHeight: 97239921, //97239921 old
     }
     let count = 0
     async function handleStreamerMessage(streamerMessage: types.StreamerMessage): Promise<void>{
@@ -728,13 +729,35 @@ export class TasksService {
           //   let method = receipt.receipt.actions[]
           // }
           let filteredTrxns = shard.chunk.transactions.filter((x) => x.transaction.receiverId === 'game.baseball.playible.near')
+          //console.log(JSON.stringify(shard.chunk))
           for (let transaction of filteredTrxns){
             console.log("Playible contract found")
-            console.log(JSON.parse(transaction.transaction.actions[0].toString()))
-            const action = JSON.parse(transaction.transaction.actions[0].toString())
-            const args = JSON.parse(Buffer.from(action, 'base64').toString())
+            //console.log(JSON.stringify(transaction.transaction.actions[0]))
+            //console.log(transaction.transaction.actions[0].toString())
+            const action = JSON.parse(JSON.stringify(transaction.transaction.actions[0]))
+            //console.log(action)
+            console.log(JSON.stringify(transaction.outcome))
+            //const args = JSON.parse(Buffer.from(action, 'base64').toString())
+            if(action.FunctionCall.methodName === 'submit_lineup_result_callbacks'){
+              console.log("Submit lineup received")
+              console.log("Signer id: " + transaction.transaction.signerId)
+              console.log("Logs: " + transaction.outcome.executionOutcome.outcome.logs.toString())
+              console.log("Status: " + JSON.stringify(transaction.outcome.executionOutcome.outcome.receiptIds))
+              console.log("Transaction hash: " + transaction.transaction.hash)
+              console.log(Buffer.from(action.FunctionCall.args, 'base64').toString())
+            } else if(action.FunctionCall.methodName === 'add_game'){
+              console.log("Add game received")
+              console.log(Buffer.from(action.FunctionCall.args, 'base64').toString())
+            }
           }
+            // let filteredReceipts = shard.chunk.receipts.filter((x) => x.receiverId === 'game.baseball.playible.near')
+            // for (let receipt of filteredReceipts){
+            //   const action: ReceiptEnum = receipt.receipt
+            //   console.log(JSON.stringify(action))
+            // }
         }
+          
+        
       }
       console.log(``)
     }
