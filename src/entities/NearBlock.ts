@@ -1,6 +1,6 @@
 import { Field, Float, ID, Int, ObjectType } from "type-graphql"
-import { BaseEntity, Column, Entity, ManyToOne, OneToMany, PrimaryGeneratedColumn, Relation } from "typeorm"
-
+import { BaseEntity, Column, Entity, ManyToOne, OneToMany, OneToOne, PrimaryGeneratedColumn, Relation } from "typeorm"
+import { NearResponse } from '../entities/NearResponse'
 @ObjectType()
 @Entity()
 export class NearBlock extends BaseEntity{
@@ -12,7 +12,15 @@ export class NearBlock extends BaseEntity{
   @Column("numeric", {nullable: false})
   height!: number
 
+  @Field(() => String)
+  @Column({ type: "varchar", length: 255 })
+  hash!: string
+
   @Field(() => Date)
   @Column({ type: "timestamptz"})
   timestamp!: Date
+
+  @Field(() => NearResponse)
+  @OneToOne(() => NearResponse, (response) => response.nearBlock)
+  nearResponse!: Relation<NearResponse>
 }
