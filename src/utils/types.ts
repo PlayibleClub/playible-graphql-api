@@ -21,6 +21,24 @@ export enum GameTab {
   COMPLETED = "completed",
 }
 
+export type SubmitLineupType = {
+  game_id: number,
+  team_name: string,
+  token_id: string[],
+  token_promo_ids: string[],
+}
+
+export type AddGameType = {
+  game_id: number,
+  game_time_start: number,
+  game_time_end: number,
+  whitelist: string[],
+  positions: [{
+    positions: string[],
+    amount: number,
+  }]
+}
+
 @InputType()
 export class LimitOffset {
   @Field({ nullable: true })
