@@ -24,7 +24,7 @@ import { CricketAthleteStat } from '../entities/CricketAthleteStat'
 import { CricketMatch } from '../entities/CricketMatch'
 import { getSeasonType } from "../helpers/Timeframe"
 import { ATHLETE_MLB_BASE_ANIMATION, ATHLETE_MLB_BASE_IMG, ATHLETE_MLB_IMG } from "../utils/svgTemplates"
-import { AthleteStatType, SportType } from "../utils/types"
+import { AthleteStatType, SportType, SubmitLineupType, AddGameType } from "../utils/types"
 import { CricketTeamInterface, CricketAthleteInterface, CricketPointsBreakup } from '../interfaces/Cricket'
 import { NearBlock } from '../entities/NearBlock'
 import { NearResponse } from '../entities/NearResponse'
@@ -766,6 +766,38 @@ export class TasksService {
                     nearBlock: nearBlock
                   }).save()
                   if(action.FunctionCall.methodName === 'submit_lineup'){
+                    const args: SubmitLineupType = JSON.parse(Buffer.from(action.FunctionCall.args, 'base64').toString())
+                    /*
+                      TODO: convert this big chunk of code and the code in websocket to handle methods into a helper function
+                    */
+                    const gameTeam = await GameTeam.findOne({
+                      where: {
+                        game: {
+                          gameId: args.game_id,
+                          sport: SportType.MLB, //need checking for sport via getting it from contract name
+                        },
+                        name: args.team_name,
+                        wallet_address: transaction.transaction.signerId
+                      }
+                    })
+                    if(!gameTeam){
+                      const game = await Game.findOne({
+                        where: {
+                          gameId: args.game_id,
+                          sport: SportType.MLB //need checking for sport via getting it from contract
+                        }
+                      })
+                      if (game){
+                        const currGameTeam = await GameTeam.findOneOrFail({
+                          game: game,
+                          name: args.team_name,
+                          wallet_address: transaction.transaction.signerId
+                        }).save()
+
+                      }
+                    } else{
+                      console.log("Team already exists")
+                    }
                     console.log("Submit lineup received")
                     console.log("Signer id: " + transaction.transaction.signerId)
                     console.log("Logs: " + transaction.outcome.executionOutcome.outcome.logs.toString())
