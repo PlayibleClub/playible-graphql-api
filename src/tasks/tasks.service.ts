@@ -709,6 +709,44 @@ export class TasksService {
   }
 
   @Timeout(1)
+
+  async syncNearDataTest(){
+    const lakeConfig: types.LakeConfig = {
+      s3BucketName: "near-lake-data-mainnet",
+      s3RegionName: "eu-central-1",
+      startBlockHeight: 97159133
+    }
+
+    let count = 0
+    async function handleStreamerMessage(streamerMessage: types.StreamerMessage): Promise<void>{
+      
+      count = +count + +1
+      console.log("Inside async loop")
+      if(count === 10){
+        console.log("Exiting loop")
+        throw 'Aborted'
+      }
+      for (let shard of streamerMessage.shards){
+        if(shard.chunk !== undefined){
+          let filteredReceipts = shard.chunk.receipts.filter((x) => x.receiverId === 'game.baseball.playible.near')
+          //console.log(JSON.stringify(filteredReceipts))
+          
+        }
+        
+
+      }
+    }
+    try{
+      await startStream(lakeConfig, handleStreamerMessage)
+    } catch (e){
+      if (e === 'Aborted'){
+        console.log("Block height limit reached")
+      }
+    }
+    
+  }
+
+  //@Timeout(1)
   async syncNearData(){ //for mainnet 
     const lakeConfig: types.LakeConfig = {
       //credentials
@@ -717,6 +755,8 @@ export class TasksService {
       startBlockHeight: 97236933, //97239921 old
     }
     let count = 0
+
+    //Function to receive responses from lake-indexer
     async function handleStreamerMessage(streamerMessage: types.StreamerMessage): Promise<void>{
       // console.log(`
       // Block #${streamerMessage.block.header.height}
@@ -724,6 +764,8 @@ export class TasksService {
       // }`)
       console.log(count)
       count = +count + +1
+
+      //check if current block height is existing within the database
       const block = await NearBlock.findOne({
         where: {
           height: streamerMessage.block.header.height,
@@ -737,6 +779,8 @@ export class TasksService {
             // for (let receipt of filteredReceipts){
             //   let method = receipt.receipt.actions[]
             // }
+            
+            //filter only transactions for our contracts
             let filteredTrxns = shard.chunk.transactions.filter((x) => x.transaction.receiverId === 'game.baseball.playible.near')
             if (filteredTrxns){ //to know if the array isn't empty -> create a NearBlock entity to store data
               const nearBlock = await NearBlock.create({
@@ -755,6 +799,7 @@ export class TasksService {
                 //console.log(JSON.stringify(transaction.outcome))
                 //const args = JSON.parse(Buffer.from(action, 'base64').toString())
                 
+                //filter only function calls that we need for leaderboards for now, then create a response entry
                 if(action.FunctionCall.methodName === 'submit_lineup' || action.FunctionCall.methodName === 'add_game'){
                   await NearResponse.create({
                     transactionHash: transaction.transaction.hash,
@@ -788,12 +833,40 @@ export class TasksService {
                         }
                       })
                       if (game){
-                        const currGameTeam = await GameTeam.findOneOrFail({
+                        const currGameTeam = await GameTeam.create({
                           game: game,
                           name: args.team_name,
                           wallet_address: transaction.transaction.signerId
                         }).save()
 
+                        const lineup: string[] = args.token_id //merge both arrays to create lineup
+                        lineup.concat(args.token_promo_ids)
+
+                        lineup.forEach(async (athleteId) => {
+                          let apiId = ""
+                          if(athleteId.includes("PR") || athleteId.includes("SB")){ //retrieve the apiID from athleteId via string manipulation
+                            athleteId = athleteId.split("_")[1]
+                          }
+                          athleteId = athleteId.split("CR")[0]
+                          console.log(athleteId)
+
+                          const athlete = await Athlete.findOne({
+                            where: { apiId: parseInt(athleteId)}
+                          })
+
+                          if (athlete){
+                            try{
+                              await GameTeamAthlete.create({
+                                gameTeam: currGameTeam,
+                                athlete: athlete,
+                              }).save()
+                            } catch(e){
+                              Logger.error(e)
+                            }
+                          } else{
+                            Logger.error("ERROR athlete apiId not found")
+                          }
+                        })
                       }
                     } else{
                       console.log("Team already exists")
