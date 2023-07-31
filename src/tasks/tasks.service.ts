@@ -24,13 +24,13 @@ import { CricketAthleteStat } from '../entities/CricketAthleteStat'
 import { CricketMatch } from '../entities/CricketMatch'
 import { getSeasonType } from "../helpers/Timeframe"
 import { ATHLETE_MLB_BASE_ANIMATION, ATHLETE_MLB_BASE_IMG, ATHLETE_MLB_IMG } from "../utils/svgTemplates"
-import { AthleteStatType, SportType, SubmitLineupType, AddGameType } from "../utils/types"
+import { AthleteStatType, SportType, SubmitLineupType, AddGameType, ResponseStatus } from "../utils/types"
 import { CricketTeamInterface, CricketAthleteInterface, CricketPointsBreakup } from '../interfaces/Cricket'
 import { NearBlock } from '../entities/NearBlock'
 import { NearResponse } from '../entities/NearResponse'
 import { NFL_ATHLETE_IDS, NBA_ATHLETE_IDS, NBA_ATHLETE_PROMO_IDS, MLB_ATHLETE_IDS, MLB_ATHLETE_PROMO_IDS, IPL2023_ATHLETE_IDS } from "./../utils/athlete-ids"
 import { AppDataSource } from "../utils/db"
-import { ReceiptEnum } from "near-lake-framework/dist/types"
+import { ReceiptEnum, ExecutionStatus } from "near-lake-framework/dist/types"
 
 import lineupSubmission from '../utils/test-jsons/lineup_submission_add_game_result.json'
 import e from "express"
@@ -714,23 +714,27 @@ export class TasksService {
     const lakeConfig: types.LakeConfig = {
       s3BucketName: "near-lake-data-mainnet",
       s3RegionName: "eu-central-1",
-      startBlockHeight: 97159133
+      startBlockHeight: 97239922//97159134 //97236933
     }
 
     let count = 0
     async function handleStreamerMessage(streamerMessage: types.StreamerMessage): Promise<void>{
       
-      count = +count + +1
+      //count = +count + +1
       console.log("Inside async loop")
+      console.log(`Block height: ${streamerMessage.block.header.height}`)
       if(count === 10){
         console.log("Exiting loop")
         throw 'Aborted'
       }
       for (let shard of streamerMessage.shards){
-        if(shard.chunk !== undefined){
-          let filteredReceipts = shard.chunk.receipts.filter((x) => x.receiverId === 'game.baseball.playible.near')
-          //console.log(JSON.stringify(filteredReceipts))
+        if(shard.chunk !== undefined && streamerMessage.block.header.height === 97239922){
+          // let filteredReceipts = shard.chunk.receipts.filter((x) => x.receiverId === 'game.baseball.playible.near')
+          // console.log(JSON.stringify(filteredReceipts))
           
+          // let filtered = shard.chunk.transactions.filter((x) => x.outcome.executionOutcome.outcome.executorId === 'game.baseball.playible.near')
+          // console.log(JSON.stringify(filtered))
+          console.log(JSON.stringify(shard.receiptExecutionOutcomes))
         }
         
 
@@ -780,6 +784,28 @@ export class TasksService {
             //   let method = receipt.receipt.actions[]
             // }
             
+            //filtering for receipt execution outcomes and look for pending receipt
+            const pendingReceipts = await NearResponse.find({
+              where: {
+                status: ResponseStatus.PENDING
+              }
+            })
+            let filteredReceipts = shard.receiptExecutionOutcomes.filter((x) => pendingReceipts.some(item => item.receiptId === x.receipt?.receiptId))
+            if (filteredReceipts){
+              for (let receipt of filteredReceipts){
+                const pending = await NearResponse.findOne({
+                  where: {
+                    receiptId: receipt.executionOutcome.id,
+                    status: ResponseStatus.PENDING,
+                  }
+                })
+
+                if(JSON.stringify(receipt.executionOutcome.outcome.status).includes('Failure')){
+                  //delete entry tied to pending NearResponse?
+                  //or keep records of arguments then execute them here
+                }
+              }
+            }
             //filter only transactions for our contracts
             let filteredTrxns = shard.chunk.transactions.filter((x) => x.transaction.receiverId === 'game.baseball.playible.near')
             if (filteredTrxns){ //to know if the array isn't empty -> create a NearBlock entity to store data
@@ -801,6 +827,7 @@ export class TasksService {
                 
                 //filter only function calls that we need for leaderboards for now, then create a response entry
                 if(action.FunctionCall.methodName === 'submit_lineup' || action.FunctionCall.methodName === 'add_game'){
+
                   await NearResponse.create({
                     transactionHash: transaction.transaction.hash,
                     receiverId: transaction.transaction.receiverId,
@@ -808,7 +835,8 @@ export class TasksService {
                     receiptId: transaction.outcome.executionOutcome.outcome.receiptIds,
                     methodName: action.FunctionCall.methodName,
                     methodArgs: action.FunctionCall.args,
-                    nearBlock: nearBlock
+                    nearBlock: nearBlock,
+                    status: ResponseStatus.PENDING
                   }).save()
                   if(action.FunctionCall.methodName === 'submit_lineup'){
                     const args: SubmitLineupType = JSON.parse(Buffer.from(action.FunctionCall.args, 'base64').toString())
