@@ -21,6 +21,12 @@ export enum GameTab {
   COMPLETED = "completed",
 }
 
+export enum ResponseStatus {
+  PENDING = "pending",
+  SUCCESS = "success",
+  FAILED = "failed",
+}
+
 export type SubmitLineupType = {
   game_id: number,
   team_name: string,
