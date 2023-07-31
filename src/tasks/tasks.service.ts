@@ -879,7 +879,27 @@ export class TasksService {
                     console.log(Buffer.from(action.FunctionCall.args, 'base64').toString())
                   } else if(action.FunctionCall.methodName === 'add_game'){
                     console.log("Add game received")
-                    console.log(Buffer.from(action.FunctionCall.args, 'base64').toString())
+                    
+                    const args: AddGameType = JSON.parse(Buffer.from(action.FunctionCall.args, 'base64').toString())
+                    const game = await Game.findOne({
+                      where: {
+                        gameId: args.game_id,
+                        sport: SportType.MLB //add checking of sport via contract name
+                      }
+                    })
+
+                    if (!game){
+                      await Game.create({
+                        gameId: args.game_id,
+                        name: "Game " + args.game_id,
+                        description: 'on-going',
+                        startTime: moment(args.game_time_start),
+                        endTime: moment(args.game_time_end),
+                        sport: SportType.MLB
+                      }).save()
+
+                      Logger.debug(`Game ${args.game_id} created for ${SportType.MLB}`)
+                    }
                   }
                 }
                 
@@ -4283,7 +4303,8 @@ export class TasksService {
                   sport: SportType.MLB
                 }).save()
 
-                Logger.debug("Game " + event.event.data[0].game_id + " created for " + SportType.MLB)
+                
+                Logger.debug(`Game ${event.event.data[0].game_id} created for ${SportType.MLB}`)
               }
             }
           }
