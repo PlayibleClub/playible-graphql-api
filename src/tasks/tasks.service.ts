@@ -809,13 +809,99 @@ export class TasksService {
                     await NearResponse.save(pending)
                   } else if("SuccessReceiptId" in receipt.executionOutcome.outcome.status){
                     //The receipt chain continues, append receiptId to array, status stays pending
-                    const test = receipt.executionOutcome.outcome.status.SuccessReceiptId
                     
+                    pending.receiptIds.push(receipt.executionOutcome.outcome.status.SuccessReceiptId)
                     //pending.receiptIds.push(JSON.parse(receipt.executionOutcome.outcome.status).SuccessValue)
                     await NearResponse.save(pending)
                   } else if ("SuccessValue" in receipt.executionOutcome.outcome.status){
                     //The receipt chain ends as a success, set status to Success and process arguments
-                    pending.receiptIds.push(receipt.executionOutcome.id)
+                    pending.status = ResponseStatus.SUCCESS
+                    if(pending.methodName !== undefined && pending.methodArgs !== undefined){
+
+                      if(pending.methodName === 'submit_lineup'){
+                        const args: SubmitLineupType = JSON.parse(Buffer.from(pending.methodArgs, 'base64').toString())
+                        /*
+                          TODO: convert this big chunk of code and the code in websocket to handle methods into a helper function
+                        */
+                        const gameTeam = await GameTeam.findOne({
+                          where: {
+                            game: {
+                              gameId: args.game_id,
+                              sport: SportType.MLB, //need checking for sport via getting it from contract name
+                            },
+                            name: args.team_name,
+                            wallet_address: pending.signerId
+                          }
+                        })
+                        if(!gameTeam){
+                          const game = await Game.findOne({
+                            where: {
+                              gameId: args.game_id,
+                              sport: SportType.MLB //need checking for sport via getting it from contract
+                            }
+                          })
+                          if (game){
+                            const currGameTeam = await GameTeam.create({
+                              game: game,
+                              name: args.team_name,
+                              wallet_address: pending.signerId
+                            }).save()
+
+                            const lineup: string[] = args.token_id //merge both arrays to create lineup
+                            lineup.concat(args.token_promo_ids)
+
+                            lineup.forEach(async (athleteId) => {
+                              let apiId = ""
+                              if(athleteId.includes("PR") || athleteId.includes("SB")){ //retrieve the apiID from athleteId via string manipulation
+                                athleteId = athleteId.split("_")[1]
+                              }
+                              athleteId = athleteId.split("CR")[0]
+                              console.log(athleteId)
+
+                              const athlete = await Athlete.findOne({
+                                where: { apiId: parseInt(athleteId)}
+                              })
+
+                              if (athlete){
+                                try{
+                                  await GameTeamAthlete.create({
+                                    gameTeam: currGameTeam,
+                                    athlete: athlete,
+                                  }).save()
+                                } catch(e){
+                                  Logger.error(e)
+                                }
+                              } else{
+                                Logger.error("ERROR athlete apiId not found")
+                              }
+                            })
+                          }
+                        } else{
+                          console.log("Team already exists")
+                        }
+                      } else if (pending.methodName === 'add_game'){
+                        const args: AddGameType = JSON.parse(Buffer.from(pending.methodArgs, 'base64').toString())
+                        const game = await Game.findOne({
+                          where: {
+                            gameId: args.game_id,
+                            sport: SportType.MLB //add checking of sport via contract name
+                          }
+                        })
+
+                        if (!game){
+                          await Game.create({
+                            gameId: args.game_id,
+                            name: "Game " + args.game_id,
+                            description: 'on-going',
+                            startTime: moment(args.game_time_start),
+                            endTime: moment(args.game_time_end),
+                            sport: SportType.MLB
+                          }).save()
+
+                          Logger.debug(`Game ${args.game_id} created for ${SportType.MLB}`)
+                        }
+                      }
+                    }
                   }
                 }
                 else{
