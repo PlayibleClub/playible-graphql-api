@@ -23,7 +23,7 @@ export class NearResponse extends BaseEntity{
 
   @Field(() => [String])
   @Column({ type: "varchar", length: 255, nullable: true, array: true})
-  receiptId?: string[]
+  receiptIds?: string[]
 
   @Field(() => String)
   @Column({ type: "varchar", length: 50, nullable: true})

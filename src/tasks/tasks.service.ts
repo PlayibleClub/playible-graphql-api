@@ -4,7 +4,7 @@ import S3 from "aws-sdk/clients/s3"
 import axios from "axios"
 import fs from "fs"
 import { startStream, types } from 'near-lake-framework'
-import { LessThanOrEqual, MoreThanOrEqual, Equal, Not, In, QueryBuilder } from "typeorm"
+import { LessThanOrEqual, MoreThanOrEqual, Equal, Not, In, QueryBuilder, ArrayContains } from "typeorm"
 import convert from "xml-js"
 import moment from 'moment-timezone'
 import WebSocket from 'ws'
@@ -714,7 +714,7 @@ export class TasksService {
     const lakeConfig: types.LakeConfig = {
       s3BucketName: "near-lake-data-mainnet",
       s3RegionName: "eu-central-1",
-      startBlockHeight: 97239922//97159134 //97236933
+      startBlockHeight: 97784164//97239922//97159134 //97236933
     }
 
     let count = 0
@@ -728,7 +728,7 @@ export class TasksService {
         throw 'Aborted'
       }
       for (let shard of streamerMessage.shards){
-        if(shard.chunk !== undefined && streamerMessage.block.header.height === 97239922){
+        if(shard.chunk !== undefined && streamerMessage.block.header.height === 97784164){
           // let filteredReceipts = shard.chunk.receipts.filter((x) => x.receiverId === 'game.baseball.playible.near')
           // console.log(JSON.stringify(filteredReceipts))
           
@@ -790,20 +790,38 @@ export class TasksService {
                 status: ResponseStatus.PENDING
               }
             })
-            let filteredReceipts = shard.receiptExecutionOutcomes.filter((x) => pendingReceipts.some(item => item.receiptId === x.receipt?.receiptId))
+            let filteredReceipts = shard.receiptExecutionOutcomes.filter((x) => pendingReceipts.some(item => item.receiptIds?.includes(x.executionOutcome.id)))
             if (filteredReceipts){
               for (let receipt of filteredReceipts){
-                const pending = await NearResponse.findOne({
+                let pending = await NearResponse.findOneOrFail({
                   where: {
-                    receiptId: receipt.executionOutcome.id,
+                    receiptIds: ArrayContains([receipt.executionOutcome.id]),
                     status: ResponseStatus.PENDING,
                   }
                 })
-
-                if(JSON.stringify(receipt.executionOutcome.outcome.status).includes('Failure')){
-                  //delete entry tied to pending NearResponse?
-                  //or keep records of arguments then execute them here
+                
+                //get the last element of receiptIds array
+                if(pending.receiptIds !== undefined && pending.receiptIds[pending.receiptIds.length - 1] === receipt.executionOutcome.id){
+                  if("Failure" in receipt.executionOutcome.outcome.status){
+                    //delete entry tied to pending NearResponse?
+                    //or keep records of arguments then execute them here
+                    pending.status = ResponseStatus.FAILED
+                    await NearResponse.save(pending)
+                  } else if("SuccessReceiptId" in receipt.executionOutcome.outcome.status){
+                    //The receipt chain continues, append receiptId to array, status stays pending
+                    const test = receipt.executionOutcome.outcome.status.SuccessReceiptId
+                    
+                    //pending.receiptIds.push(JSON.parse(receipt.executionOutcome.outcome.status).SuccessValue)
+                    await NearResponse.save(pending)
+                  } else if ("SuccessValue" in receipt.executionOutcome.outcome.status){
+                    //The receipt chain ends as a success, set status to Success and process arguments
+                    pending.receiptIds.push(receipt.executionOutcome.id)
+                  }
                 }
+                else{
+                  Logger.error("Receipt ID mismatch!")
+                }
+                
               }
             }
             //filter only transactions for our contracts
@@ -828,11 +846,12 @@ export class TasksService {
                 //filter only function calls that we need for leaderboards for now, then create a response entry
                 if(action.FunctionCall.methodName === 'submit_lineup' || action.FunctionCall.methodName === 'add_game'){
 
+                  //creates a new NearResponse holding all the necessary details. Will be processed inside receiptExecutionOutcome
                   await NearResponse.create({
                     transactionHash: transaction.transaction.hash,
                     receiverId: transaction.transaction.receiverId,
                     signerId: transaction.transaction.signerId,
-                    receiptId: transaction.outcome.executionOutcome.outcome.receiptIds,
+                    receiptIds: transaction.outcome.executionOutcome.outcome.receiptIds,
                     methodName: action.FunctionCall.methodName,
                     methodArgs: action.FunctionCall.args,
                     nearBlock: nearBlock,
