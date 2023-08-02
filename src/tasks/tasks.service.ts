@@ -708,33 +708,34 @@ export class TasksService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
 
-  @Timeout(1)
+  //@Timeout(1)
 
   async syncNearDataTest(){
     const lakeConfig: types.LakeConfig = {
       s3BucketName: "near-lake-data-mainnet",
       s3RegionName: "eu-central-1",
-      startBlockHeight: 97784164//97239922//97159134 //97236933
+      startBlockHeight: 97856453//97239922//97159134 //97236933
     }
 
     let count = 0
     async function handleStreamerMessage(streamerMessage: types.StreamerMessage): Promise<void>{
       
       //count = +count + +1
-      console.log("Inside async loop")
+      //console.log("Inside async loop")
       console.log(`Block height: ${streamerMessage.block.header.height}`)
       if(count === 10){
         console.log("Exiting loop")
         throw 'Aborted'
       }
       for (let shard of streamerMessage.shards){
-        if(shard.chunk !== undefined && streamerMessage.block.header.height === 97784164){
-          // let filteredReceipts = shard.chunk.receipts.filter((x) => x.receiverId === 'game.baseball.playible.near')
-          // console.log(JSON.stringify(filteredReceipts))
+        if(shard.chunk !== undefined && shard.chunk !== null){
+          if(shard.chunk.transactions !== null && shard.chunk.transactions !== undefined){
+            let filteredTrxns = shard.chunk.transactions.filter((x) => x.transaction !== null && x.transaction.receiverId === 'game.baseball.playible.near')
+            if(filteredTrxns !== null && filteredTrxns.length > 0){
+              console.log("hello")
+            }
+          }
           
-          // let filtered = shard.chunk.transactions.filter((x) => x.outcome.executionOutcome.outcome.executorId === 'game.baseball.playible.near')
-          // console.log(JSON.stringify(filtered))
-          console.log(JSON.stringify(shard.receiptExecutionOutcomes))
         }
         
 
@@ -750,13 +751,13 @@ export class TasksService {
     
   }
 
-  //@Timeout(1)
+  @Timeout(1)
   async syncNearData(){ //for mainnet 
     const lakeConfig: types.LakeConfig = {
       //credentials
       s3BucketName: "near-lake-data-mainnet",
       s3RegionName: "eu-central-1",
-      startBlockHeight: 97236933, //97239921 old
+      startBlockHeight: 97856450//97543661//97856450, //97239921 old
     }
     let count = 0
 
@@ -766,32 +767,94 @@ export class TasksService {
       // Block #${streamerMessage.block.header.height}
       // Shards: ${streamerMessage.shards.length
       // }`)
-      console.log(count)
+      //console.log(count)
       count = +count + +1
 
+      // if(count === 6){
+      //   throw 'Aborted'
+      // }
       //check if current block height is existing within the database
+      const blockHeight = streamerMessage.block.header.height
+      console.log(blockHeight)
+
       const block = await NearBlock.findOne({
         where: {
           height: streamerMessage.block.header.height,
           hash: streamerMessage.block.header.hash,
         }
       })
+
       if (!block){
+        //console.log(JSON.stringify(streamerMessage.shards))
         for(let shard of streamerMessage.shards){
-          if(shard.chunk !== undefined){
+          if(shard.chunk !== undefined && shard.chunk !== null){
             // let filteredReceipts = shard.chunk.receipts.filter((x) => x.receiverId === 'game.baseball.playible.near')
             // for (let receipt of filteredReceipts){
             //   let method = receipt.receipt.actions[]
             // }
             
+            //console.log("Processing transactions")
+            if(shard.chunk.transactions !== null && shard.chunk.transactions !== undefined){
+              //console.log("Transaction not null?")
+              let filteredTrxns = shard.chunk.transactions.filter((x) => x.transaction !== null && x.transaction.receiverId === 'game.baseball.playible.near')
+              if (filteredTrxns.length > 0){ //to know if the array isn't empty -> create a NearBlock entity to store data
+                Logger.debug("Creating NEAR Block...")
+                const nearBlock = await NearBlock.create({
+                  height: streamerMessage.block.header.height,
+                  hash: streamerMessage.block.header.hash,
+                  timestamp: moment().utc()
+                }).save()
+
+
+                for (let transaction of filteredTrxns){
+                  //console.log("Playible contract found")
+                  //console.log(JSON.stringify(transaction.transaction.actions[0]))
+                  //console.log(transaction.transaction.actions[0].toString())
+                  const action = JSON.parse(JSON.stringify(transaction.transaction.actions[0]))
+                  //console.log(action)
+                  //console.log(JSON.stringify(transaction.outcome))
+                  //const args = JSON.parse(Buffer.from(action, 'base64').toString())
+                  
+                  //filter only function calls that we need for leaderboards for now, then create a response entry
+                  if(action.FunctionCall.methodName === 'submit_lineup' || action.FunctionCall.methodName === 'add_game'){
+
+                    //creates a new NearResponse holding all the necessary details. Will be processed inside receiptExecutionOutcome
+                    if("SuccessReceiptId" in transaction.outcome.executionOutcome.outcome.status){
+                      //add checking if NearResponse already exists
+                      await NearResponse.create({
+                        transactionHash: transaction.transaction.hash,
+                        receiverId: transaction.transaction.receiverId,
+                        signerId: transaction.transaction.signerId,
+                        receiptIds: [transaction.outcome.executionOutcome.outcome.status.SuccessReceiptId],
+                        methodName: action.FunctionCall.methodName,
+                        methodArgs: action.FunctionCall.args,
+                        nearBlock: nearBlock,
+                        status: ResponseStatus.PENDING
+                      }).save()
+                    }
+                    
+                    
+                  }
+                  
+                }
+              } else{
+                //console.log("No transactions found for playible contracts")
+              }
+            }
+            
+
+            //console.log(`Processing receipts at block ${blockHeight}`)
             //filtering for receipt execution outcomes and look for pending receipt
             const pendingReceipts = await NearResponse.find({
               where: {
                 status: ResponseStatus.PENDING
               }
             })
+
             let filteredReceipts = shard.receiptExecutionOutcomes.filter((x) => pendingReceipts.some(item => item.receiptIds?.includes(x.executionOutcome.id)))
-            if (filteredReceipts){
+            //console.log(`Filtered receipts length for height ${blockHeight}: ${filteredReceipts.length}`)
+            if (filteredReceipts.length > 0){
+              Logger.debug("Found playible receipt")
               for (let receipt of filteredReceipts){
                 let pending = await NearResponse.findOneOrFail({
                   where: {
@@ -799,6 +862,7 @@ export class TasksService {
                     status: ResponseStatus.PENDING,
                   }
                 })
+
                 
                 //get the last element of receiptIds array
                 if(pending.receiptIds !== undefined && pending.receiptIds[pending.receiptIds.length - 1] === receipt.executionOutcome.id){
@@ -809,20 +873,23 @@ export class TasksService {
                     await NearResponse.save(pending)
                   } else if("SuccessReceiptId" in receipt.executionOutcome.outcome.status){
                     //The receipt chain continues, append receiptId to array, status stays pending
-                    
+                    Logger.debug("Found another receiptId, continuing chain")
                     pending.receiptIds.push(receipt.executionOutcome.outcome.status.SuccessReceiptId)
                     //pending.receiptIds.push(JSON.parse(receipt.executionOutcome.outcome.status).SuccessValue)
                     await NearResponse.save(pending)
                   } else if ("SuccessValue" in receipt.executionOutcome.outcome.status){
                     //The receipt chain ends as a success, set status to Success and process arguments
+                    Logger.debug("SuccessValue found, processing...")
                     pending.status = ResponseStatus.SUCCESS
+                    await NearResponse.save(pending)
                     if(pending.methodName !== undefined && pending.methodArgs !== undefined){
-
+                      
                       if(pending.methodName === 'submit_lineup'){
                         const args: SubmitLineupType = JSON.parse(Buffer.from(pending.methodArgs, 'base64').toString())
                         /*
                           TODO: convert this big chunk of code and the code in websocket to handle methods into a helper function
                         */
+                      
                         const gameTeam = await GameTeam.findOne({
                           where: {
                             game: {
@@ -847,19 +914,20 @@ export class TasksService {
                               wallet_address: pending.signerId
                             }).save()
 
-                            const lineup: string[] = args.token_id //merge both arrays to create lineup
-                            lineup.concat(args.token_promo_ids)
+                            let token_id: string[] = args.token_id !== undefined ? args.token_id : []
+                            let promo_ids: string[] = args.token_promo_ids !== undefined ? args.token_promo_ids : []
+                            const lineup = token_id.concat(promo_ids)
 
                             lineup.forEach(async (athleteId) => {
-                              let apiId = ""
+                              
                               if(athleteId.includes("PR") || athleteId.includes("SB")){ //retrieve the apiID from athleteId via string manipulation
                                 athleteId = athleteId.split("_")[1]
                               }
-                              athleteId = athleteId.split("CR")[0]
-                              console.log(athleteId)
+                              let apiId = athleteId.split("CR")[0]
+                              
 
                               const athlete = await Athlete.findOne({
-                                where: { apiId: parseInt(athleteId)}
+                                where: { apiId: parseInt(apiId)}
                               })
 
                               if (athlete){
@@ -874,10 +942,14 @@ export class TasksService {
                               } else{
                                 Logger.error("ERROR athlete apiId not found")
                               }
+                              
                             })
+                            Logger.debug("Submit lineup finished")
+                          } else{
+                            Logger.error("Game not found")
                           }
                         } else{
-                          console.log("Team already exists")
+                          Logger.error("Team already exists")
                         }
                       } else if (pending.methodName === 'add_game'){
                         const args: AddGameType = JSON.parse(Buffer.from(pending.methodArgs, 'base64').toString())
@@ -899,145 +971,22 @@ export class TasksService {
                           }).save()
 
                           Logger.debug(`Game ${args.game_id} created for ${SportType.MLB}`)
+                        } else{
+                          Logger.error(`Game ${args.game_id} already exists`)
                         }
                       }
                     }
                   }
-                }
-                else{
+                } else{
                   Logger.error("Receipt ID mismatch!")
                 }
                 
               }
+            } else{
+              //console.log("No receipts found for playible contracts")
             }
             //filter only transactions for our contracts
-            let filteredTrxns = shard.chunk.transactions.filter((x) => x.transaction.receiverId === 'game.baseball.playible.near')
-            if (filteredTrxns){ //to know if the array isn't empty -> create a NearBlock entity to store data
-              const nearBlock = await NearBlock.create({
-                height: streamerMessage.block.header.height,
-                hash: streamerMessage.block.header.hash,
-                timestamp: moment().utc()
-              }).save()
-
-
-              for (let transaction of filteredTrxns){
-                //console.log("Playible contract found")
-                //console.log(JSON.stringify(transaction.transaction.actions[0]))
-                //console.log(transaction.transaction.actions[0].toString())
-                const action = JSON.parse(JSON.stringify(transaction.transaction.actions[0]))
-                //console.log(action)
-                //console.log(JSON.stringify(transaction.outcome))
-                //const args = JSON.parse(Buffer.from(action, 'base64').toString())
-                
-                //filter only function calls that we need for leaderboards for now, then create a response entry
-                if(action.FunctionCall.methodName === 'submit_lineup' || action.FunctionCall.methodName === 'add_game'){
-
-                  //creates a new NearResponse holding all the necessary details. Will be processed inside receiptExecutionOutcome
-                  await NearResponse.create({
-                    transactionHash: transaction.transaction.hash,
-                    receiverId: transaction.transaction.receiverId,
-                    signerId: transaction.transaction.signerId,
-                    receiptIds: transaction.outcome.executionOutcome.outcome.receiptIds,
-                    methodName: action.FunctionCall.methodName,
-                    methodArgs: action.FunctionCall.args,
-                    nearBlock: nearBlock,
-                    status: ResponseStatus.PENDING
-                  }).save()
-                  if(action.FunctionCall.methodName === 'submit_lineup'){
-                    const args: SubmitLineupType = JSON.parse(Buffer.from(action.FunctionCall.args, 'base64').toString())
-                    /*
-                      TODO: convert this big chunk of code and the code in websocket to handle methods into a helper function
-                    */
-                    const gameTeam = await GameTeam.findOne({
-                      where: {
-                        game: {
-                          gameId: args.game_id,
-                          sport: SportType.MLB, //need checking for sport via getting it from contract name
-                        },
-                        name: args.team_name,
-                        wallet_address: transaction.transaction.signerId
-                      }
-                    })
-                    if(!gameTeam){
-                      const game = await Game.findOne({
-                        where: {
-                          gameId: args.game_id,
-                          sport: SportType.MLB //need checking for sport via getting it from contract
-                        }
-                      })
-                      if (game){
-                        const currGameTeam = await GameTeam.create({
-                          game: game,
-                          name: args.team_name,
-                          wallet_address: transaction.transaction.signerId
-                        }).save()
-
-                        const lineup: string[] = args.token_id //merge both arrays to create lineup
-                        lineup.concat(args.token_promo_ids)
-
-                        lineup.forEach(async (athleteId) => {
-                          let apiId = ""
-                          if(athleteId.includes("PR") || athleteId.includes("SB")){ //retrieve the apiID from athleteId via string manipulation
-                            athleteId = athleteId.split("_")[1]
-                          }
-                          athleteId = athleteId.split("CR")[0]
-                          console.log(athleteId)
-
-                          const athlete = await Athlete.findOne({
-                            where: { apiId: parseInt(athleteId)}
-                          })
-
-                          if (athlete){
-                            try{
-                              await GameTeamAthlete.create({
-                                gameTeam: currGameTeam,
-                                athlete: athlete,
-                              }).save()
-                            } catch(e){
-                              Logger.error(e)
-                            }
-                          } else{
-                            Logger.error("ERROR athlete apiId not found")
-                          }
-                        })
-                      }
-                    } else{
-                      console.log("Team already exists")
-                    }
-                    console.log("Submit lineup received")
-                    console.log("Signer id: " + transaction.transaction.signerId)
-                    console.log("Logs: " + transaction.outcome.executionOutcome.outcome.logs.toString())
-                    console.log("Status: " + JSON.stringify(transaction.outcome.executionOutcome.outcome.receiptIds))
-                    console.log("Transaction hash: " + transaction.transaction.hash)
-                    console.log(Buffer.from(action.FunctionCall.args, 'base64').toString())
-                  } else if(action.FunctionCall.methodName === 'add_game'){
-                    console.log("Add game received")
-                    
-                    const args: AddGameType = JSON.parse(Buffer.from(action.FunctionCall.args, 'base64').toString())
-                    const game = await Game.findOne({
-                      where: {
-                        gameId: args.game_id,
-                        sport: SportType.MLB //add checking of sport via contract name
-                      }
-                    })
-
-                    if (!game){
-                      await Game.create({
-                        gameId: args.game_id,
-                        name: "Game " + args.game_id,
-                        description: 'on-going',
-                        startTime: moment(args.game_time_start),
-                        endTime: moment(args.game_time_end),
-                        sport: SportType.MLB
-                      }).save()
-
-                      Logger.debug(`Game ${args.game_id} created for ${SportType.MLB}`)
-                    }
-                  }
-                }
-                
-              }
-            }
+            
             //console.log(JSON.stringify(filteredTrxns))
             
               // let filteredReceipts = shard.chunk.receipts.filter((x) => x.receiverId === 'game.baseball.playible.near')
@@ -1054,10 +1003,14 @@ export class TasksService {
         console.log("Block already exists.")
       }
       
-      console.log(``)
     }
 
-    await startStream(lakeConfig, handleStreamerMessage)
+    try{
+      await startStream(lakeConfig, handleStreamerMessage)
+    } catch(e){
+      console.log(e)
+    }
+    
   }
   // @Timeout(1)
   async generateAthleteNbaAssets() {
