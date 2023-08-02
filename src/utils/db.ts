@@ -20,6 +20,8 @@ import { CricketTeam } from "../entities/CricketTeam"
 import { CricketAthlete } from '../entities/CricketAthlete'
 import { CricketAthleteStat } from '../entities/CricketAthleteStat' 
 import { CricketMatch } from '../entities/CricketMatch'
+import { NearBlock } from '../entities/NearBlock'
+import { NearResponse } from '../entities/NearResponse'
 export const AppDataSource = new DataSource({
   type: "postgres",
   host: process.env.POSTGRES_HOST,
@@ -45,7 +47,9 @@ export const AppDataSource = new DataSource({
     CricketTeam,
     CricketAthlete,
     CricketAthleteStat,
-    CricketMatch
+    CricketMatch,
+    NearBlock,
+    NearResponse
   ],
   synchronize: true,
   // logging: true,
