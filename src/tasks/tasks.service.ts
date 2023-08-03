@@ -751,13 +751,14 @@ export class TasksService {
     
   }
 
-  @Timeout(1)
+  //@Timeout(1)
   async syncNearData(){ //for mainnet 
     const lakeConfig: types.LakeConfig = {
       //credentials
-      s3BucketName: "near-lake-data-mainnet",
+      s3BucketName: "near-lake-data-testnet",
       s3RegionName: "eu-central-1",
-      startBlockHeight: 97856450//97543661//97856450, //97239921 old
+      startBlockHeight: 133726304 // for testnet
+      //startBlockHeight: 97856450//97543661//97856450, //97239921 old
     }
     let count = 0
 
@@ -770,7 +771,7 @@ export class TasksService {
       //console.log(count)
       count = +count + +1
 
-      // if(count === 6){
+      // if(count === 10){
       //   throw 'Aborted'
       // }
       //check if current block height is existing within the database
@@ -796,10 +797,10 @@ export class TasksService {
             //console.log("Processing transactions")
             if(shard.chunk.transactions !== null && shard.chunk.transactions !== undefined){
               //console.log("Transaction not null?")
-              let filteredTrxns = shard.chunk.transactions.filter((x) => x.transaction !== null && x.transaction.receiverId === 'game.baseball.playible.near')
+              let filteredTrxns = shard.chunk.transactions.filter((x) => x.transaction !== null && x.transaction.receiverId === 'game.baseball.playible.testnet')
               if (filteredTrxns.length > 0){ //to know if the array isn't empty -> create a NearBlock entity to store data
                 Logger.debug("Creating NEAR Block...")
-                const nearBlock = await NearBlock.create({
+                let nearBlock = await NearBlock.create({
                   height: streamerMessage.block.header.height,
                   hash: streamerMessage.block.header.hash,
                   timestamp: moment().utc()
@@ -821,16 +822,18 @@ export class TasksService {
                     //creates a new NearResponse holding all the necessary details. Will be processed inside receiptExecutionOutcome
                     if("SuccessReceiptId" in transaction.outcome.executionOutcome.outcome.status){
                       //add checking if NearResponse already exists
-                      await NearResponse.create({
+                      const saveResponse = await NearResponse.create({
                         transactionHash: transaction.transaction.hash,
                         receiverId: transaction.transaction.receiverId,
                         signerId: transaction.transaction.signerId,
                         receiptIds: [transaction.outcome.executionOutcome.outcome.status.SuccessReceiptId],
                         methodName: action.FunctionCall.methodName,
                         methodArgs: action.FunctionCall.args,
-                        nearBlock: nearBlock,
                         status: ResponseStatus.PENDING
                       }).save()
+
+                      nearBlock.nearResponse = saveResponse
+                      await NearBlock.save(nearBlock)
                     }
                     
                     
@@ -852,7 +855,7 @@ export class TasksService {
             })
 
             let filteredReceipts = shard.receiptExecutionOutcomes.filter((x) => pendingReceipts.some(item => item.receiptIds?.includes(x.executionOutcome.id)))
-            //console.log(`Filtered receipts length for height ${blockHeight}: ${filteredReceipts.length}`)
+            console.log(`Filtered receipts length for height ${blockHeight}: ${filteredReceipts.length}`)
             if (filteredReceipts.length > 0){
               Logger.debug("Found playible receipt")
               for (let receipt of filteredReceipts){
@@ -866,6 +869,13 @@ export class TasksService {
                 
                 //get the last element of receiptIds array
                 if(pending.receiptIds !== undefined && pending.receiptIds[pending.receiptIds.length - 1] === receipt.executionOutcome.id){
+                  await NearBlock.create({
+                    height: streamerMessage.block.header.height,
+                    hash: streamerMessage.block.header.hash,
+                    timestamp: moment().utc(),
+                    nearResponse: pending
+                  }).save()
+
                   if("Failure" in receipt.executionOutcome.outcome.status){
                     //delete entry tied to pending NearResponse?
                     //or keep records of arguments then execute them here
@@ -884,6 +894,7 @@ export class TasksService {
                     await NearResponse.save(pending)
                     if(pending.methodName !== undefined && pending.methodArgs !== undefined){
                       
+
                       if(pending.methodName === 'submit_lineup'){
                         const args: SubmitLineupType = JSON.parse(Buffer.from(pending.methodArgs, 'base64').toString())
                         /*
@@ -4229,7 +4240,7 @@ export class TasksService {
     }
   }
 
-  //@Timeout(1)
+  @Timeout(1)
   async runNearMainnetBaseballWebSocketListener(){
     function listenToMainnet(){
       const ws = new WebSocket('wss://events.near.stream/ws')
@@ -4267,134 +4278,134 @@ export class TasksService {
         //console.log(msg.events[0].predecessor_id);
         //console.log(util.inspect(msg, false, null, true))
         console.log(data.toString())
-        console.log(msg.events.length);
-        //console.log(msg.events[0].event.data[0].game_id);
-        if(msg.events.length > 0){
+        // console.log(msg.events.length);
+        // //console.log(msg.events[0].event.data[0].game_id);
+        // if(msg.events.length > 0){
           
-          for(let event of msg.events){
-            if(event.event.event === 'lineup_submission_result'){
-              console.log("lineup submission")
+        //   for(let event of msg.events){
+        //     if(event.event.event === 'lineup_submission_result'){
+        //       console.log("lineup submission")
 
-              const gameTeam = await GameTeam.findOne({
-                where: {
-                  game: {
-                    gameId: event.event.data[0].game_id, 
-                    sport: SportType.MLB
-                  },
-                  name: event.event.data[0].team_name,
-                  wallet_address: event.event.data[0].signer,
-                },
+        //       const gameTeam = await GameTeam.findOne({
+        //         where: {
+        //           game: {
+        //             gameId: event.event.data[0].game_id, 
+        //             sport: SportType.MLB
+        //           },
+        //           name: event.event.data[0].team_name,
+        //           wallet_address: event.event.data[0].signer,
+        //         },
                 
-              })
+        //       })
 
-              if(gameTeam){ //team submission already exists
-                Logger.debug("This team already exists")
-              } else{
-                const game = await Game.findOne({
-                  where: { 
-                    gameId: event.event.data[0].game_id, 
-                    sport: SportType.MLB
-                  }
-                })
-                if(game){ //add lineup processing
-                  // try{
-                  //   GameTeam.create({
-                  //     game: game,
-                  //     name: event.event.data[0].team_name, //add sportType
-                  //     wallet_address: event.event.data[0].signer,
-                  //   }).save()
+        //       if(gameTeam){ //team submission already exists
+        //         Logger.debug("This team already exists")
+        //       } else{
+        //         const game = await Game.findOne({
+        //           where: { 
+        //             gameId: event.event.data[0].game_id, 
+        //             sport: SportType.MLB
+        //           }
+        //         })
+        //         if(game){ //add lineup processing
+        //           // try{
+        //           //   GameTeam.create({
+        //           //     game: game,
+        //           //     name: event.event.data[0].team_name, //add sportType
+        //           //     wallet_address: event.event.data[0].signer,
+        //           //   }).save()
                     
-                  // } catch(e){
-                  //   Logger.error(e)
-                  // }
-                  // GameTeam.create({
-                  //   game: game,
-                  //   name: event.event.data[0].team_name,
-                  //   wallet_address: event.event.data[0].signer,
-                  // }).save().then(async (newTeam) => {
+        //           // } catch(e){
+        //           //   Logger.error(e)
+        //           // }
+        //           // GameTeam.create({
+        //           //   game: game,
+        //           //   name: event.event.data[0].team_name,
+        //           //   wallet_address: event.event.data[0].signer,
+        //           // }).save().then(async (newTeam) => {
                     
-                  // })
-                  await GameTeam.create({
-                    game: game,
-                    name: event.event.data[0].team_name,
-                    wallet_address: event.event.data[0].signer,
-                  }).save()
+        //           // })
+        //           await GameTeam.create({
+        //             game: game,
+        //             name: event.event.data[0].team_name,
+        //             wallet_address: event.event.data[0].signer,
+        //           }).save()
 
-                  const lineup = event.event.data[0].lineup
-                    //get the apiId
-                  const currGameTeam = await GameTeam.findOneOrFail({
-                    where: { 
-                      game: {
-                        gameId: event.event.data[0].gameId
-                      }, 
-                      name: event.event.data[0].team_name, 
-                      wallet_address: event.event.data[0].signer
-                    }
-                  })
-                  for(let token_id of lineup){
-                    let apiId = ""
-                    if(token_id.includes("PR") || token_id.includes("SB")){
-                      token_id = token_id.split("_")[1]
-                    }
-                    apiId = token_id.split("CR")[0]
-                    console.log(apiId)
+        //           const lineup = event.event.data[0].lineup
+        //             //get the apiId
+        //           const currGameTeam = await GameTeam.findOneOrFail({
+        //             where: { 
+        //               game: {
+        //                 gameId: event.event.data[0].gameId
+        //               }, 
+        //               name: event.event.data[0].team_name, 
+        //               wallet_address: event.event.data[0].signer
+        //             }
+        //           })
+        //           for(let token_id of lineup){
+        //             let apiId = ""
+        //             if(token_id.includes("PR") || token_id.includes("SB")){
+        //               token_id = token_id.split("_")[1]
+        //             }
+        //             apiId = token_id.split("CR")[0]
+        //             console.log(apiId)
 
-                    const athlete = await Athlete.findOne({
-                      where: {apiId: parseInt(apiId)}
-                    })
-                    if(athlete){
-                      try{
-                        GameTeamAthlete.create({
-                          gameTeam: currGameTeam,
-                          athlete: athlete,
-                        }).save()
+        //             const athlete = await Athlete.findOne({
+        //               where: {apiId: parseInt(apiId)}
+        //             })
+        //             if(athlete){
+        //               try{
+        //                 GameTeamAthlete.create({
+        //                   gameTeam: currGameTeam,
+        //                   athlete: athlete,
+        //                 }).save()
 
-                        Logger.debug("Added athlete " + apiId + " to lineup")
-                      }
-                      catch(e){
-                        Logger.error(e)
-                      }
+        //                 Logger.debug("Added athlete " + apiId + " to lineup")
+        //               }
+        //               catch(e){
+        //                 Logger.error(e)
+        //               }
                       
-                    } else{
-                      Logger.error("ERROR athlete apiId not found, disregarding...")
-                    }
-                    //get the athlete, add to gameteamathlete
-                  }
+        //             } else{
+        //               Logger.error("ERROR athlete apiId not found, disregarding...")
+        //             }
+        //             //get the athlete, add to gameteamathlete
+        //           }
                   
-                } else{
-                  Logger.error("Game does not exist.")
-                }
+        //         } else{
+        //           Logger.error("Game does not exist.")
+        //         }
                 
-              }
-            }
-            else if (event.event.event === 'add_game'){
-              console.log("add game")
+        //       }
+        //     }
+        //     else if (event.event.event === 'add_game'){
+        //       console.log("add game")
               
-              const game = await Game.findOne({
-                where: {
-                  gameId: event.event.data[0].game_id,
-                  sport: SportType.MLB,
-                }
-              })
-              if(game){
-                Logger.error("Game " + event.event.data[0].game_id + " already exists")
-              }
-              else {
-                await Game.create({
-                  gameId: event.event.data[0].game_id,
-                  name: "Game " + event.event.data[0].game_id, 
-                  description: 'on-going',
-                  startTime: moment(event.event.data[0].game_time_start),
-                  endTime: moment(event.event.data[0].game_time_end),
-                  sport: SportType.MLB
-                }).save()
+        //       const game = await Game.findOne({
+        //         where: {
+        //           gameId: event.event.data[0].game_id,
+        //           sport: SportType.MLB,
+        //         }
+        //       })
+        //       if(game){
+        //         Logger.error("Game " + event.event.data[0].game_id + " already exists")
+        //       }
+        //       else {
+        //         await Game.create({
+        //           gameId: event.event.data[0].game_id,
+        //           name: "Game " + event.event.data[0].game_id, 
+        //           description: 'on-going',
+        //           startTime: moment(event.event.data[0].game_time_start),
+        //           endTime: moment(event.event.data[0].game_time_end),
+        //           sport: SportType.MLB
+        //         }).save()
 
                 
-                Logger.debug(`Game ${event.event.data[0].game_id} created for ${SportType.MLB}`)
-              }
-            }
-          }
-        }
+        //         Logger.debug(`Game ${event.event.data[0].game_id} created for ${SportType.MLB}`)
+        //       }
+        //     }
+        //   }
+        // }
       })
       ws.on("close", function close(){
         console.log("Connection closed")

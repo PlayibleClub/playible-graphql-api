@@ -21,6 +21,6 @@ export class NearBlock extends BaseEntity{
   timestamp!: Date
 
   @Field(() => NearResponse)
-  @OneToOne(() => NearResponse, (response) => response.nearBlock)
+  @ManyToOne(() => NearResponse, (response) => response.nearBlock)
   nearResponse!: Relation<NearResponse>
 }
