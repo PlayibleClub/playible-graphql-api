@@ -38,6 +38,6 @@ export class NearResponse extends BaseEntity{
   status!: string //from RPC API
 
   @Field(() => [NearBlock])
-  @OneToMany(() => NearBlock, (block) => block.nearResponse, {cascade: true})
+  @OneToMany(() => NearBlock, (block) => block.nearResponse)
   nearBlock!: Relation<NearBlock[]>
 }
