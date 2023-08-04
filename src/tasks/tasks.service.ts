@@ -751,7 +751,7 @@ export class TasksService {
     
   }
 
-  //@Timeout(1)
+  @Timeout(1)
   async syncNearData(){ //for mainnet 
     const lakeConfig: types.LakeConfig = {
       //credentials
@@ -762,6 +762,8 @@ export class TasksService {
     }
     let count = 0
 
+    let nearBlocks : NearBlock[] = []
+    let nearResponses: NearResponse[] = []
     //Function to receive responses from lake-indexer
     async function handleStreamerMessage(streamerMessage: types.StreamerMessage): Promise<void>{
       // console.log(`
@@ -770,10 +772,12 @@ export class TasksService {
       // }`)
       //console.log(count)
       count = +count + +1
-
-      // if(count === 10){
-      //   throw 'Aborted'
-      // }
+      console.log(count)
+      if(count === 300){
+        await NearBlock.save([...nearBlocks], {chunk: 20})
+        await NearResponse.save([...nearResponses], {chunk: 20})
+        throw 'Aborted'
+      }
       //check if current block height is existing within the database
       const blockHeight = streamerMessage.block.header.height
       console.log(blockHeight)
@@ -786,42 +790,29 @@ export class TasksService {
       })
 
       if (!block){
-        //console.log(JSON.stringify(streamerMessage.shards))
+        //console.log(`Response array length ${nearResponses.length}`)
         for(let shard of streamerMessage.shards){
           if(shard.chunk !== undefined && shard.chunk !== null){
-            // let filteredReceipts = shard.chunk.receipts.filter((x) => x.receiverId === 'game.baseball.playible.near')
-            // for (let receipt of filteredReceipts){
-            //   let method = receipt.receipt.actions[]
-            // }
-            
-            //console.log("Processing transactions")
             if(shard.chunk.transactions !== null && shard.chunk.transactions !== undefined){
-              //console.log("Transaction not null?")
               let filteredTrxns = shard.chunk.transactions.filter((x) => x.transaction !== null && x.transaction.receiverId === 'game.baseball.playible.testnet')
               if (filteredTrxns.length > 0){ //to know if the array isn't empty -> create a NearBlock entity to store data
-                Logger.debug("Creating NEAR Block...")
+                Logger.debug(`Creating NEAR block ${blockHeight}`)
                 let nearBlock = await NearBlock.create({
                   height: streamerMessage.block.header.height,
                   hash: streamerMessage.block.header.hash,
                   timestamp: moment().utc()
-                }).save()
+                })
 
 
                 for (let transaction of filteredTrxns){
-                  //console.log("Playible contract found")
-                  //console.log(JSON.stringify(transaction.transaction.actions[0]))
-                  //console.log(transaction.transaction.actions[0].toString())
-                  const action = JSON.parse(JSON.stringify(transaction.transaction.actions[0]))
-                  //console.log(action)
-                  //console.log(JSON.stringify(transaction.outcome))
-                  //const args = JSON.parse(Buffer.from(action, 'base64').toString())
-                  
+
+                  const action = JSON.parse(JSON.stringify(transaction.transaction.actions[0]))   
                   //filter only function calls that we need for leaderboards for now, then create a response entry
                   if(action.FunctionCall.methodName === 'submit_lineup' || action.FunctionCall.methodName === 'add_game'){
 
                     //creates a new NearResponse holding all the necessary details. Will be processed inside receiptExecutionOutcome
                     if("SuccessReceiptId" in transaction.outcome.executionOutcome.outcome.status){
-                      //add checking if NearResponse already exists
+                      
                       const saveResponse = await NearResponse.create({
                         transactionHash: transaction.transaction.hash,
                         receiverId: transaction.transaction.receiverId,
@@ -830,10 +821,13 @@ export class TasksService {
                         methodName: action.FunctionCall.methodName,
                         methodArgs: action.FunctionCall.args,
                         status: ResponseStatus.PENDING
-                      }).save()
+                      })
 
                       nearBlock.nearResponse = saveResponse
-                      await NearBlock.save(nearBlock)
+                      //await NearBlock.save(nearBlock)
+
+                      nearResponses.push(saveResponse)
+                      nearBlocks.push(nearBlock)
                     }
                     
                     
@@ -848,50 +842,60 @@ export class TasksService {
 
             //console.log(`Processing receipts at block ${blockHeight}`)
             //filtering for receipt execution outcomes and look for pending receipt
-            const pendingReceipts = await NearResponse.find({
-              where: {
-                status: ResponseStatus.PENDING
-              }
-            })
+            // const pendingReceipts = await NearResponse.find({
+            //   where: {
+            //     status: ResponseStatus.PENDING
+            //   }
+            // })
+            let pendingReceipts = nearResponses.filter((x) => x.status === ResponseStatus.PENDING)
+            for (let receipt of pendingReceipts){
+              console.log(`Block height for receipt ${blockHeight}`)
+              console.log(receipt.receiptIds)
+            }
+            // if(blockHeight === 133726533 || blockHeight === 133726535){
+            //   for (let receipt of shard.receiptExecutionOutcomes){
+            //     console.log(`Execution id: ${receipt.executionOutcome.id}`)
+            //   }
+            // }
+            let filteredReceipts = shard.receiptExecutionOutcomes.filter((x) => pendingReceipts.some((item) => item.receiptIds?.includes(x.executionOutcome.id)))
 
-            let filteredReceipts = shard.receiptExecutionOutcomes.filter((x) => pendingReceipts.some(item => item.receiptIds?.includes(x.executionOutcome.id)))
-            console.log(`Filtered receipts length for height ${blockHeight}: ${filteredReceipts.length}`)
+            //console.log(`Filtered receipts length for height ${blockHeight}: ${filteredReceipts.length}`)
             if (filteredReceipts.length > 0){
               Logger.debug("Found playible receipt")
               for (let receipt of filteredReceipts){
-                let pending = await NearResponse.findOneOrFail({
-                  where: {
-                    receiptIds: ArrayContains([receipt.executionOutcome.id]),
-                    status: ResponseStatus.PENDING,
-                  }
-                })
-
+                // let pending = await NearResponse.findOneOrFail({
+                //   where: {
+                //     receiptIds: ArrayContains([receipt.executionOutcome.id]),
+                //     status: ResponseStatus.PENDING,
+                //   }
+                // })
+                let pending = pendingReceipts.find((x) => x.receiptIds !== undefined && x.receiptIds?.includes(receipt.executionOutcome.id) && x.status === ResponseStatus.PENDING)
                 
                 //get the last element of receiptIds array
-                if(pending.receiptIds !== undefined && pending.receiptIds[pending.receiptIds.length - 1] === receipt.executionOutcome.id){
-                  await NearBlock.create({
+                if(pending !== undefined && pending.receiptIds !== undefined && pending.receiptIds[pending.receiptIds.length - 1] === receipt.executionOutcome.id){
+                  nearBlocks.push(await NearBlock.create({
                     height: streamerMessage.block.header.height,
                     hash: streamerMessage.block.header.hash,
                     timestamp: moment().utc(),
                     nearResponse: pending
-                  }).save()
-
+                  }))
+                  
                   if("Failure" in receipt.executionOutcome.outcome.status){
                     //delete entry tied to pending NearResponse?
                     //or keep records of arguments then execute them here
                     pending.status = ResponseStatus.FAILED
-                    await NearResponse.save(pending)
+                    //await NearResponse.save(pending)
                   } else if("SuccessReceiptId" in receipt.executionOutcome.outcome.status){
                     //The receipt chain continues, append receiptId to array, status stays pending
                     Logger.debug("Found another receiptId, continuing chain")
                     pending.receiptIds.push(receipt.executionOutcome.outcome.status.SuccessReceiptId)
                     //pending.receiptIds.push(JSON.parse(receipt.executionOutcome.outcome.status).SuccessValue)
-                    await NearResponse.save(pending)
+                    //await NearResponse.save(pending)
                   } else if ("SuccessValue" in receipt.executionOutcome.outcome.status){
                     //The receipt chain ends as a success, set status to Success and process arguments
                     Logger.debug("SuccessValue found, processing...")
                     pending.status = ResponseStatus.SUCCESS
-                    await NearResponse.save(pending)
+                    //await NearResponse.save(pending)
                     if(pending.methodName !== undefined && pending.methodArgs !== undefined){
                       
 
@@ -900,7 +904,8 @@ export class TasksService {
                         /*
                           TODO: convert this big chunk of code and the code in websocket to handle methods into a helper function
                         */
-                      
+                        console.log(args)
+                        console.log(pending.methodArgs)
                         const gameTeam = await GameTeam.findOne({
                           where: {
                             game: {
@@ -925,10 +930,10 @@ export class TasksService {
                               wallet_address: pending.signerId
                             }).save()
 
-                            let token_id: string[] = args.token_id !== undefined ? args.token_id : []
-                            let promo_ids: string[] = args.token_promo_ids !== undefined ? args.token_promo_ids : []
+                            let token_id: string[] = args.token_ids !== undefined && args.token_ids !== null ? args.token_ids : []
+                            let promo_ids: string[] = args.token_promo_ids !== undefined && args.token_promo_ids !== null ? args.token_promo_ids : []
                             const lineup = token_id.concat(promo_ids)
-
+                            console.log(lineup)
                             lineup.forEach(async (athleteId) => {
                               
                               if(athleteId.includes("PR") || athleteId.includes("SB")){ //retrieve the apiID from athleteId via string manipulation
@@ -940,7 +945,7 @@ export class TasksService {
                               const athlete = await Athlete.findOne({
                                 where: { apiId: parseInt(apiId)}
                               })
-
+                              console.log("Adding athlete...")
                               if (athlete){
                                 try{
                                   await GameTeamAthlete.create({
@@ -4240,7 +4245,7 @@ export class TasksService {
     }
   }
 
-  @Timeout(1)
+  //@Timeout(1)
   async runNearMainnetBaseballWebSocketListener(){
     function listenToMainnet(){
       const ws = new WebSocket('wss://events.near.stream/ws')
