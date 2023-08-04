@@ -30,7 +30,7 @@ export enum ResponseStatus {
 export type SubmitLineupType = {
   game_id: number,
   team_name: string,
-  token_id: string[],
+  token_ids: string[],
   token_promo_ids: string[],
 }
 
