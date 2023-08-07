@@ -34,6 +34,12 @@ export type SubmitLineupType = {
   token_promo_ids: string[],
 }
 
+export type SportMap = {
+  'baseball' : SportType,
+  'basketball': SportType,
+  'nfl': SportType
+}
+
 export type AddGameType = {
   game_id: number,
   game_time_start: number,

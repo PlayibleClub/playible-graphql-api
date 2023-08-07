@@ -24,14 +24,14 @@ import { CricketAthleteStat } from '../entities/CricketAthleteStat'
 import { CricketMatch } from '../entities/CricketMatch'
 import { getSeasonType } from "../helpers/Timeframe"
 import { ATHLETE_MLB_BASE_ANIMATION, ATHLETE_MLB_BASE_IMG, ATHLETE_MLB_IMG } from "../utils/svgTemplates"
-import { AthleteStatType, SportType, SubmitLineupType, AddGameType, ResponseStatus } from "../utils/types"
+import { AthleteStatType, SportType, SubmitLineupType, AddGameType, ResponseStatus, SportMap } from "../utils/types"
 import { CricketTeamInterface, CricketAthleteInterface, CricketPointsBreakup } from '../interfaces/Cricket'
 import { NearBlock } from '../entities/NearBlock'
 import { NearResponse } from '../entities/NearResponse'
 import { NFL_ATHLETE_IDS, NBA_ATHLETE_IDS, NBA_ATHLETE_PROMO_IDS, MLB_ATHLETE_IDS, MLB_ATHLETE_PROMO_IDS, IPL2023_ATHLETE_IDS } from "./../utils/athlete-ids"
 import { AppDataSource } from "../utils/db"
 import { ReceiptEnum, ExecutionStatus } from "near-lake-framework/dist/types"
-
+import { getSportType } from '../helpers/Sport'
 import lineupSubmission from '../utils/test-jsons/lineup_submission_add_game_result.json'
 import e from "express"
 
@@ -751,7 +751,7 @@ export class TasksService {
     
   }
 
-  @Timeout(1)
+  //@Timeout(1)
   async syncNearData(){ //for mainnet 
     const lakeConfig: types.LakeConfig = {
       //credentials
@@ -906,11 +906,13 @@ export class TasksService {
                         */
                         console.log(args)
                         console.log(pending.methodArgs)
+                        
+                        let sport = getSportType(pending.receiverId)
                         const gameTeam = await GameTeam.findOne({
                           where: {
                             game: {
                               gameId: args.game_id,
-                              sport: SportType.MLB, //need checking for sport via getting it from contract name
+                              sport: sport, //need checking for sport via getting it from contract name
                             },
                             name: args.team_name,
                             wallet_address: pending.signerId
@@ -920,7 +922,7 @@ export class TasksService {
                           const game = await Game.findOne({
                             where: {
                               gameId: args.game_id,
-                              sport: SportType.MLB //need checking for sport via getting it from contract
+                              sport: sport //need checking for sport via getting it from contract
                             }
                           })
                           if (game){
@@ -969,10 +971,11 @@ export class TasksService {
                         }
                       } else if (pending.methodName === 'add_game'){
                         const args: AddGameType = JSON.parse(Buffer.from(pending.methodArgs, 'base64').toString())
+                        const sport = getSportType(pending.receiverId)
                         const game = await Game.findOne({
                           where: {
                             gameId: args.game_id,
-                            sport: SportType.MLB //add checking of sport via contract name
+                            sport: sport //add checking of sport via contract name
                           }
                         })
 
@@ -983,7 +986,7 @@ export class TasksService {
                             description: 'on-going',
                             startTime: moment(args.game_time_start),
                             endTime: moment(args.game_time_end),
-                            sport: SportType.MLB
+                            sport: sport
                           }).save()
 
                           Logger.debug(`Game ${args.game_id} created for ${SportType.MLB}`)
@@ -4245,7 +4248,7 @@ export class TasksService {
     }
   }
 
-  //@Timeout(1)
+  @Timeout(1)
   async runNearMainnetBaseballWebSocketListener(){
     function listenToMainnet(){
       const ws = new WebSocket('wss://events.near.stream/ws')
@@ -4285,132 +4288,145 @@ export class TasksService {
         console.log(data.toString())
         // console.log(msg.events.length);
         // //console.log(msg.events[0].event.data[0].game_id);
-        // if(msg.events.length > 0){
+        if(msg.events.length > 0){
           
-        //   for(let event of msg.events){
-        //     if(event.event.event === 'lineup_submission_result'){
-        //       console.log("lineup submission")
-
-        //       const gameTeam = await GameTeam.findOne({
-        //         where: {
-        //           game: {
-        //             gameId: event.event.data[0].game_id, 
-        //             sport: SportType.MLB
-        //           },
-        //           name: event.event.data[0].team_name,
-        //           wallet_address: event.event.data[0].signer,
-        //         },
+          for(let event of msg.events){
+            if(event.event.event === 'lineup_submission_result'){
+              console.log("lineup submission")
+              const sport = getSportType(event.accountId)
+              const gameTeam = await GameTeam.findOne({
+                where: {
+                  game: {
+                    gameId: event.event.data[0].game_id, 
+                    sport: sport
+                  },
+                  name: event.event.data[0].team_name,
+                  wallet_address: event.event.data[0].signer,
+                },
                 
-        //       })
+              })
 
-        //       if(gameTeam){ //team submission already exists
-        //         Logger.debug("This team already exists")
-        //       } else{
-        //         const game = await Game.findOne({
-        //           where: { 
-        //             gameId: event.event.data[0].game_id, 
-        //             sport: SportType.MLB
-        //           }
-        //         })
-        //         if(game){ //add lineup processing
-        //           // try{
-        //           //   GameTeam.create({
-        //           //     game: game,
-        //           //     name: event.event.data[0].team_name, //add sportType
-        //           //     wallet_address: event.event.data[0].signer,
-        //           //   }).save()
+              if(gameTeam){ //team submission already exists
+                Logger.debug("This team already exists")
+              } else{
+                const sport = getSportType(event.accountId)
+                const game = await Game.findOne({
+                  where: { 
+                    gameId: event.event.data[0].game_id, 
+                    sport: sport
+                  }
+                })
+                if(game){ //add lineup processing
+                  // try{
+                  //   GameTeam.create({
+                  //     game: game,
+                  //     name: event.event.data[0].team_name, //add sportType
+                  //     wallet_address: event.event.data[0].signer,
+                  //   }).save()
                     
-        //           // } catch(e){
-        //           //   Logger.error(e)
-        //           // }
-        //           // GameTeam.create({
-        //           //   game: game,
-        //           //   name: event.event.data[0].team_name,
-        //           //   wallet_address: event.event.data[0].signer,
-        //           // }).save().then(async (newTeam) => {
+                  // } catch(e){
+                  //   Logger.error(e)
+                  // }
+                  // GameTeam.create({
+                  //   game: game,
+                  //   name: event.event.data[0].team_name,
+                  //   wallet_address: event.event.data[0].signer,
+                  // }).save().then(async (newTeam) => {
                     
-        //           // })
-        //           await GameTeam.create({
-        //             game: game,
-        //             name: event.event.data[0].team_name,
-        //             wallet_address: event.event.data[0].signer,
-        //           }).save()
+                  // })
+                  await GameTeam.create({
+                    game: game,
+                    name: event.event.data[0].team_name,
+                    wallet_address: event.event.data[0].signer,
+                  }).save()
 
-        //           const lineup = event.event.data[0].lineup
-        //             //get the apiId
-        //           const currGameTeam = await GameTeam.findOneOrFail({
-        //             where: { 
-        //               game: {
-        //                 gameId: event.event.data[0].gameId
-        //               }, 
-        //               name: event.event.data[0].team_name, 
-        //               wallet_address: event.event.data[0].signer
-        //             }
-        //           })
-        //           for(let token_id of lineup){
-        //             let apiId = ""
-        //             if(token_id.includes("PR") || token_id.includes("SB")){
-        //               token_id = token_id.split("_")[1]
-        //             }
-        //             apiId = token_id.split("CR")[0]
-        //             console.log(apiId)
+                  const lineup = event.event.data[0].lineup
+                    //get the apiId
+                  const currGameTeam = await GameTeam.findOneOrFail({
+                    where: { 
+                      game: {
+                        gameId: event.event.data[0].gameId
+                      }, 
+                      name: event.event.data[0].team_name, 
+                      wallet_address: event.event.data[0].signer
+                    }
+                  })
+                  for(let token_id of lineup){
+                    let apiId = ""
+                    if(token_id.includes("PR") || token_id.includes("SB")){
+                      token_id = token_id.split("_")[1]
+                    }
+                    apiId = token_id.split("CR")[0]
+                    console.log(apiId)
 
-        //             const athlete = await Athlete.findOne({
-        //               where: {apiId: parseInt(apiId)}
-        //             })
-        //             if(athlete){
-        //               try{
-        //                 GameTeamAthlete.create({
-        //                   gameTeam: currGameTeam,
-        //                   athlete: athlete,
-        //                 }).save()
+                    const athlete = await Athlete.findOne({
+                      where: {apiId: parseInt(apiId)}
+                    })
+                    if(athlete){
+                      try{
+                        GameTeamAthlete.create({
+                          gameTeam: currGameTeam,
+                          athlete: athlete,
+                        }).save()
 
-        //                 Logger.debug("Added athlete " + apiId + " to lineup")
-        //               }
-        //               catch(e){
-        //                 Logger.error(e)
-        //               }
+                        Logger.debug("Added athlete " + apiId + " to lineup")
+                      }
+                      catch(e){
+                        Logger.error(e)
+                      }
                       
-        //             } else{
-        //               Logger.error("ERROR athlete apiId not found, disregarding...")
-        //             }
-        //             //get the athlete, add to gameteamathlete
-        //           }
+                    } else{
+                      Logger.error("ERROR athlete apiId not found, disregarding...")
+                    }
+                    //get the athlete, add to gameteamathlete
+                  }
+
+                  Logger.debug("Successfully added team")
+                  let nearBlock = await NearBlock.create({
+                    height: event.block_height,
+                    hash: event.block_hash,
+                    timestamp: moment().utc(),
+                  })
+                  let saveResponse = await NearResponse.create({
+                    
+                  })
                   
-        //         } else{
-        //           Logger.error("Game does not exist.")
-        //         }
+                } else{
+                  Logger.error("Game does not exist.")
+                }
                 
-        //       }
-        //     }
-        //     else if (event.event.event === 'add_game'){
-        //       console.log("add game")
-              
-        //       const game = await Game.findOne({
-        //         where: {
-        //           gameId: event.event.data[0].game_id,
-        //           sport: SportType.MLB,
-        //         }
-        //       })
-        //       if(game){
-        //         Logger.error("Game " + event.event.data[0].game_id + " already exists")
-        //       }
-        //       else {
-        //         await Game.create({
-        //           gameId: event.event.data[0].game_id,
-        //           name: "Game " + event.event.data[0].game_id, 
-        //           description: 'on-going',
-        //           startTime: moment(event.event.data[0].game_time_start),
-        //           endTime: moment(event.event.data[0].game_time_end),
-        //           sport: SportType.MLB
-        //         }).save()
+              }
+            }
+            else if (event.event.event === 'add_game'){
+              console.log("add game")
+              let sport: SportType = SportType.MLB
+
+
+              const game = await Game.findOne({
+                where: {
+                  gameId: event.event.data[0].game_id,
+                  sport: SportType.MLB,
+                }
+              })
+              if(game){
+                Logger.error("Game " + event.event.data[0].game_id + " already exists")
+              }
+              else {
+                await Game.create({
+                  gameId: event.event.data[0].game_id,
+                  name: "Game " + event.event.data[0].game_id, 
+                  description: 'on-going',
+                  startTime: moment(event.event.data[0].game_time_start),
+                  endTime: moment(event.event.data[0].game_time_end),
+                  sport: SportType.MLB
+                }).save()
 
                 
-        //         Logger.debug(`Game ${event.event.data[0].game_id} created for ${SportType.MLB}`)
-        //       }
-        //     }
-        //   }
-        // }
+                Logger.debug(`Game ${event.event.data[0].game_id} created for ${SportType.MLB}`)
+              }
+            }
+          }
+        }
       })
       ws.on("close", function close(){
         console.log("Connection closed")
