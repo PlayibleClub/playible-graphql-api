@@ -4388,9 +4388,15 @@ export class TasksService {
                     timestamp: moment().utc(),
                   })
                   let saveResponse = await NearResponse.create({
-                    
+                    receiverId: event.account_id,
+                    signerId: event.event.data[0].signer,
+                    receiptIds: [event.receiptId],
+                    methodName: event.event.event,
+                    status: ResponseStatus.SUCCESS,
                   })
                   
+                  nearBlock.nearResponse = saveResponse
+                  await NearBlock.save(nearBlock)
                 } else{
                   Logger.error("Game does not exist.")
                 }
@@ -4421,7 +4427,21 @@ export class TasksService {
                   sport: SportType.MLB
                 }).save()
 
+                let nearBlock = await NearBlock.create({
+                  height: event.block_height,
+                  hash: event.block_hash,
+                  timestamp: moment().utc(),
+                })
+                let saveResponse = await NearResponse.create({
+                  receiverId: event.account_id,
+                  signerId: event.event.data[0].signer,
+                  receiptIds: [event.receiptId],
+                  methodName: event.event.event,
+                  status: ResponseStatus.SUCCESS,
+                })
                 
+                nearBlock.nearResponse = saveResponse
+                await NearBlock.save(nearBlock)
                 Logger.debug(`Game ${event.event.data[0].game_id} created for ${SportType.MLB}`)
               }
             }
