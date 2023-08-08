@@ -4273,10 +4273,16 @@ export class TasksService {
               }
             },
           ],
-          fetch_past_events: 10//capped at 15?
+          fetch_past_events: 1//capped at 15?
         }))
+
       })
-    
+      
+      ws.on("close", function close(){
+        Logger.debug("Connection closed")
+        console.log("retrying connection...")
+        setTimeout(() => listenToMainnet(), 1000)
+      })
       ws.on("message", async function incoming(data) {
         const util = require("util")
     
@@ -4293,47 +4299,28 @@ export class TasksService {
           for(let event of msg.events){
             if(event.event.event === 'lineup_submission_result'){
               console.log("lineup submission")
-              const sport = getSportType(event.accountId)
-              const gameTeam = await GameTeam.findOne({
-                where: {
-                  game: {
-                    gameId: event.event.data[0].game_id, 
-                    sport: sport
-                  },
-                  name: event.event.data[0].team_name,
-                  wallet_address: event.event.data[0].signer,
-                },
-                
+              const sport = getSportType(event.account_id)
+
+              const game = await Game.findOne({
+                where: { 
+                  gameId: event.event.data[0].game_id, 
+                  sport: sport
+                }
               })
 
-              if(gameTeam){ //team submission already exists
-                Logger.debug("This team already exists")
-              } else{
-                const sport = getSportType(event.accountId)
-                const game = await Game.findOne({
-                  where: { 
-                    gameId: event.event.data[0].game_id, 
-                    sport: sport
-                  }
+              if(game){
+                const gameTeam = await GameTeam.findOne({
+                  where: {
+                    game: {
+                      id: game.id
+                    },
+                    name: event.event.data[0].team_name,
+                    wallet_address: event.event.data[0].signer,
+                  },
+                  
                 })
-                if(game){ //add lineup processing
-                  // try{
-                  //   GameTeam.create({
-                  //     game: game,
-                  //     name: event.event.data[0].team_name, //add sportType
-                  //     wallet_address: event.event.data[0].signer,
-                  //   }).save()
-                    
-                  // } catch(e){
-                  //   Logger.error(e)
-                  // }
-                  // GameTeam.create({
-                  //   game: game,
-                  //   name: event.event.data[0].team_name,
-                  //   wallet_address: event.event.data[0].signer,
-                  // }).save().then(async (newTeam) => {
-                    
-                  // })
+
+                if(!gameTeam){
                   await GameTeam.create({
                     game: game,
                     name: event.event.data[0].team_name,
@@ -4351,8 +4338,10 @@ export class TasksService {
                       wallet_address: event.event.data[0].signer
                     }
                   })
+                  //console.log(lineup)
                   for(let token_id of lineup){
                     let apiId = ""
+                    
                     if(token_id.includes("PR") || token_id.includes("SB")){
                       token_id = token_id.split("_")[1]
                     }
@@ -4398,10 +4387,12 @@ export class TasksService {
                   nearBlock.nearResponse = saveResponse
                   await NearBlock.save(nearBlock)
                 } else{
-                  Logger.error("Game does not exist.")
+                  Logger.error(`Team already exist on Game ${game.gameId} for ${game.sport}`)
                 }
-                
+              } else{
+                Logger.error(`Game ${event.event.data[0].game_id} does not exist for ${sport}`)
               }
+              
             }
             else if (event.event.event === 'add_game'){
               console.log("add game")
@@ -4447,11 +4438,7 @@ export class TasksService {
           }
         }
       })
-      ws.on("close", function close(){
-        console.log("Connection closed")
-        console.log("retrying connection...")
-        setTimeout(() => listenToMainnet(), 1000)
-      })
+      
     }
     
     listenToMainnet()
