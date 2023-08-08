@@ -4271,8 +4271,7 @@ export class TasksService {
                 "standard": "game",
               }
             },
-          ],
-          fetch_past_events: 1//capped at 15?
+          ],//capped at 15?
         }))
 
       })
