@@ -4407,11 +4407,10 @@ export class TasksService {
               console.log("add game")
               let sport: SportType = SportType.MLB
 
-
               const game = await Game.findOne({
                 where: {
                   gameId: event.event.data[0].game_id,
-                  sport: SportType.MLB,
+                  sport: sport
                 }
               })
               if(game){
@@ -4424,7 +4423,7 @@ export class TasksService {
                   description: 'on-going',
                   startTime: moment(event.event.data[0].game_time_start),
                   endTime: moment(event.event.data[0].game_time_end),
-                  sport: SportType.MLB
+                  sport: sport
                 }).save()
 
                 let nearBlock = await NearBlock.create({
