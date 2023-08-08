@@ -39,6 +39,8 @@
     "@sentry/node": "^7.4.1",
     "@sentry/tracing": "^7.4.1",
     "@types/cron": "^2.0.0",
+    "@types/pg": "^8.10.2",
+    "@types/ws": "^8.5.4",
     "apollo-server-express": "^3.8.2",
     "argon2": "^0.28.5",
     "aws-sdk": "^2.1153.0",
@@ -54,12 +56,14 @@
     "moment": "^2.29.3",
     "moment-timezone": "^0.5.41",
     "near-api-js": "^0.45.1",
+    "near-lake-framework": "^2.0.0",
     "pg": "^8.7.3",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.5.5",
     "type-graphql": "^1.1.1",
     "typeorm": "^0.3.6",
     "uuid": "^8.3.2",
+    "ws": "^8.13.0",
     "xml-js": "^1.6.11"
   }
 }

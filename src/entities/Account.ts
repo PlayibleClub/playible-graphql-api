@@ -20,9 +20,9 @@ export class Account extends BaseEntity {
   })
   assets!: Relation<Asset>[]
 
-  @Field(() => [GameTeam])
-  @OneToMany(() => GameTeam, (gameTeam) => gameTeam.account, {
-    cascade: true,
-  })
-  teams!: Relation<GameTeam>[]
+  // @Field(() => [GameTeam])
+  // @OneToMany(() => GameTeam, (gameTeam) => gameTeam.account, {
+  //   cascade: true,
+  // })
+  // teams!: Relation<GameTeam>[]
 }

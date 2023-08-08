@@ -6,12 +6,13 @@ import cors from "cors"
 import "dotenv-safe/config"
 import express, { Request, Response } from "express"
 import session from "express-session"
+import WebSocket from 'ws'
 import { createClient } from "redis"
 import { AuthChecker, buildSchema } from "type-graphql"
 
 import { NestFactory } from "@nestjs/core"
 
-import { ContextType } from "@nestjs/common"
+import { ContextType, Logger } from "@nestjs/common"
 import { AppModule } from "./app.module"
 import { __prod__ } from "./constants"
 import { AppDataSource } from "./utils/db"
@@ -142,7 +143,60 @@ const main = async () => {
   nest.listen(8000, () => {
     console.log("nest started at localhost:8001")
   })
+
+  //NEAR mainnet websocket
+
+  
+  // function listenToMainnet(){
+  //   const ws = new WebSocket('wss://events.near.stream/ws')
+  //   ws.on('open', function open(){
+  //     console.log("test")
+  //     ws.send(JSON.stringify({
+  //       secret: 'secret',
+  //       filter: [
+  //         {
+  //           account_id: "game.baseball.playible.near",
+  //           event: {
+  //             "event": "add_game",
+  //             "standard": "game",
+  //           }
+            
+  //         },
+  //         {
+  //           account_id: "game.baseball.playible.near",
+  //           event: {
+  //             "event": "lineup_submission_result",
+  //             "standard": "game",
+  //           }
+  //         }
+  //       ],
+        
+  //       fetch_past_events: 10,
+  //     }))
+  //   })
+  
+  //   ws.on("message", function incoming(data) {
+  //     const util = require("util")
+  
+  //     const logger = new Logger("WEBSOCKET")
+  //     logger.debug("MESSAGE RECEIVED")
+  //     const msg = JSON.parse(data.toString())
+  //     //console.log(msg.events[0].predecessor_id);
+  //     console.log(util.inspect(msg, false, null, true))
+  //     //console.log(msg.events[0].event.data[0].game_id);
+  //   })
+  //   ws.on("close", function close(){
+  //     console.log("Connection closed")
+  //     console.log("retrying connection...")
+  //     setTimeout(() => listenToMainnet(), 1000)
+  //   })
+  // }
+  // listenToMainnet()
+
 }
+
+
+
 
 main().catch((err) => {
   console.log(err)

@@ -21,7 +21,7 @@ export class Game extends BaseEntity {
 
   @Field(() => String, { nullable: true })
   @Column({ type: "text", nullable: true })
-  description?: string
+  description?: string // status?
 
   @Field(() => Date)
   @Column({ type: "timestamptz" })
@@ -31,10 +31,9 @@ export class Game extends BaseEntity {
   @Column({ type: "timestamptz" })
   endTime!: Date
 
-
   @Field(() => Number)
   @Column({ type: "numeric" , nullable: true})
-  prize!: number
+  prize?: number
 
   @Field(() => String, { nullable: true })
   @Column({ type: "text", nullable: true })

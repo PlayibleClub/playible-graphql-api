@@ -3,14 +3,16 @@ import { Cron, Interval, Timeout } from "@nestjs/schedule"
 import S3 from "aws-sdk/clients/s3"
 import axios from "axios"
 import fs from "fs"
-import { LessThanOrEqual, MoreThanOrEqual, Equal, Not, In } from "typeorm"
+import { startStream, types } from 'near-lake-framework'
+import { LessThanOrEqual, MoreThanOrEqual, Equal, Not, In, QueryBuilder, ArrayContains } from "typeorm"
 import convert from "xml-js"
 import moment from 'moment-timezone'
-
+import WebSocket from 'ws'
 import { Athlete } from "../entities/Athlete"
 import { AthleteStat } from "../entities/AthleteStat"
 import { Game } from "../entities/Game"
 import { GameTeam } from "../entities/GameTeam"
+import { GameTeamAthlete} from "../entities/GameTeamAthlete"
 import { Team } from "../entities/Team"
 import { Timeframe } from "../entities/Timeframe"
 import { Schedule } from "../entities/Schedule"
@@ -22,9 +24,14 @@ import { CricketAthleteStat } from '../entities/CricketAthleteStat'
 import { CricketMatch } from '../entities/CricketMatch'
 import { getSeasonType } from "../helpers/Timeframe"
 import { ATHLETE_MLB_BASE_ANIMATION, ATHLETE_MLB_BASE_IMG, ATHLETE_MLB_IMG } from "../utils/svgTemplates"
-import { AthleteStatType, SportType } from "../utils/types"
+import { AthleteStatType, SportType, SubmitLineupType, AddGameType, ResponseStatus, SportMap } from "../utils/types"
 import { CricketTeamInterface, CricketAthleteInterface, CricketPointsBreakup } from '../interfaces/Cricket'
+import { NearBlock } from '../entities/NearBlock'
+import { NearResponse } from '../entities/NearResponse'
 import { NFL_ATHLETE_IDS, NBA_ATHLETE_IDS, NBA_ATHLETE_PROMO_IDS, MLB_ATHLETE_IDS, MLB_ATHLETE_PROMO_IDS, IPL2023_ATHLETE_IDS } from "./../utils/athlete-ids"
+import { AppDataSource } from "../utils/db"
+import { ReceiptEnum, ExecutionStatus } from "near-lake-framework/dist/types"
+import { getSportType } from '../helpers/Sport'
 import { computeShoheiOhtaniScores } from "../helpers/Athlete"
 import e from "express"
 
@@ -284,7 +291,7 @@ export class TasksService {
         const updateAthlete: Athlete[] = []
         for (let athlete of data){
 
-            if(MLB_ATHLETE_IDS.includes(athlete["PlayerID"])){
+            
               try {
                 const team = await Team.findOne({
                   where: {apiId: athlete["GlobalTeamID"]},
@@ -299,7 +306,7 @@ export class TasksService {
                   if(currAthlete){
                     currAthlete.firstName = athlete["FirstName"]
                     currAthlete.lastName = athlete["LastName"]
-                    currAthlete.position = athlete["Position"]
+                    currAthlete.position = athlete["Position"] !== null ? athlete["Position"] : "N/A"
                     currAthlete.jersey = athlete["Jersey"]
                     currAthlete.isActive = athlete["Status"] === "Active"
                     currAthlete.isInjured = athlete["InjuryStatus"]
@@ -310,7 +317,7 @@ export class TasksService {
                         apiId: athlete["PlayerID"],
                         firstName: athlete["FirstName"],
                         lastName: athlete["LastName"],
-                        position: athlete["Position"],
+                        position: athlete["Position"] !== null ? athlete["Position"] : "N/A",
                         jersey: athlete["Jersey"],
                         team,
                         isActive: athlete["Status"] === "Active",
@@ -323,7 +330,7 @@ export class TasksService {
               } catch(err){
                 this.logger.error(err)
               }
-            }
+            
             
           
           
@@ -701,6 +708,329 @@ export class TasksService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`)
   }
 
+  //@Timeout(1)
+
+  async syncNearDataTest(){
+    const lakeConfig: types.LakeConfig = {
+      s3BucketName: "near-lake-data-mainnet",
+      s3RegionName: "eu-central-1",
+      startBlockHeight: 97856453//97239922//97159134 //97236933
+    }
+
+    let count = 0
+    async function handleStreamerMessage(streamerMessage: types.StreamerMessage): Promise<void>{
+      
+      //count = +count + +1
+      //console.log("Inside async loop")
+      console.log(`Block height: ${streamerMessage.block.header.height}`)
+      if(count === 10){
+        console.log("Exiting loop")
+        throw 'Aborted'
+      }
+      for (let shard of streamerMessage.shards){
+        if(shard.chunk !== undefined && shard.chunk !== null){
+          if(shard.chunk.transactions !== null && shard.chunk.transactions !== undefined){
+            let filteredTrxns = shard.chunk.transactions.filter((x) => x.transaction !== null && x.transaction.receiverId === 'game.baseball.playible.near')
+            if(filteredTrxns !== null && filteredTrxns.length > 0){
+              console.log("hello")
+            }
+          }
+          
+        }
+        
+
+      }
+    }
+    try{
+      await startStream(lakeConfig, handleStreamerMessage)
+    } catch (e){
+      if (e === 'Aborted'){
+        console.log("Block height limit reached")
+      }
+    }
+    
+  }
+
+  //@Timeout(1)
+  async syncNearData(){ //for mainnet 
+    const lakeConfig: types.LakeConfig = {
+      //credentials
+      s3BucketName: "near-lake-data-testnet",
+      s3RegionName: "eu-central-1",
+      startBlockHeight: 133726304 // for testnet
+      //startBlockHeight: 97856450//97543661//97856450, //97239921 old
+    }
+    let count = 0
+
+    let nearBlocks : NearBlock[] = []
+    let nearResponses: NearResponse[] = []
+    //Function to receive responses from lake-indexer
+    async function handleStreamerMessage(streamerMessage: types.StreamerMessage): Promise<void>{
+      // console.log(`
+      // Block #${streamerMessage.block.header.height}
+      // Shards: ${streamerMessage.shards.length
+      // }`)
+      //console.log(count)
+      count = +count + +1
+      console.log(count)
+      if(count === 300){
+        await NearBlock.save([...nearBlocks], {chunk: 20})
+        await NearResponse.save([...nearResponses], {chunk: 20})
+        throw 'Aborted'
+      }
+      //check if current block height is existing within the database
+      const blockHeight = streamerMessage.block.header.height
+      console.log(blockHeight)
+
+      const block = await NearBlock.findOne({
+        where: {
+          height: streamerMessage.block.header.height,
+          hash: streamerMessage.block.header.hash,
+        }
+      })
+
+      if (!block){
+        //console.log(`Response array length ${nearResponses.length}`)
+        for(let shard of streamerMessage.shards){
+          if(shard.chunk !== undefined && shard.chunk !== null){
+            if(shard.chunk.transactions !== null && shard.chunk.transactions !== undefined){
+              let filteredTrxns = shard.chunk.transactions.filter((x) => x.transaction !== null && x.transaction.receiverId === 'game.baseball.playible.testnet')
+              if (filteredTrxns.length > 0){ //to know if the array isn't empty -> create a NearBlock entity to store data
+                Logger.debug(`Creating NEAR block ${blockHeight}`)
+                let nearBlock = await NearBlock.create({
+                  height: streamerMessage.block.header.height,
+                  hash: streamerMessage.block.header.hash,
+                  timestamp: moment().utc()
+                })
+
+
+                for (let transaction of filteredTrxns){
+
+                  const action = JSON.parse(JSON.stringify(transaction.transaction.actions[0]))   
+                  //filter only function calls that we need for leaderboards for now, then create a response entry
+                  if(action.FunctionCall.methodName === 'submit_lineup' || action.FunctionCall.methodName === 'add_game'){
+
+                    //creates a new NearResponse holding all the necessary details. Will be processed inside receiptExecutionOutcome
+                    if("SuccessReceiptId" in transaction.outcome.executionOutcome.outcome.status){
+                      
+                      const saveResponse = await NearResponse.create({
+                        transactionHash: transaction.transaction.hash,
+                        receiverId: transaction.transaction.receiverId,
+                        signerId: transaction.transaction.signerId,
+                        receiptIds: [transaction.outcome.executionOutcome.outcome.status.SuccessReceiptId],
+                        methodName: action.FunctionCall.methodName,
+                        methodArgs: action.FunctionCall.args,
+                        status: ResponseStatus.PENDING
+                      })
+
+                      nearBlock.nearResponse = saveResponse
+                      //await NearBlock.save(nearBlock)
+
+                      nearResponses.push(saveResponse)
+                      nearBlocks.push(nearBlock)
+                    }
+                    
+                    
+                  }
+                  
+                }
+              } else{
+                //console.log("No transactions found for playible contracts")
+              }
+            }
+            
+
+            //console.log(`Processing receipts at block ${blockHeight}`)
+            //filtering for receipt execution outcomes and look for pending receipt
+            // const pendingReceipts = await NearResponse.find({
+            //   where: {
+            //     status: ResponseStatus.PENDING
+            //   }
+            // })
+            let pendingReceipts = nearResponses.filter((x) => x.status === ResponseStatus.PENDING)
+            for (let receipt of pendingReceipts){
+              console.log(`Block height for receipt ${blockHeight}`)
+              console.log(receipt.receiptIds)
+            }
+            // if(blockHeight === 133726533 || blockHeight === 133726535){
+            //   for (let receipt of shard.receiptExecutionOutcomes){
+            //     console.log(`Execution id: ${receipt.executionOutcome.id}`)
+            //   }
+            // }
+            let filteredReceipts = shard.receiptExecutionOutcomes.filter((x) => pendingReceipts.some((item) => item.receiptIds?.includes(x.executionOutcome.id)))
+
+            //console.log(`Filtered receipts length for height ${blockHeight}: ${filteredReceipts.length}`)
+            if (filteredReceipts.length > 0){
+              Logger.debug("Found playible receipt")
+              for (let receipt of filteredReceipts){
+                // let pending = await NearResponse.findOneOrFail({
+                //   where: {
+                //     receiptIds: ArrayContains([receipt.executionOutcome.id]),
+                //     status: ResponseStatus.PENDING,
+                //   }
+                // })
+                let pending = pendingReceipts.find((x) => x.receiptIds !== undefined && x.receiptIds?.includes(receipt.executionOutcome.id) && x.status === ResponseStatus.PENDING)
+                
+                //get the last element of receiptIds array
+                if(pending !== undefined && pending.receiptIds !== undefined && pending.receiptIds[pending.receiptIds.length - 1] === receipt.executionOutcome.id){
+                  nearBlocks.push(await NearBlock.create({
+                    height: streamerMessage.block.header.height,
+                    hash: streamerMessage.block.header.hash,
+                    timestamp: moment().utc(),
+                    nearResponse: pending
+                  }))
+                  
+                  if("Failure" in receipt.executionOutcome.outcome.status){
+                    //delete entry tied to pending NearResponse?
+                    //or keep records of arguments then execute them here
+                    pending.status = ResponseStatus.FAILED
+                    //await NearResponse.save(pending)
+                  } else if("SuccessReceiptId" in receipt.executionOutcome.outcome.status){
+                    //The receipt chain continues, append receiptId to array, status stays pending
+                    Logger.debug("Found another receiptId, continuing chain")
+                    pending.receiptIds.push(receipt.executionOutcome.outcome.status.SuccessReceiptId)
+                    //pending.receiptIds.push(JSON.parse(receipt.executionOutcome.outcome.status).SuccessValue)
+                    //await NearResponse.save(pending)
+                  } else if ("SuccessValue" in receipt.executionOutcome.outcome.status){
+                    //The receipt chain ends as a success, set status to Success and process arguments
+                    Logger.debug("SuccessValue found, processing...")
+                    pending.status = ResponseStatus.SUCCESS
+                    //await NearResponse.save(pending)
+                    if(pending.methodName !== undefined && pending.methodArgs !== undefined){
+                      
+
+                      if(pending.methodName === 'submit_lineup'){
+                        const args: SubmitLineupType = JSON.parse(Buffer.from(pending.methodArgs, 'base64').toString())
+                        /*
+                          TODO: convert this big chunk of code and the code in websocket to handle methods into a helper function
+                        */
+                        console.log(args)
+                        console.log(pending.methodArgs)
+                        
+                        let sport = getSportType(pending.receiverId)
+                        const gameTeam = await GameTeam.findOne({
+                          where: {
+                            game: {
+                              gameId: args.game_id,
+                              sport: sport, //need checking for sport via getting it from contract name
+                            },
+                            name: args.team_name,
+                            wallet_address: pending.signerId
+                          }
+                        })
+                        if(!gameTeam){
+                          const game = await Game.findOne({
+                            where: {
+                              gameId: args.game_id,
+                              sport: sport //need checking for sport via getting it from contract
+                            }
+                          })
+                          if (game){
+                            const currGameTeam = await GameTeam.create({
+                              game: game,
+                              name: args.team_name,
+                              wallet_address: pending.signerId
+                            }).save()
+
+                            let token_id: string[] = args.token_ids !== undefined && args.token_ids !== null ? args.token_ids : []
+                            let promo_ids: string[] = args.token_promo_ids !== undefined && args.token_promo_ids !== null ? args.token_promo_ids : []
+                            const lineup = token_id.concat(promo_ids)
+                            console.log(lineup)
+                            lineup.forEach(async (athleteId) => {
+                              
+                              if(athleteId.includes("PR") || athleteId.includes("SB")){ //retrieve the apiID from athleteId via string manipulation
+                                athleteId = athleteId.split("_")[1]
+                              }
+                              let apiId = athleteId.split("CR")[0]
+                              
+
+                              const athlete = await Athlete.findOne({
+                                where: { apiId: parseInt(apiId)}
+                              })
+                              console.log("Adding athlete...")
+                              if (athlete){
+                                try{
+                                  await GameTeamAthlete.create({
+                                    gameTeam: currGameTeam,
+                                    athlete: athlete,
+                                  }).save()
+                                } catch(e){
+                                  Logger.error(e)
+                                }
+                              } else{
+                                Logger.error("ERROR athlete apiId not found")
+                              }
+                              
+                            })
+                            Logger.debug("Submit lineup finished")
+                          } else{
+                            Logger.error("Game not found")
+                          }
+                        } else{
+                          Logger.error("Team already exists")
+                        }
+                      } else if (pending.methodName === 'add_game'){
+                        const args: AddGameType = JSON.parse(Buffer.from(pending.methodArgs, 'base64').toString())
+                        const sport = getSportType(pending.receiverId)
+                        const game = await Game.findOne({
+                          where: {
+                            gameId: args.game_id,
+                            sport: sport //add checking of sport via contract name
+                          }
+                        })
+
+                        if (!game){
+                          await Game.create({
+                            gameId: args.game_id,
+                            name: "Game " + args.game_id,
+                            description: 'on-going',
+                            startTime: moment(args.game_time_start),
+                            endTime: moment(args.game_time_end),
+                            sport: sport
+                          }).save()
+
+                          Logger.debug(`Game ${args.game_id} created for ${SportType.MLB}`)
+                        } else{
+                          Logger.error(`Game ${args.game_id} already exists`)
+                        }
+                      }
+                    }
+                  }
+                } else{
+                  Logger.error("Receipt ID mismatch!")
+                }
+                
+              }
+            } else{
+              //console.log("No receipts found for playible contracts")
+            }
+            //filter only transactions for our contracts
+            
+            //console.log(JSON.stringify(filteredTrxns))
+            
+              // let filteredReceipts = shard.chunk.receipts.filter((x) => x.receiverId === 'game.baseball.playible.near')
+              // console.log(JSON.stringify(filteredReceipts))
+              // for (let receipt of filteredReceipts){
+              //   const action: ReceiptEnum = receipt.receipt
+              //   console.log(JSON.stringify(action))
+              // }
+          }
+            
+          
+        }
+      } else{
+        console.log("Block already exists.")
+      }
+      
+    }
+
+    try{
+      await startStream(lakeConfig, handleStreamerMessage)
+    } catch(e){
+      console.log(e)
+    }
+    
+  }
   // @Timeout(1)
   async generateAthleteNbaAssets() {
     this.logger.debug("Generate Athlete NBA Assets: STARTED")
@@ -2026,7 +2356,7 @@ export class TasksService {
       this.logger.error("NFL Athlete Injury Data: SPORTS DATA ERROR")
     }
   }
-  @Interval(3600000) //runs every 1 hour
+  ////@Interval(3600000) //runs every 1 hour
   async updateNbaAthleteInjuryStatus(){
     this.logger.debug("Update NBA Athlete Injury Status: STARTED")
 
@@ -2054,7 +2384,7 @@ export class TasksService {
     }
   }
 
-  @Interval(3600000) // runs every 1 hour
+  ////@Interval(3600000) // runs every 1 hour
   async updateMlbAthleteInjuryStatus(){
     this.logger.debug("Update MLB Athlete Injury Status: STARTED")
 
@@ -2184,10 +2514,10 @@ export class TasksService {
     this.logger.debug("Update NFL Athlete Stats All Weeks: FINISHED")
   }
 
-  @Cron("55 11 * * *", {
-    name: "updateNflTeamScores",
-    timeZone: "Asia/Manila",
-  })
+  // @Cron("55 11 * * *", {
+  //   name: "updateNflTeamScores",
+  //   timeZone: "Asia/Manila",
+  // })
   async updateNflTeamScores() {
     this.logger.debug("Update NFL Team Scores: STARTED")
 
@@ -2250,7 +2580,7 @@ export class TasksService {
   }
 
   //@Timeout(1)
-  @Interval(900000) // Runs every 15 mins
+  ////@Interval(900000) // Runs every 15 mins
   async updateNbaAthleteStatsPerSeason() {
     this.logger.debug("Update NBA Athlete Stats: STARTED")
 
@@ -2355,7 +2685,7 @@ export class TasksService {
     }
   }
 
-  @Interval(900000) // runs every 15 minutes
+  ////@Interval(900000) // runs every 15 minutes
   async updateMlbAthleteStatsPerSeason(){
     this.logger.debug("Update MLB Athlete Stats (Season): STARTED")
 
@@ -2488,7 +2818,7 @@ export class TasksService {
     
   }
 
-  @Interval(300000) // runs every 5 minutes
+  ////@Interval(300000) // runs every 5 minutes
   async updateMlbAthleteStatsPerDay(){
     this.logger.debug("Update MLB Athlete Stats Per Day: STARTED")
     
@@ -2638,7 +2968,7 @@ export class TasksService {
     
   }
    //@Timeout(1)
-  @Interval(300000) // Runs every 5 mins
+  //////@Interval(300000) // Runs every 5 mins
   async updateNbaAthleteStatsPerDay() {
     this.logger.debug("Update NBA Athlete Stats Per Day: STARTED")
 
@@ -2892,157 +3222,6 @@ export class TasksService {
   }
 
   //@Timeout(1)
-  async updateMlbAthleteStatsPerDayLoop(){
-    this.logger.debug("Update MLB Athlete Stats: Started")
-
-    const timeFrames = await axios.get(
-      `${process.env.SPORTS_DATA_URL}mlb/scores/json/CurrentSeason?key=${process.env.SPORTS_DATA_MLB_KEY}`
-    )
-    if (timeFrames.status === 200){
-      const timeFrame = timeFrames.data
-
-      if (timeFrame){
-        let timesRun = 0
-        let interval = setInterval(async () => {
-          timesRun+= 1
-          const season = timeFrame.ApiSeason
-          const date = moment().tz("America/New_York").subtract(timesRun, "day").toDate()
-          const dateFormat = moment(date).format("YYYY-MMM-DD").toUpperCase()
-          this.logger.debug(dateFormat)
-
-          const { data, status } = await axios.get(
-            `${process.env.SPORTS_DATA_URL}mlb/stats/json/PlayerGameStatsByDate/${dateFormat}?key=${process.env.SPORTS_DATA_MLB_KEY}`
-          )
-
-          if (status === 200 && Object.keys(data).length !== 0){
-            const newStats: AthleteStat[] = []
-            const updateStats: AthleteStat[] = []
-  
-            for (let athleteStat of data){
-              const apiId: number = athleteStat["PlayerID"]
-              const curStat = await AthleteStat.findOne({
-                where: {
-                  statId: athleteStat["StatID"],
-                },
-                relations:{
-                  athlete: true,
-                }
-              })
-    
-              const opponent = await Team.findOne({
-                where: { apiId: athleteStat["GlobalOpponentID"]},
-              })
-    
-              const apiDate = moment.tz(athleteStat["DateTime"], "America/New_York")
-              const utcDate = apiDate.utc().format()
-    
-              if (curStat){
-                curStat.fantasyScore = apiId === 10008667 ? computeShoheiOhtaniScores(athleteStat) : athleteStat["FantasyPointsDraftKings"],
-                curStat.atBats = athleteStat["AtBats"]
-                curStat.runs = athleteStat["Runs"]
-                curStat.hits = athleteStat["Hits"]
-                curStat.singles = athleteStat["Singles"]
-                curStat.doubles = athleteStat["Doubles"]
-                curStat.triples = athleteStat["Triples"]
-                curStat.homeRuns = athleteStat["HomeRuns"]
-                curStat.runsBattedIn = athleteStat["RunsBattedIn"]
-                curStat.battingAverage = athleteStat["BattingAverage"]
-                curStat.strikeouts = athleteStat["Strikeouts"]
-                curStat.walks = athleteStat["Walks"]
-                curStat.caughtStealing = athleteStat["CaughtStealing"]
-                curStat.onBasePercentage = athleteStat["OnBasePercentage"]
-                curStat.sluggingPercentage = athleteStat["SluggingPercentage"]
-                curStat.onBasePlusSlugging = athleteStat["OnBasePlusSlugging"]
-                curStat.wins = athleteStat["Wins"]
-                curStat.losses = athleteStat["Losses"]
-                curStat.earnedRunAverage = athleteStat["EarnedRunAverage"]
-                curStat.hitByPitch = athleteStat["HitByPitch"]
-                curStat.stolenBases = athleteStat["StolenBases"]
-                curStat.walksHitsPerInningsPitched = athleteStat["WalksHitsPerInningsPitched"]
-                curStat.pitchingBattingAverageAgainst = athleteStat["PitchingBattingAverageAgainst"]
-                curStat.pitchingHits = athleteStat["PitchingHits"]
-                curStat.pitchingRuns = athleteStat["PitchingRuns"]
-                curStat.pitchingEarnedRuns = athleteStat["PitchingEarnedRuns"]
-                curStat.pitchingWalks = athleteStat["PitchingWalks"]
-                curStat.pitchingHomeRuns = athleteStat["PitchingHomeRuns"]
-                curStat.pitchingStrikeouts = athleteStat["PitchingStrikeouts"]
-                curStat.pitchingCompleteGames = athleteStat["PitchingCompleteGames"]
-                curStat.pitchingShutouts = athleteStat["PitchingShutOuts"]
-                curStat.pitchingNoHitters = athleteStat["PitchingNoHitters"]
-                curStat.played = athleteStat["Games"]
-                curStat.gameDate = athleteStat["DateTime"] !== null ? new Date(utcDate) : athleteStat["DateTime"]
-                updateStats.push(curStat)
-              } else{
-                const curAthlete = await Athlete.findOne({
-                  where: { apiId}
-                })
-    
-                if (curAthlete){
-                  newStats.push(
-                    AthleteStat.create({
-                      athlete: curAthlete,
-                      season: season,
-                      opponent: opponent,
-                      gameDate: athleteStat["DateTime"] !== null ? new Date(utcDate) : athleteStat["DateTime"],
-                      type: AthleteStatType.DAILY,
-                      statId: athleteStat["StatID"],
-                      position: athleteStat["Position"],
-                      played: athleteStat["Games"],
-                      fantasyScore: apiId === 10008667 ? computeShoheiOhtaniScores(athleteStat) : athleteStat["FantasyPointsDraftKings"],
-                      atBats: athleteStat["AtBats"],
-                      runs: athleteStat["Runs"],
-                      hits: athleteStat["Hits"],
-                      singles: athleteStat["Singles"],
-                      doubles: athleteStat["Doubles"],
-                      triples: athleteStat["Triples"],
-                      homeRuns: athleteStat["HomeRuns"],
-                      runsBattedIn: athleteStat["RunsBattedIn"],
-                      battingAverage: athleteStat["BattingAverage"],
-                      strikeouts: athleteStat["Strikeouts"],
-                      walks: athleteStat["Walks"],
-                      caughtStealing: athleteStat["CaughtStealing"],
-                      onBasePercentage: athleteStat["OnBasePercentage"],
-                      sluggingPercentage: athleteStat["SluggingPercentage"],
-                      wins: athleteStat["Wins"],
-                      losses: athleteStat["Losses"],
-                      earnedRunAverage: athleteStat["EarnedRunAverage"],
-                      hitByPitch: athleteStat["HitByPitch"],
-                      stolenBases: athleteStat["StolenBases"],
-                      walksHitsPerInningsPitched: athleteStat["WalksHitsPerInningsPitched"],
-                      pitchingBattingAverageAgainst: athleteStat["PitchingBattingAverageAgainst"],
-                      pitchingHits: athleteStat["PitchingHits"],
-                      pitchingRuns: athleteStat["PitchingRuns"],
-                      pitchingEarnedRuns: athleteStat["PitchingEarnedRuns"],
-                      pitchingWalks: athleteStat["PitchingWalks"],
-                      pitchingHomeRuns: athleteStat["PitchingHomeRuns"],
-                      pitchingStrikeouts: athleteStat["PitchingStrikeouts"],
-                      pitchingCompleteGames: athleteStat["PitchingCompleteGames"],
-                      pitchingShutouts: athleteStat["PitchingShutOuts"],
-                      pitchingNoHitters: athleteStat["PitchingNoHitters"],
-    
-                    })
-                  )
-                }
-              }
-            }
-    
-            await AthleteStat.save([...newStats, ...updateStats], { chunk: 20 })
-            this.logger.debug("Update MLB Athlete Stats (Daily)(Loop): FINISHED")
-          } else {
-            this.logger.debug("Update MLB Athlete Stats (Daily)(Loop): SPORTS DATA ERROR")
-            if(Object.keys(data).length === 0) {
-              this.logger.debug("Update MLB Athlete Stats (Daily)(Loop): EMPTY DATA RESPONSE")
-            }
-          }
-          if (timesRun === 12){
-            clearInterval(interval)
-          }
-        }, 300000)
-      }
-    }
-  }
-
-  //@Timeout(1)
   async getInitialNflTimeframe (){
 
     this.logger.debug("Get Initial NFL Timeframe: STARTED")
@@ -3096,7 +3275,7 @@ export class TasksService {
     }
   }
 
-  //@Interval(259200000) //Runs every 3 days
+  //////@Interval(259200000) //Runs every 3 days
   async updateNflTimeframe (){
 
     this.logger.debug("Update NFL Timeframe: STARTED")
@@ -3151,7 +3330,7 @@ export class TasksService {
   }
 
   //@Timeout(1)
-  @Interval(3600000) //Runs every 1 hour
+  ////@Interval(3600000) //Runs every 1 hour
   async updateNbaCurrentSeason () {
     
     this.logger.debug("Update NBA Current Season: STARTED")
@@ -3200,7 +3379,7 @@ export class TasksService {
     
   }
 
-  @Interval(3600000) // runs every 1 hour
+  ////@Interval(3600000) // runs every 1 hour
   async updateMlbCurrentSeason(){
     this.logger.debug("Update MLB Current Season: STARTED")
 
@@ -3245,7 +3424,7 @@ export class TasksService {
   }
   
   //@Timeout(1)
-  @Interval(4200000) // Runs every 1 hour 10 minutes
+  ////@Interval(4200000) // Runs every 1 hour 10 minutes
   async updateNbaSchedules(){
     this.logger.debug("UPDATE NBA Schedules: STARTED")
 
@@ -3319,7 +3498,7 @@ export class TasksService {
     
   }
 
-  @Interval(4200000) // runs every 1 hour 20 minutes
+  ////@Interval(4200000) // runs every 1 hour 20 minutes
   async updateMlbSchedules(){
     this.logger.debug("UPDATE MLB Schedules: STARTED")
 
@@ -3999,5 +4178,478 @@ export class TasksService {
       await CricketAthleteStat.save([...newStats, ...updateStats], { chunk: 20 })
       this.logger.debug("Update Cricket Athlete Stat (Season): FINISHED")
     }
+  }
+
+  @Timeout(1)
+  async runNearMainnetBaseballWebSocketListener(){
+    function listenToMainnet(){
+      const ws = new WebSocket('wss://events.near.stream/ws')
+      ws.on('open', function open(){
+        ws.send(JSON.stringify({
+          secret: 'secret',
+          filter: [
+            {
+              account_id: "game.baseball.playible.near",
+              event: {
+                "event": "add_game",
+                "standard": "game",
+              }
+              
+            },
+            {
+              account_id: "game.baseball.playible.near",
+              event: {
+                "event": "lineup_submission_result",
+                "standard": "game",
+              }
+            },
+          ],//capped at 15?
+        }))
+
+      })
+      
+      ws.on("close", function close(){
+        Logger.debug("Connection closed")
+        console.log("retrying connection...")
+        setTimeout(() => listenToMainnet(), 1000)
+      })
+      ws.on("message", async function incoming(data) {
+        const util = require("util")
+    
+        const logger = new Logger("WEBSOCKET")
+        logger.debug("MESSAGE RECEIVED")
+        const msg = JSON.parse(data.toString())
+        //console.log(msg.events[0].predecessor_id);
+        //console.log(util.inspect(msg, false, null, true))
+        console.log(data.toString())
+        // console.log(msg.events.length);
+        // //console.log(msg.events[0].event.data[0].game_id);
+        if(msg.events.length > 0){
+          
+          for(let event of msg.events){
+            if(event.event.event === 'lineup_submission_result'){
+              console.log("lineup submission")
+              const sport = getSportType(event.account_id)
+
+              const game = await Game.findOne({
+                where: { 
+                  gameId: event.event.data[0].game_id, 
+                  sport: sport
+                }
+              })
+
+              if(game){
+                const gameTeam = await GameTeam.findOne({
+                  where: {
+                    game: {
+                      id: game.id
+                    },
+                    name: event.event.data[0].team_name,
+                    wallet_address: event.event.data[0].signer,
+                  },
+                  
+                })
+
+                if(!gameTeam){
+                  await GameTeam.create({
+                    game: game,
+                    name: event.event.data[0].team_name,
+                    wallet_address: event.event.data[0].signer,
+                  }).save()
+
+                  const lineup = event.event.data[0].lineup
+                    //get the apiId
+                  const currGameTeam = await GameTeam.findOneOrFail({
+                    where: { 
+                      game: {
+                        gameId: event.event.data[0].gameId
+                      }, 
+                      name: event.event.data[0].team_name, 
+                      wallet_address: event.event.data[0].signer
+                    }
+                  })
+                  //console.log(lineup)
+                  for(let token_id of lineup){
+                    let apiId = ""
+                    
+                    if(token_id.includes("PR") || token_id.includes("SB")){
+                      token_id = token_id.split("_")[1]
+                    }
+                    apiId = token_id.split("CR")[0]
+
+                    const athlete = await Athlete.findOne({
+                      where: {apiId: parseInt(apiId)}
+                    })
+                    if(athlete){
+                      try{
+                        GameTeamAthlete.create({
+                          gameTeam: currGameTeam,
+                          athlete: athlete,
+                        }).save()
+
+                        
+                      }
+                      catch(e){
+                        Logger.error(e)
+                      }
+                      
+                    } else{
+                      Logger.error("ERROR athlete apiId not found, disregarding...")
+                    }
+                    //get the athlete, add to gameteamathlete
+                  }
+
+                  Logger.debug("Successfully added team")
+                  let nearBlock = await NearBlock.create({
+                    height: event.block_height,
+                    hash: event.block_hash,
+                    timestamp: moment().utc(),
+                  })
+                  let saveResponse = await NearResponse.create({
+                    receiverId: event.account_id,
+                    signerId: event.event.data[0].signer,
+                    receiptIds: [event.receipt_id],
+                    methodName: event.event.event,
+                    status: ResponseStatus.SUCCESS,
+                  })
+                  
+                  nearBlock.nearResponse = saveResponse
+                  await NearBlock.save(nearBlock)
+                  Logger.debug(`Successfully created Block ${event.block_height} for ${event.event.event} call`)
+                } else{
+                  Logger.error(`Team already exist on Game ${game.gameId} for ${game.sport}`)
+                }
+              } else{
+                Logger.error(`Game ${event.event.data[0].game_id} does not exist for ${sport}`)
+              }
+              
+            }
+            else if (event.event.event === 'add_game'){
+              console.log("add game")
+              let sport: SportType = SportType.MLB
+
+              const game = await Game.findOne({
+                where: {
+                  gameId: event.event.data[0].game_id,
+                  sport: sport
+                }
+              })
+              if(game){
+                Logger.error("Game " + event.event.data[0].game_id + " already exists")
+              }
+              else {
+                await Game.create({
+                  gameId: event.event.data[0].game_id,
+                  name: "Game " + event.event.data[0].game_id, 
+                  description: 'on-going',
+                  startTime: moment(event.event.data[0].game_time_start),
+                  endTime: moment(event.event.data[0].game_time_end),
+                  sport: sport
+                }).save()
+
+                Logger.debug(`Game ${event.event.data[0].game_id} created for ${SportType.MLB}`)
+                let nearBlock = await NearBlock.create({
+                  height: event.block_height,
+                  hash: event.block_hash,
+                  timestamp: moment().utc(),
+                })
+                let saveResponse = await NearResponse.create({
+                  receiverId: event.account_id,
+                  signerId: event.event.data[0].signer,
+                  receiptIds: [event.receipt_id],
+                  methodName: event.event.event,
+                  status: ResponseStatus.SUCCESS,
+                })
+                
+                nearBlock.nearResponse = saveResponse
+                await NearBlock.save(nearBlock)
+                Logger.debug(`Successfully created Block ${event.block_height} for ${event.event.event} call`)
+                
+              }
+            }
+          }
+        }
+      })
+      
+    }
+    
+    listenToMainnet()
+  }
+
+  //@Timeout(1)
+  async jsonBaseballWebsocketTest(){
+    //
+    const fs = require('fs')
+    const msg = JSON.parse(fs.readFileSync('./src/utils/test-jsons/lineup_submission_add_game_result.txt'))
+    console.log(msg)
+    if(msg.events.length > 0){
+          
+      for(let event of msg.events){
+        if(event.event.event === 'lineup_submission_result'){
+          console.log("lineup submission")
+
+          const gameTeam = await GameTeam.findOne({
+            where: {
+              game: {
+                gameId: event.event.data[0].game_id, 
+                sport: SportType.MLB
+              },
+              name: event.event.data[0].team_name,
+              wallet_address: event.event.data[0].signer,
+            },
+            
+          })
+
+          if(gameTeam){ //team submission already exists
+            Logger.debug("This team already exists")
+          } else{
+            const game = await Game.findOne({
+              where: { 
+                gameId: event.event.data[0].game_id, 
+                sport: SportType.MLB
+              }
+            })
+            if(game){ //add lineup processing
+              // try{
+              //   GameTeam.create({
+              //     game: game,
+              //     name: event.event.data[0].team_name, //add sportType
+              //     wallet_address: event.event.data[0].signer,
+              //   }).save()
+                
+              // } catch(e){
+              //   Logger.error(e)
+              // }
+              // GameTeam.create({
+              //   game: game,
+              //   name: event.event.data[0].team_name,
+              //   wallet_address: event.event.data[0].signer,
+              // }).save().then(async (newTeam) => {
+                
+              // })
+              await GameTeam.create({
+                game: game,
+                name: event.event.data[0].team_name,
+                wallet_address: event.event.data[0].signer,
+              }).save()
+
+              const lineup = event.event.data[0].lineup
+                //get the apiId
+              const currGameTeam = await GameTeam.findOneOrFail({
+                where: { 
+                  game: {
+                    gameId: event.event.data[0].gameId
+                  }, 
+                  name: event.event.data[0].team_name, 
+                  wallet_address: event.event.data[0].signer
+                }
+              })
+              for(let token_id of lineup){
+                let apiId = ""
+                if(token_id.includes("PR") || token_id.includes("SB")){
+                  token_id = token_id.split("_")[1]
+                }
+                apiId = token_id.split("CR")[0]
+                console.log(apiId)
+
+                const athlete = await Athlete.findOne({
+                  where: {apiId: parseInt(apiId)}
+                })
+                if(athlete){
+                  try{
+                    GameTeamAthlete.create({
+                      gameTeam: currGameTeam,
+                      athlete: athlete,
+                    }).save()
+
+                    Logger.debug("Added athlete " + apiId + " to lineup")
+                  }
+                  catch(e){
+                    Logger.error(e)
+                  }
+                  
+                } else{
+                  Logger.error("ERROR athlete apiId not found, disregarding...")
+                }
+                //get the athlete, add to gameteamathlete
+              }
+              
+            } else{
+              Logger.error("Game does not exist.")
+            }
+            
+          }
+        }
+        else if (event.event.event === 'add_game'){
+          console.log("add game")
+          
+          const game = await Game.findOne({
+            where: {
+              gameId: event.event.data[0].game_id,
+              sport: SportType.MLB,
+            }
+          })
+          if(game){
+            Logger.error("Game " + event.event.data[0].game_id + " already exists")
+          }
+          else {
+            await Game.create({
+              gameId: event.event.data[0].game_id,
+              name: "Game " + event.event.data[0].game_id, 
+              description: 'on-going',
+              startTime: moment(event.event.data[0].game_time_start),
+              endTime: moment(event.event.data[0].game_time_end),
+              sport: SportType.MLB
+            }).save()
+
+            Logger.debug("Game " + event.event.data[0].game_id + " created for " + SportType.MLB)
+          }
+        }
+      }
+    }
+  }
+
+  //@Timeout(1)
+  async updateGameTeamFantasyScores(){
+
+    const games = await Game.find({
+      where: {description: 'on-going'}
+    })
+
+    if(games){
+      for(let game of games){
+        let teamUpdate: GameTeam[] = []
+        for(let team of game.teams){
+          
+          let teamFantasyScore = 0
+          for(let teamAthlete of team.athletes){
+            let athlete = teamAthlete.athlete
+
+            athlete.stats = athlete.stats.filter((stat) => stat.gameDate && 
+              moment(stat.gameDate).unix() >= moment(game.startTime).unix() && moment(stat.gameDate).unix() <= moment(game.endTime).unix())
+            
+            const totalAthleteFantasyScore = athlete.stats.reduce(
+              (accumulator, currentValue) => accumulator + (currentValue.fantasyScore && currentValue.fantasyScore || 0) ,
+              0,
+            ) / athlete.stats.length
+            teamFantasyScore += totalAthleteFantasyScore
+            
+          }
+          team.fantasyScore = teamFantasyScore
+          teamUpdate.push(team)
+        }
+        await GameTeam.save([...teamUpdate], {chunk: 20})
+      }
+    } else{
+      this.logger.debug("No active games found");
+    }
+  }
+  
+  //@Timeout(1)
+  async updateGameTeamFantasyScoreQueryBuilder(){
+
+    // const athletesToUpdate = await AppDataSource.createQueryBuilder().select("gt").from(GameTeam, "gt")
+    //   .leftJoinAndSelect("gt.athletes", "athletes").leftJoinAndSelect("athletes.athlete", "athlete").getOne()
+    // const athletesToUpdate = await AppDataSource.createQueryBuilder().select("gta").from(GameTeamAthlete, "gta").leftJoinAndSelect("gta.athlete", "athlete").leftJoinAndSelect("athlete.stats", "stat")
+    // this.logger.debug(JSON.stringify(athletesToUpdate))
+    // this.logger.debug(athletesToUpdate?.athletes)
+
+    const teams = await GameTeam.find({
+      where: {
+        game: {
+          gameId: 30,
+          sport: SportType.MLB,
+        },
+        
+      },
+      relations: {
+        game: true,
+        athletes: {
+          athlete:{
+            stats: true
+          }
+        }
+      }
+    })
+
+    for(let team of teams){
+      let teamFantasyScore = 0
+      for(let teamAthlete of team.athletes){
+        let athlete = teamAthlete.athlete
+
+        // athlete.stats = athlete.stats.filter((stat) => stat.gameDate && 
+        //   moment(stat.gameDate).unix() >= moment(team.game.startTime).unix() && moment(stat.gameDate).unix() <= moment(team.game.endTime).unix())
+        
+        // let totalAthleteFantasyScore = 0
+        // if(athlete.stats.length > 0){
+        //   totalAthleteFantasyScore = athlete.stats.reduce(
+        //     (accumulator, currentValue) => +accumulator + +(currentValue.fantasyScore && currentValue.fantasyScore || 0) ,
+        //     0,
+        //   )
+        // } 
+        
+        const totalAthleteFantasyScore = await AppDataSource.getRepository(AthleteStat).createQueryBuilder("as")
+          .select('SUM(as.fantasyScore)', "sum").where("as.athleteId =:athleteId", {athleteId: athlete.id}).andWhere("as.gameDate >= :startTime", {startTime: team.game.startTime}).andWhere("as.gameDate <= :endTime", {endTime: team.game.endTime}).getRawOne()
+       
+        console.log("ts: " + teamFantasyScore)
+        console.log("total: " + totalAthleteFantasyScore.sum)
+        teamFantasyScore = +teamFantasyScore + +totalAthleteFantasyScore.sum
+      }
+      team.fantasyScore = teamFantasyScore
+      console.log(teamFantasyScore)
+    }
+    //return teams
+    // interface TeamUpdate {
+    //   teamId: number;
+    //   totalFantasyScore: number;
+    // }
+    // let currTeamId = -1
+
+    // const athletesToUpdate = await AppDataSource.createQueryBuilder()
+    //   .select("gta").from(GameTeamAthlete, "gta").leftJoinAndSelect("gta.gameTeam", "team")
+    //   .leftJoinAndSelect("team.game", "game").where("game.description = :description", {description: "on-going"}).getRawMany()
+    // const test = await AppDataSource.createQueryBuilder().select("gt").from(GameTeam, "gt").leftJoinAndSelect("gt.athletes", "athletes").leftJoinAndSelect("athletes.athlete", "athlete").leftJoinAndSelect("athlete.stats", "stats").getOne()
+    // console.log(test?.athletes[0].athlete.stats[1].fantasyScore)
+    // let updateTeam: TeamUpdate[] = []
+    // for(let athlete of athletesToUpdate){
+    //   if(currTeamId === -1){
+    //     currTeamId = athlete.gta_gameTeamId
+    //   }
+    //   console.log(athlete.game_endTime)
+    //   const athleteStats = await AppDataSource.createQueryBuilder().select("stats").from(AthleteStat, "stats")
+    //     .where("stats.gameDate <= :gameDate", {gameDate: athlete.game_startTime})
+    //     .andWhere("stats.gameDate >= :gameDate", {gameDate: athlete.game_endTime}).getRawMany()
+    //   console.log(athleteStats)
+    // }
+    /*
+    select game_team left join game, loop through game_team
+    select game entity based on game_team gameId, for getting time and updating of status
+    loop through game_team athletes
+    */
+
+    // const teams = await GameTeam.find({
+    //   where: {
+    //     game: {description: 'on-going'}
+    //   }
+    // })
+    
+    // if (teams){
+    //   let teamUpdate: GameTeam[] = []
+    //   for(let team of teams){
+    //     let teamFantasyScore = 0
+    //     for(let teamAthlete of team.athletes){
+    //       let athlete = teamAthlete.athlete
+
+    //       athlete.stats = athlete.stats.filter((stat) => stat.gameDate && 
+    //         moment(stat.gameDate).unix() >= moment(team.game.startTime).unix() && moment(stat.gameDate).unix() <= moment(team.game.endTime).unix())
+          
+    //       const totalAthleteFantasyScore = athlete.stats.reduce(
+    //         (accumulator, currentValue) => accumulator + (currentValue.fantasyScore && currentValue.fantasyScore || 0) ,
+    //         0,
+    //       ) / athlete.stats.length
+    //       teamFantasyScore += totalAthleteFantasyScore
+    //     }
+    //   }
+    // }
   }
 }
