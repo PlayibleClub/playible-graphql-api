@@ -4253,7 +4253,6 @@ export class TasksService {
     function listenToMainnet(){
       const ws = new WebSocket('wss://events.near.stream/ws')
       ws.on('open', function open(){
-        console.log("test")
         ws.send(JSON.stringify({
           secret: 'secret',
           filter: [
@@ -4346,7 +4345,6 @@ export class TasksService {
                       token_id = token_id.split("_")[1]
                     }
                     apiId = token_id.split("CR")[0]
-                    console.log(apiId)
 
                     const athlete = await Athlete.findOne({
                       where: {apiId: parseInt(apiId)}
@@ -4358,7 +4356,7 @@ export class TasksService {
                           athlete: athlete,
                         }).save()
 
-                        Logger.debug("Added athlete " + apiId + " to lineup")
+                        
                       }
                       catch(e){
                         Logger.error(e)
@@ -4379,13 +4377,14 @@ export class TasksService {
                   let saveResponse = await NearResponse.create({
                     receiverId: event.account_id,
                     signerId: event.event.data[0].signer,
-                    receiptIds: [event.receiptId],
+                    receiptIds: [event.receipt_id],
                     methodName: event.event.event,
                     status: ResponseStatus.SUCCESS,
                   })
                   
                   nearBlock.nearResponse = saveResponse
                   await NearBlock.save(nearBlock)
+                  Logger.debug(`Successfully created Block ${event.block_height} for ${event.event.event} call`)
                 } else{
                   Logger.error(`Team already exist on Game ${game.gameId} for ${game.sport}`)
                 }
@@ -4417,6 +4416,7 @@ export class TasksService {
                   sport: sport
                 }).save()
 
+                Logger.debug(`Game ${event.event.data[0].game_id} created for ${SportType.MLB}`)
                 let nearBlock = await NearBlock.create({
                   height: event.block_height,
                   hash: event.block_hash,
@@ -4425,14 +4425,15 @@ export class TasksService {
                 let saveResponse = await NearResponse.create({
                   receiverId: event.account_id,
                   signerId: event.event.data[0].signer,
-                  receiptIds: [event.receiptId],
+                  receiptIds: [event.receipt_id],
                   methodName: event.event.event,
                   status: ResponseStatus.SUCCESS,
                 })
                 
                 nearBlock.nearResponse = saveResponse
                 await NearBlock.save(nearBlock)
-                Logger.debug(`Game ${event.event.data[0].game_id} created for ${SportType.MLB}`)
+                Logger.debug(`Successfully created Block ${event.block_height} for ${event.event.event} call`)
+                
               }
             }
           }

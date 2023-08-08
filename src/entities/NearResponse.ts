@@ -10,8 +10,8 @@ export class NearResponse extends BaseEntity{
   id!: number
 
   @Field(() => String)
-  @Column({ type: "varchar", length: 255})
-  transactionHash!: string
+  @Column({ type: "varchar", length: 255, nullable: true})
+  transactionHash?: string
   
   @Field(() => String)
   @Column({ type: "varchar", length: 64})
