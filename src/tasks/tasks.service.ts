@@ -8,6 +8,7 @@ import { LessThanOrEqual, MoreThanOrEqual, Equal, Not, In, QueryBuilder, ArrayCo
 import convert from "xml-js"
 import moment from 'moment-timezone'
 import WebSocket from 'ws'
+import { ethers } from "ethers"
 import { Athlete } from "../entities/Athlete"
 import { AthleteStat } from "../entities/AthleteStat"
 import { Game } from "../entities/Game"
@@ -4181,8 +4182,16 @@ export class TasksService {
   }
 
   @Timeout(1)
+  async runPolygonMainnetWebSocketListener(){
+
+    const network = "maticmum"
+
+    const provider = new ethers.AlchemyProvider(network, process.env.POLYGON_MUMBAI_API_KEY)
+    console.log(await provider.getBlockNumber())
+  }
+  //@Timeout(1)
   async runNearMainnetBaseballWebSocketListener(){
-    function listenToMainnet(){
+    function listenToMainnet(){ 
       const ws = new WebSocket('wss://events.near.stream/ws')
       ws.on('open', function open(){
         ws.send(JSON.stringify({
