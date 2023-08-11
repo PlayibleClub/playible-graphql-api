@@ -2818,7 +2818,7 @@ export class TasksService {
     
   }
 
-  ////@Interval(300000) // runs every 5 minutes
+  @Interval(300000) // runs every 5 minutes
   async updateMlbAthleteStatsPerDay(){
     this.logger.debug("Update MLB Athlete Stats Per Day: STARTED")
     
@@ -4209,8 +4209,7 @@ export class TasksService {
       })
       
       ws.on("close", function close(){
-        Logger.debug("Connection closed")
-        console.log("retrying connection...")
+        Logger.debug("Connection closed, reconnecting...")
         setTimeout(() => listenToMainnet(), 1000)
       })
       ws.on("message", async function incoming(data) {
