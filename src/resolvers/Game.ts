@@ -111,53 +111,56 @@ export class GameResolver {
   async getLeaderboard(
     @Arg("gameId") gameId: number,
     @Arg("sport") sport: SportType,
-  ): Promise<GameTeam[]> {
-    const teams = await GameTeam.find({
-      take: 10,
-      where: {
-        game: {
-          gameId: gameId,
-          sport: sport,
-        },
+  ): Promise<any[]> {
+    // const teams = await GameTeam.find({
+    //   take: 10,
+    //   where: {
+    //     game: {
+    //       gameId: gameId,
+    //       sport: sport,
+    //     },
         
-      },
-      relations: {
-        game: true,
-        athletes: {
-          athlete:{
-            stats: true
-          }
-        }
-      }
-    })
+    //   },
+    //   relations: {
+    //     game: true,
+    //     athletes: {
+    //       athlete:{
+    //         stats: true
+    //       }
+    //     }
+    //   }
+    // })
 
-    for(let team of teams){
-      let teamFantasyScore = 0
-      for(let teamAthlete of team.athletes){
-        let athlete = teamAthlete.athlete
+    // for(let team of teams){
+    //   let teamFantasyScore = 0
+    //   for(let teamAthlete of team.athletes){
+    //     let athlete = teamAthlete.athlete
 
-        // athlete.stats = athlete.stats.filter((stat) => stat.gameDate && 
-        //   moment(stat.gameDate).unix() >= moment(team.game.startTime).unix() && moment(stat.gameDate).unix() <= moment(team.game.endTime).unix())
+    //     // athlete.stats = athlete.stats.filter((stat) => stat.gameDate && 
+    //     //   moment(stat.gameDate).unix() >= moment(team.game.startTime).unix() && moment(stat.gameDate).unix() <= moment(team.game.endTime).unix())
         
-        // let totalAthleteFantasyScore = 0
-        // if(athlete.stats.length > 0){
-        //   totalAthleteFantasyScore = athlete.stats.reduce(
-        //     (accumulator, currentValue) => +accumulator + +(currentValue.fantasyScore && currentValue.fantasyScore || 0) ,
-        //     0,
-        //   )
-        // } 
+    //     // let totalAthleteFantasyScore = 0
+    //     // if(athlete.stats.length > 0){
+    //     //   totalAthleteFantasyScore = athlete.stats.reduce(
+    //     //     (accumulator, currentValue) => +accumulator + +(currentValue.fantasyScore && currentValue.fantasyScore || 0) ,
+    //     //     0,
+    //     //   )
+    //     // } 
         
-        const totalAthleteFantasyScore = await AppDataSource.getRepository(AthleteStat).createQueryBuilder("as")
-          .select('SUM(as.fantasyScore)', "sum").where("as.athleteId =:athleteId", {athleteId: athlete.id}).andWhere("as.gameDate >= :startTime", {startTime: team.game.startTime}).andWhere("as.gameDate <= :endTime", {endTime: team.game.endTime}).getRawOne()
+    //     const totalAthleteFantasyScore = await AppDataSource.getRepository(AthleteStat).createQueryBuilder("as")
+    //       .select('SUM(as.fantasyScore)', "sum").where("as.athleteId =:athleteId", {athleteId: athlete.id}).andWhere("as.gameDate >= :startTime", {startTime: team.game.startTime}).andWhere("as.gameDate <= :endTime", {endTime: team.game.endTime}).getRawOne()
 
-        teamFantasyScore = +teamFantasyScore + +totalAthleteFantasyScore.sum
+    //     teamFantasyScore = +teamFantasyScore + +totalAthleteFantasyScore.sum
 
-        //teamFantasyScore = +teamFantasyScore + +totalAthleteFantasyScore
-      }
-      team.fantasyScore = teamFantasyScore
+    //     //teamFantasyScore = +teamFantasyScore + +totalAthleteFantasyScore
+    //   }
+    //   team.fantasyScore = teamFantasyScore
       
-    }
-    return teams
+    // }
+
+    const returnTeam = await AppDataSource.getRepository(Game).createQueryBuilder("g").groupBy("gt.id").orderBy("total", "DESC").select(['SUM(as.fantasyScore) as total', "gt.name", "gt.id"]).innerJoin("g.teams", "gt").innerJoin("gt.athletes", "gta").innerJoin("gta.athlete", "a").innerJoin("a.stats", "as")
+                        .where("g.id = :gameId", { gameId: gameId}).andWhere("as.gameDate >= :startTime", {startTime: "g.startTime"}).andWhere("as.gameDate <= :endTime", {endTime: "g.endTime"}).andWhere("g.sport = :sport", {sport: sport}).getRawMany()
+    return returnTeam
 
   }
 
