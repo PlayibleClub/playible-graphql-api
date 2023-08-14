@@ -159,7 +159,7 @@ export class GameResolver {
     // }
 
     const returnTeam = await AppDataSource.getRepository(Game).createQueryBuilder("g").groupBy("gt.id").orderBy("total", "DESC").select(['SUM(as.fantasyScore) as total', "gt.name", "gt.id"]).innerJoin("g.teams", "gt").innerJoin("gt.athletes", "gta").innerJoin("gta.athlete", "a").innerJoin("a.stats", "as")
-                        .where("g.id = :gameId", { gameId: gameId}).andWhere("as.gameDate >= :startTime", {startTime: "g.startTime"}).andWhere("as.gameDate <= :endTime", {endTime: "g.endTime"}).andWhere("g.sport = :sport", {sport: sport}).getRawMany()
+                        .where("g.id = :gameId", { gameId: gameId}).andWhere("as.gameDate >= g.startTime").andWhere("as.gameDate <= g.endTime").andWhere("g.sport = :sport", {sport: sport}).getRawMany()
     return returnTeam
 
   }
