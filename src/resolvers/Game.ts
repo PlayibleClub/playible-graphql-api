@@ -113,6 +113,7 @@ export class GameResolver {
     @Arg("sport") sport: SportType,
   ): Promise<GameTeam[]> {
     const teams = await GameTeam.find({
+      take: 10,
       where: {
         game: {
           gameId: gameId,
