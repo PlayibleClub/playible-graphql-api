@@ -8,7 +8,7 @@ import { Collection } from "../entities/Collection"
 import { Game } from "../entities/Game"
 import { GameTeam } from "../entities/GameTeam"
 import { GameTeamAthlete } from "../entities/GameTeamAthlete"
-
+import { LeaderboardResult} from '../utils/types'
 import { LessThanOrEqual, MoreThan, MoreThanOrEqual, QueryBuilder } from "typeorm"
 import { CreateGameArgs, CreateTeamArgs, GetGameArgs } from "../args/GameArgs"
 import { GameTab, SportType } from "../utils/types"
@@ -107,59 +107,15 @@ export class GameResolver {
     return { data, count }
   }
 
-  @Query(() => [GameTeam])
+  @Query(() => [LeaderboardResult])
   async getLeaderboard(
     @Arg("gameId") gameId: number,
     @Arg("sport") sport: SportType,
-  ): Promise<any[]> {
-    // const teams = await GameTeam.find({
-    //   take: 10,
-    //   where: {
-    //     game: {
-    //       gameId: gameId,
-    //       sport: sport,
-    //     },
-        
-    //   },
-    //   relations: {
-    //     game: true,
-    //     athletes: {
-    //       athlete:{
-    //         stats: true
-    //       }
-    //     }
-    //   }
-    // })
+  ): Promise<LeaderboardResult[]> {
+    
 
-    // for(let team of teams){
-    //   let teamFantasyScore = 0
-    //   for(let teamAthlete of team.athletes){
-    //     let athlete = teamAthlete.athlete
-
-    //     // athlete.stats = athlete.stats.filter((stat) => stat.gameDate && 
-    //     //   moment(stat.gameDate).unix() >= moment(team.game.startTime).unix() && moment(stat.gameDate).unix() <= moment(team.game.endTime).unix())
-        
-    //     // let totalAthleteFantasyScore = 0
-    //     // if(athlete.stats.length > 0){
-    //     //   totalAthleteFantasyScore = athlete.stats.reduce(
-    //     //     (accumulator, currentValue) => +accumulator + +(currentValue.fantasyScore && currentValue.fantasyScore || 0) ,
-    //     //     0,
-    //     //   )
-    //     // } 
-        
-    //     const totalAthleteFantasyScore = await AppDataSource.getRepository(AthleteStat).createQueryBuilder("as")
-    //       .select('SUM(as.fantasyScore)', "sum").where("as.athleteId =:athleteId", {athleteId: athlete.id}).andWhere("as.gameDate >= :startTime", {startTime: team.game.startTime}).andWhere("as.gameDate <= :endTime", {endTime: team.game.endTime}).getRawOne()
-
-    //     teamFantasyScore = +teamFantasyScore + +totalAthleteFantasyScore.sum
-
-    //     //teamFantasyScore = +teamFantasyScore + +totalAthleteFantasyScore
-    //   }
-    //   team.fantasyScore = teamFantasyScore
-      
-    // }
-
-    const returnTeam = await AppDataSource.getRepository(Game).createQueryBuilder("g").groupBy("gt.id").orderBy("total", "DESC").select(['SUM(as.fantasyScore) as total', "gt.name", "gt.id"]).innerJoin("g.teams", "gt").innerJoin("gt.athletes", "gta").innerJoin("gta.athlete", "a").innerJoin("a.stats", "as")
-                        .where("g.gameId = :gameId", { gameId: gameId}).andWhere("as.gameDate >= g.startTime").andWhere("as.gameDate <= g.endTime").andWhere("g.sport = :sport", {sport: sport}).getRawMany()
+    const returnTeam = await AppDataSource.getRepository(Game).createQueryBuilder("g").groupBy("gt.id").orderBy("total", "DESC").select(['SUM(as.fantasyScore) as total', "gt.name as team_name", "gt.id as game_team_id", "gt.wallet_address as wallet_address"]).innerJoin("g.teams", "gt").innerJoin("gt.athletes", "gta").innerJoin("gta.athlete", "a").innerJoin("a.stats", "as")
+                        .where("g.gameId = :gameId", { gameId: gameId}).andWhere("as.gameDate >= g.startTime").andWhere("as.gameDate <= g.endTime").andWhere("g.sport = :sport", {sport: sport}).andWhere("as.played = 1").getRawMany()
     return returnTeam
 
   }

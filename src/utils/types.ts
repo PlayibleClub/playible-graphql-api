@@ -1,5 +1,4 @@
-import { InputType, Field } from "type-graphql"
-
+import { Field, InputType, Float, ID, Int, ObjectType } from "type-graphql"
 export enum SportType {
   MLB = "mlb",
   MLB_PROMO = "mlb-promo",
@@ -57,4 +56,19 @@ export class LimitOffset {
   limit?: number
   @Field({ nullable: true })
   offset?: number
+}
+
+@ObjectType()
+export class LeaderboardResult {
+  @Field(() => ID)
+  game_team_id: number
+
+  @Field(() => String)
+  team_name: string
+
+  @Field(() => String)
+  wallet_address: string
+  
+  @Field(() => Number)
+  total: number
 }
