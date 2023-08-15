@@ -4184,10 +4184,21 @@ export class TasksService {
   @Timeout(1)
   async runPolygonMainnetWebSocketListener(){
 
+    console.log("Start polygon listen")
     const network = "maticmum"
-
     const provider = new ethers.AlchemyProvider(network, process.env.POLYGON_MUMBAI_API_KEY)
-    console.log(await provider.getBlockNumber())
+    //console.log(await provider.getBlockNumber())
+    const filter = {
+      address: "0x1bd561c6571cCae8dC7E5018f9d5F78B1B3c6C57",
+      topics: [
+        ethers.id("retrieveValue(uint256)"),
+        
+      ]
+    }
+    provider.on(filter, (log, event) => {
+      console.log(log)
+      console.log(event)
+    })
   }
   //@Timeout(1)
   async runNearMainnetBaseballWebSocketListener(){
