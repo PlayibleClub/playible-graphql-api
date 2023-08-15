@@ -4354,7 +4354,7 @@ export class TasksService {
                 })
                 let saveResponse = await NearResponse.create({
                   receiverId: event.account_id,
-                  signerId: event.event.data[0].signer,
+                  signerId: event.event.data[0].predecessor_id,
                   receiptIds: [event.receipt_id],
                   methodName: event.event.event,
                   status: ResponseStatus.SUCCESS,
