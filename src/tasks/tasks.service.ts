@@ -4058,7 +4058,7 @@ export class TasksService {
               }
             },
           ],
-          fetch_past_events: 10//capped at 15?
+          //capped at 15?
         }))
 
       })
