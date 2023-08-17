@@ -24,14 +24,15 @@ import { CricketAthleteStat } from '../entities/CricketAthleteStat'
 import { CricketMatch } from '../entities/CricketMatch'
 import { getSeasonType } from "../helpers/Timeframe"
 import { ATHLETE_MLB_BASE_ANIMATION, ATHLETE_MLB_BASE_IMG, ATHLETE_MLB_IMG } from "../utils/svgTemplates"
-import { AthleteStatType, SportType, SubmitLineupType, AddGameType, ResponseStatus, SportMap } from "../utils/types"
+import { AthleteStatType, SportType, SubmitLineupType, EventAddGameType, EventSubmitLineupType, AddGameType, ResponseStatus, SportMap } from "../utils/types"
 import { CricketTeamInterface, CricketAthleteInterface, CricketPointsBreakup } from '../interfaces/Cricket'
 import { NearBlock } from '../entities/NearBlock'
 import { NearResponse } from '../entities/NearResponse'
 import { NFL_ATHLETE_IDS, NBA_ATHLETE_IDS, NBA_ATHLETE_PROMO_IDS, MLB_ATHLETE_IDS, MLB_ATHLETE_PROMO_IDS, IPL2023_ATHLETE_IDS } from "./../utils/athlete-ids"
 import { AppDataSource } from "../utils/db"
-import { ReceiptEnum, ExecutionStatus } from "near-lake-framework/dist/types"
+import { ReceiptEnum, ExecutionStatus, FunctionCallAction } from "near-lake-framework/dist/types"
 import { getSportType } from '../helpers/Sport'
+import { addGameHandler, submitLineupHandler } from '../helpers/EventHandler'
 import { computeShoheiOhtaniScores } from "../helpers/Athlete"
 import e from "express"
 
@@ -755,7 +756,7 @@ export class TasksService {
   async syncNearData(){ //for mainnet 
     const lakeConfig: types.LakeConfig = {
       //credentials
-      s3BucketName: "near-lake-data-testnet",
+      s3BucketName: "near-lake-data-mainnet",
       s3RegionName: "eu-central-1",
       startBlockHeight: 133726304 // for testnet
       //startBlockHeight: 97856450//97543661//97856450, //97239921 old
@@ -773,7 +774,7 @@ export class TasksService {
       //console.log(count)
       count = +count + +1
       console.log(count)
-      if(count === 300){
+      if(count === 500){
         await NearBlock.save([...nearBlocks], {chunk: 20})
         await NearResponse.save([...nearResponses], {chunk: 20})
         throw 'Aborted'
@@ -793,230 +794,82 @@ export class TasksService {
         //console.log(`Response array length ${nearResponses.length}`)
         for(let shard of streamerMessage.shards){
           if(shard.chunk !== undefined && shard.chunk !== null){
-            if(shard.chunk.transactions !== null && shard.chunk.transactions !== undefined){
-              let filteredTrxns = shard.chunk.transactions.filter((x) => x.transaction !== null && x.transaction.receiverId === 'game.baseball.playible.testnet')
-              if (filteredTrxns.length > 0){ //to know if the array isn't empty -> create a NearBlock entity to store data
-                Logger.debug(`Creating NEAR block ${blockHeight}`)
-                let nearBlock = await NearBlock.create({
-                  height: streamerMessage.block.header.height,
-                  hash: streamerMessage.block.header.hash,
-                  timestamp: moment().utc()
-                })
-
-
-                for (let transaction of filteredTrxns){
-
-                  const action = JSON.parse(JSON.stringify(transaction.transaction.actions[0]))   
-                  //filter only function calls that we need for leaderboards for now, then create a response entry
-                  if(action.FunctionCall.methodName === 'submit_lineup' || action.FunctionCall.methodName === 'add_game'){
-
-                    //creates a new NearResponse holding all the necessary details. Will be processed inside receiptExecutionOutcome
-                    if("SuccessReceiptId" in transaction.outcome.executionOutcome.outcome.status){
-                      
-                      const saveResponse = await NearResponse.create({
-                        transactionHash: transaction.transaction.hash,
-                        receiverId: transaction.transaction.receiverId,
-                        signerId: transaction.transaction.signerId,
-                        receiptIds: [transaction.outcome.executionOutcome.outcome.status.SuccessReceiptId],
-                        methodName: action.FunctionCall.methodName,
-                        methodArgs: action.FunctionCall.args,
-                        status: ResponseStatus.PENDING
-                      })
-
-                      nearBlock.nearResponse = saveResponse
-                      //await NearBlock.save(nearBlock)
-
-                      nearResponses.push(saveResponse)
-                      nearBlocks.push(nearBlock)
-                    }
-                    
-                    
-                  }
-                  
-                }
-              } else{
-                //console.log("No transactions found for playible contracts")
-              }
-            }
             
+            let filteredReceipts = shard.receiptExecutionOutcomes.filter((x) => x.executionOutcome.outcome.executorId === 'game.baseball.playible.near')
 
-            //console.log(`Processing receipts at block ${blockHeight}`)
-            //filtering for receipt execution outcomes and look for pending receipt
-            // const pendingReceipts = await NearResponse.find({
-            //   where: {
-            //     status: ResponseStatus.PENDING
-            //   }
-            // })
-            let pendingReceipts = nearResponses.filter((x) => x.status === ResponseStatus.PENDING)
-            for (let receipt of pendingReceipts){
-              console.log(`Block height for receipt ${blockHeight}`)
-              console.log(receipt.receiptIds)
-            }
-            // if(blockHeight === 133726533 || blockHeight === 133726535){
-            //   for (let receipt of shard.receiptExecutionOutcomes){
-            //     console.log(`Execution id: ${receipt.executionOutcome.id}`)
-            //   }
-            // }
-            let filteredReceipts = shard.receiptExecutionOutcomes.filter((x) => pendingReceipts.some((item) => item.receiptIds?.includes(x.executionOutcome.id)))
-
-            //console.log(`Filtered receipts length for height ${blockHeight}: ${filteredReceipts.length}`)
             if (filteredReceipts.length > 0){
               Logger.debug("Found playible receipt")
+
               for (let receipt of filteredReceipts){
-                // let pending = await NearResponse.findOneOrFail({
-                //   where: {
-                //     receiptIds: ArrayContains([receipt.executionOutcome.id]),
-                //     status: ResponseStatus.PENDING,
-                //   }
-                // })
-                let pending = pendingReceipts.find((x) => x.receiptIds !== undefined && x.receiptIds?.includes(receipt.executionOutcome.id) && x.status === ResponseStatus.PENDING)
-                
-                //get the last element of receiptIds array
-                if(pending !== undefined && pending.receiptIds !== undefined && pending.receiptIds[pending.receiptIds.length - 1] === receipt.executionOutcome.id){
-                  nearBlocks.push(await NearBlock.create({
-                    height: streamerMessage.block.header.height,
-                    hash: streamerMessage.block.header.hash,
-                    timestamp: moment().utc(),
-                    nearResponse: pending
-                  }))
+                if(receipt.receipt !== null && "Action" in receipt.receipt.receipt){
                   
-                  if("Failure" in receipt.executionOutcome.outcome.status){
-                    //delete entry tied to pending NearResponse?
-                    //or keep records of arguments then execute them here
-                    pending.status = ResponseStatus.FAILED
-                    //await NearResponse.save(pending)
-                  } else if("SuccessReceiptId" in receipt.executionOutcome.outcome.status){
-                    //The receipt chain continues, append receiptId to array, status stays pending
-                    Logger.debug("Found another receiptId, continuing chain")
-                    pending.receiptIds.push(receipt.executionOutcome.outcome.status.SuccessReceiptId)
-                    //pending.receiptIds.push(JSON.parse(receipt.executionOutcome.outcome.status).SuccessValue)
-                    //await NearResponse.save(pending)
-                  } else if ("SuccessValue" in receipt.executionOutcome.outcome.status){
-                    //The receipt chain ends as a success, set status to Success and process arguments
-                    Logger.debug("SuccessValue found, processing...")
-                    pending.status = ResponseStatus.SUCCESS
-                    //await NearResponse.save(pending)
-                    if(pending.methodName !== undefined && pending.methodArgs !== undefined){
-                      
+                  
+                  
+                  
+                  let object: FunctionCallAction = JSON.parse(JSON.stringify(receipt.receipt.receipt.Action.actions[0]))
+                  if(object.FunctionCall.methodName === 'add_game'){
 
-                      if(pending.methodName === 'submit_lineup'){
-                        const args: SubmitLineupType = JSON.parse(Buffer.from(pending.methodArgs, 'base64').toString())
-                        /*
-                          TODO: convert this big chunk of code and the code in websocket to handle methods into a helper function
-                        */
-                        console.log(args)
-                        console.log(pending.methodArgs)
-                        
-                        let sport = getSportType(pending.receiverId)
-                        const gameTeam = await GameTeam.findOne({
-                          where: {
-                            game: {
-                              gameId: args.game_id,
-                              sport: sport, //need checking for sport via getting it from contract name
-                            },
-                            name: args.team_name,
-                            wallet_address: pending.signerId
-                          }
-                        })
-                        if(!gameTeam){
-                          const game = await Game.findOne({
-                            where: {
-                              gameId: args.game_id,
-                              sport: sport //need checking for sport via getting it from contract
-                            }
-                          })
-                          if (game){
-                            const currGameTeam = await GameTeam.create({
-                              game: game,
-                              name: args.team_name,
-                              wallet_address: pending.signerId
-                            }).save()
+                    // const object: EventAddGameType = JSON.parse(JSON.stringify(receipt.executionOutcome.outcome.logs[0]))
+                    // console.log(object.EVENT_JSON.event)
+                    const event: EventAddGameType = JSON.parse(receipt.executionOutcome.outcome.logs[0].substring(11))
+                    const sport = getSportType(receipt.executionOutcome.outcome.executorId)
 
-                            let token_id: string[] = args.token_ids !== undefined && args.token_ids !== null ? args.token_ids : []
-                            let promo_ids: string[] = args.token_promo_ids !== undefined && args.token_promo_ids !== null ? args.token_promo_ids : []
-                            const lineup = token_id.concat(promo_ids)
-                            console.log(lineup)
-                            lineup.forEach(async (athleteId) => {
-                              
-                              if(athleteId.includes("PR") || athleteId.includes("SB")){ //retrieve the apiID from athleteId via string manipulation
-                                athleteId = athleteId.split("_")[1]
-                              }
-                              let apiId = athleteId.split("CR")[0]
-                              
+                    let success = await addGameHandler(event, sport)
 
-                              const athlete = await Athlete.findOne({
-                                where: { apiId: parseInt(apiId)}
-                              })
-                              console.log("Adding athlete...")
-                              if (athlete){
-                                try{
-                                  await GameTeamAthlete.create({
-                                    gameTeam: currGameTeam,
-                                    athlete: athlete,
-                                  }).save()
-                                } catch(e){
-                                  Logger.error(e)
-                                }
-                              } else{
-                                Logger.error("ERROR athlete apiId not found")
-                              }
-                              
-                            })
-                            Logger.debug("Submit lineup finished")
-                          } else{
-                            Logger.error("Game not found")
-                          }
-                        } else{
-                          Logger.error("Team already exists")
-                        }
-                      } else if (pending.methodName === 'add_game'){
-                        const args: AddGameType = JSON.parse(Buffer.from(pending.methodArgs, 'base64').toString())
-                        const sport = getSportType(pending.receiverId)
-                        const game = await Game.findOne({
-                          where: {
-                            gameId: args.game_id,
-                            sport: sport //add checking of sport via contract name
-                          }
-                        })
-
-                        if (!game){
-                          await Game.create({
-                            gameId: args.game_id,
-                            name: "Game " + args.game_id,
-                            description: 'on-going',
-                            startTime: moment(args.game_time_start),
-                            endTime: moment(args.game_time_end),
-                            sport: sport
-                          }).save()
-
-                          Logger.debug(`Game ${args.game_id} created for ${SportType.MLB}`)
-                        } else{
-                          Logger.error(`Game ${args.game_id} already exists`)
-                        }
-                      }
+                    if (success){
+                      let nearBlock = await NearBlock.create({
+                        height: streamerMessage.block.header.height,
+                        hash: streamerMessage.block.header.hash,
+                        timestamp: moment().utc()
+                      })
+  
+                      let saveResponse = await NearResponse.create({
+                        receiverId: receipt.receipt.receiverId,
+                        signerId: receipt.receipt.predecessorId,
+                        receiptIds: [receipt.receipt.receiptId],
+                        methodName: object.FunctionCall.methodName,
+                        status: ResponseStatus.SUCCESS
+                      })
+  
+                      nearBlock.nearResponse = saveResponse
+                      await NearBlock.save(nearBlock)
+                      Logger.debug(`Successfully created Block ${streamerMessage.block.header.height} for ${object.FunctionCall.methodName} call`)
                     }
+                    
+                    
+                  } else if (object.FunctionCall.methodName === 'submit_lineup_result_callbacks'){
+                    //console.log(receipt.executionOutcome.outcome.logs)
+                    const event: EventSubmitLineupType = JSON.parse(receipt.executionOutcome.outcome.logs[0].substring(11))
+                    const sport = getSportType(receipt.executionOutcome.outcome.executorId)
+
+                    let success = await submitLineupHandler(event, sport)
+
+                    if(success){
+                      let nearBlock = await NearBlock.create({
+                        height: streamerMessage.block.header.height,
+                        hash: streamerMessage.block.header.hash,
+                        timestamp: moment().utc()
+                      })
+                      let saveResponse = await NearResponse.create({
+                        receiverId: receipt.receipt.receiverId,
+                        signerId: event.data[0].signer,
+                        receiptIds: [receipt.receipt.receiptId],
+                        methodName: event.event,
+                        status: ResponseStatus.SUCCESS
+                      })
+                      nearBlock.nearResponse = saveResponse
+                      await NearBlock.save(nearBlock)
+                      Logger.debug(`Successfully created Block ${streamerMessage.block.header.height} for ${object.FunctionCall.methodName} call`)
+                    }
+                    
+
                   }
-                } else{
-                  Logger.error("Receipt ID mismatch!")
                 }
-                
               }
-            } else{
-              //console.log("No receipts found for playible contracts")
             }
-            //filter only transactions for our contracts
             
-            //console.log(JSON.stringify(filteredTrxns))
             
-              // let filteredReceipts = shard.chunk.receipts.filter((x) => x.receiverId === 'game.baseball.playible.near')
-              // console.log(JSON.stringify(filteredReceipts))
-              // for (let receipt of filteredReceipts){
-              //   const action: ReceiptEnum = receipt.receipt
-              //   console.log(JSON.stringify(action))
-              // }
           }
-            
-          
         }
       } else{
         console.log("Block already exists.")
@@ -1031,6 +884,7 @@ export class TasksService {
     }
     
   }
+  
   // @Timeout(1)
   async generateAthleteNbaAssets() {
     this.logger.debug("Generate Athlete NBA Assets: STARTED")
@@ -4203,7 +4057,8 @@ export class TasksService {
                 "standard": "game",
               }
             },
-          ],//capped at 15?
+          ],
+          fetch_past_events: 10//capped at 15?
         }))
 
       })
@@ -4213,7 +4068,6 @@ export class TasksService {
         setTimeout(() => listenToMainnet(), 1000)
       })
       ws.on("message", async function incoming(data) {
-        const util = require("util")
     
         const logger = new Logger("WEBSOCKET")
         logger.debug("MESSAGE RECEIVED")
@@ -4229,124 +4083,128 @@ export class TasksService {
             if(event.event.event === 'lineup_submission_result'){
               console.log("lineup submission")
               const sport = getSportType(event.account_id)
+              const eventObj: EventSubmitLineupType = event.event
 
-              const game = await Game.findOne({
-                where: { 
-                  gameId: event.event.data[0].game_id, 
-                  sport: sport
-                }
-              })
+              let success = await submitLineupHandler(eventObj, sport)
 
-              if(game){
-                const gameTeam = await GameTeam.findOne({
-                  where: {
-                    game: {
-                      id: game.id
-                    },
-                    name: event.event.data[0].team_name,
-                    wallet_address: event.event.data[0].signer,
-                  },
-                  
+              if (success){
+                let nearBlock = await NearBlock.create({
+                  height: event.block_height,
+                  hash: event.block_hash,
+                  timestamp: moment().utc(),
                 })
+                let saveResponse = await NearResponse.create({
+                  receiverId: event.account_id,
+                  signerId: event.event.data[0].signer,
+                  receiptIds: [event.receipt_id],
+                  methodName: event.event.event,
+                  status: ResponseStatus.SUCCESS,
+                })
+                
+                nearBlock.nearResponse = saveResponse
+                await NearBlock.save(nearBlock)
+                Logger.debug(`Successfully created Block ${event.block_height} for ${event.event.event} call`)
+              }
+              // const game = await Game.findOne({
+              //   where: { 
+              //     gameId: event.event.data[0].game_id, 
+              //     sport: sport
+              //   }
+              // })
 
-                if(!gameTeam){
-                  await GameTeam.create({
-                    game: game,
-                    name: event.event.data[0].team_name,
-                    wallet_address: event.event.data[0].signer,
-                  }).save()
+              // if(game){
+              //   const gameTeam = await GameTeam.findOne({
+              //     where: {
+              //       game: {
+              //         id: game.id
+              //       },
+              //       name: event.event.data[0].team_name,
+              //       wallet_address: event.event.data[0].signer,
+              //     },
+                  
+              //   })
 
-                  const lineup = event.event.data[0].lineup
-                    //get the apiId
-                  const currGameTeam = await GameTeam.findOneOrFail({
-                    where: { 
-                      game: {
-                        gameId: event.event.data[0].gameId
-                      }, 
-                      name: event.event.data[0].team_name, 
-                      wallet_address: event.event.data[0].signer
-                    }
-                  })
-                  //console.log(lineup)
-                  for(let token_id of lineup){
-                    let apiId = ""
+              //   if(!gameTeam){
+              //     await GameTeam.create({
+              //       game: game,
+              //       name: event.event.data[0].team_name,
+              //       wallet_address: event.event.data[0].signer,
+              //     }).save()
+
+              //     const lineup = event.event.data[0].lineup
+              //       //get the apiId
+              //     const currGameTeam = await GameTeam.findOneOrFail({
+              //       where: { 
+              //         game: {
+              //           gameId: event.event.data[0].gameId
+              //         }, 
+              //         name: event.event.data[0].team_name, 
+              //         wallet_address: event.event.data[0].signer
+              //       }
+              //     })
+              //     //console.log(lineup)
+              //     for(let token_id of lineup){
+              //       let apiId = ""
                     
-                    if(token_id.includes("PR") || token_id.includes("SB")){
-                      token_id = token_id.split("_")[1]
-                    }
-                    apiId = token_id.split("CR")[0]
+              //       if(token_id.includes("PR") || token_id.includes("SB")){
+              //         token_id = token_id.split("_")[1]
+              //       }
+              //       apiId = token_id.split("CR")[0]
 
-                    const athlete = await Athlete.findOne({
-                      where: {apiId: parseInt(apiId)}
-                    })
-                    if(athlete){
-                      try{
-                        GameTeamAthlete.create({
-                          gameTeam: currGameTeam,
-                          athlete: athlete,
-                        }).save()
+              //       const athlete = await Athlete.findOne({
+              //         where: {apiId: parseInt(apiId)}
+              //       })
+              //       if(athlete){
+              //         try{
+              //           await GameTeamAthlete.create({
+              //             gameTeam: currGameTeam,
+              //             athlete: athlete,
+              //           }).save()
 
                         
-                      }
-                      catch(e){
-                        Logger.error(e)
-                      }
+              //         }
+              //         catch(e){
+              //           Logger.error(e)
+              //         }
                       
-                    } else{
-                      Logger.error("ERROR athlete apiId not found, disregarding...")
-                    }
-                    //get the athlete, add to gameteamathlete
-                  }
+              //       } else{
+              //         Logger.error("ERROR athlete apiId not found, disregarding...")
+              //       }
+              //       //get the athlete, add to gameteamathlete
+              //     }
 
-                  Logger.debug("Successfully added team")
-                  let nearBlock = await NearBlock.create({
-                    height: event.block_height,
-                    hash: event.block_hash,
-                    timestamp: moment().utc(),
-                  })
-                  let saveResponse = await NearResponse.create({
-                    receiverId: event.account_id,
-                    signerId: event.event.data[0].signer,
-                    receiptIds: [event.receipt_id],
-                    methodName: event.event.event,
-                    status: ResponseStatus.SUCCESS,
-                  })
+              //     Logger.debug("Successfully added team")
+              //     let nearBlock = await NearBlock.create({
+              //       height: event.block_height,
+              //       hash: event.block_hash,
+              //       timestamp: moment().utc(),
+              //     })
+              //     let saveResponse = await NearResponse.create({
+              //       receiverId: event.account_id,
+              //       signerId: event.event.data[0].signer,
+              //       receiptIds: [event.receipt_id],
+              //       methodName: event.event.event,
+              //       status: ResponseStatus.SUCCESS,
+              //     })
                   
-                  nearBlock.nearResponse = saveResponse
-                  await NearBlock.save(nearBlock)
-                  Logger.debug(`Successfully created Block ${event.block_height} for ${event.event.event} call`)
-                } else{
-                  Logger.error(`Team already exist on Game ${game.gameId} for ${game.sport}`)
-                }
-              } else{
-                Logger.error(`Game ${event.event.data[0].game_id} does not exist for ${sport}`)
-              }
+              //     nearBlock.nearResponse = saveResponse
+              //     await NearBlock.save(nearBlock)
+              //     Logger.debug(`Successfully created Block ${event.block_height} for ${event.event.event} call`)
+              //   } else{
+              //     Logger.error(`Team already exist on Game ${game.gameId} for ${game.sport}`)
+              //   }
+              // } else{
+              //   Logger.error(`Game ${event.event.data[0].game_id} does not exist for ${sport}`)
+              // }
               
             }
             else if (event.event.event === 'add_game'){
               console.log("add game")
               let sport: SportType = SportType.MLB
+              const eventObj: EventAddGameType = event.event
 
-              const game = await Game.findOne({
-                where: {
-                  gameId: event.event.data[0].game_id,
-                  sport: sport
-                }
-              })
-              if(game){
-                Logger.error("Game " + event.event.data[0].game_id + " already exists")
-              }
-              else {
-                await Game.create({
-                  gameId: event.event.data[0].game_id,
-                  name: "Game " + event.event.data[0].game_id, 
-                  description: 'on-going',
-                  startTime: moment(event.event.data[0].game_time_start),
-                  endTime: moment(event.event.data[0].game_time_end),
-                  sport: sport
-                }).save()
-
-                Logger.debug(`Game ${event.event.data[0].game_id} created for ${SportType.MLB}`)
+              let success = await addGameHandler(eventObj, sport)
+              if (success){
                 let nearBlock = await NearBlock.create({
                   height: event.block_height,
                   hash: event.block_hash,
@@ -4362,9 +4220,46 @@ export class TasksService {
                 
                 nearBlock.nearResponse = saveResponse
                 await NearBlock.save(nearBlock)
-                Logger.debug(`Successfully created Block ${event.block_height} for ${event.event.event} call`)
-                
+                Logger.debug(`Successfully created Block ${event.block_height} for ${eventObj.event} call`)
               }
+              // const game = await Game.findOne({
+              //   where: {
+              //     gameId: event.event.data[0].game_id,
+              //     sport: sport
+              //   }
+              // })
+              // if(game){
+              //   Logger.error("Game " + event.event.data[0].game_id + " already exists")
+              // }
+              // else {
+              //   await Game.create({
+              //     gameId: event.event.data[0].game_id,
+              //     name: "Game " + event.event.data[0].game_id, 
+              //     description: 'on-going',
+              //     startTime: moment(event.event.data[0].game_time_start),
+              //     endTime: moment(event.event.data[0].game_time_end),
+              //     sport: sport
+              //   }).save()
+
+              //   Logger.debug(`Game ${event.event.data[0].game_id} created for ${SportType.MLB}`)
+              //   let nearBlock = await NearBlock.create({
+              //     height: event.block_height,
+              //     hash: event.block_hash,
+              //     timestamp: moment().utc(),
+              //   })
+              //   let saveResponse = await NearResponse.create({
+              //     receiverId: event.account_id,
+              //     signerId: event.event.data[0].predecessor_id,
+              //     receiptIds: [event.receipt_id],
+              //     methodName: event.event.event,
+              //     status: ResponseStatus.SUCCESS,
+              //   })
+                
+              //   nearBlock.nearResponse = saveResponse
+              //   await NearBlock.save(nearBlock)
+              //   Logger.debug(`Successfully created Block ${event.block_height} for ${event.event.event} call`)
+                
+              // }
             }
           }
         }
