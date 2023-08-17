@@ -50,6 +50,33 @@ export type AddGameType = {
   }]
 }
 
+export type EventAddGameType = {
+  
+  standard: string,
+  version: string,
+  event: string,
+  data: [{
+    result: string,
+    game_id: number,
+    game_time_start: number,
+    game_time_end: number,
+  }]
+  
+}
+
+export type EventSubmitLineupType = {
+  standard: string,
+  version: string,
+  event: string,
+  data: [{
+    result: string,
+    game_id: number,
+    team_name: string,
+    signer: string,
+    lineup: string[]
+  }]
+}
+
 @InputType()
 export class LimitOffset {
   @Field({ nullable: true })
