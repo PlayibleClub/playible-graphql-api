@@ -35,7 +35,7 @@ import { ReceiptEnum, ExecutionStatus } from "near-lake-framework/dist/types"
 import { getSportType } from '../helpers/Sport'
 import { computeShoheiOhtaniScores } from "../helpers/Athlete"
 import e from "express"
-
+import abiJson from '../utils/abi.json'
 @Injectable()
 export class TasksService {
   private readonly logger = new Logger(TasksService.name)
@@ -4186,19 +4186,32 @@ export class TasksService {
 
     console.log("Start polygon listen")
     const network = "maticmum"
-    const provider = new ethers.AlchemyProvider(network, process.env.POLYGON_MUMBAI_API_KEY)
+    const address = process.env.METAMASK_WALLET_ADDRESS ?? "default"
+    const abi = abiJson
+    //const provider = new ethers.AlchemyProvider(network, process.env.POLYGON_MUMBAI_API_KEY)
+    const provider = new ethers.WebSocketProvider(`wss://polygon-mumbai.g.alchemy.com/v2/${process.env.POLYGON_MUMBAI_API_KEY}`)
+    //const provider = new ethers.provider
+    const contract = new ethers.Contract(address, abi, provider)
     //console.log(await provider.getBlockNumber())
-    const filter = {
-      address: "0x1bd561c6571cCae8dC7E5018f9d5F78B1B3c6C57",
-      topics: [
-        ethers.id("retrieveValue(uint256)"),
-        
-      ]
-    }
-    provider.on(filter, (log, event) => {
-      console.log(log)
-      console.log(event)
+    contract.on("storeValue", (num, text, event) => {
+      let result = {
+        storedNum: num,
+        storedText: text,
+        event: event,
+      }
+      console.log(JSON.stringify(result, null, 4))
     })
+    // const filter = {
+    //   address: "0xa826C83200C07EAFf035397B71996C7fd32B15D8",
+    //   topics: [
+    //     ethers.id("storeValue(uint256, string)"),
+        
+    //   ]
+    // }
+    // provider.on(filter, (log, event) => {
+    //   console.log(log)
+    //   console.log(event)
+    // })
   }
   //@Timeout(1)
   async runNearMainnetBaseballWebSocketListener(){
