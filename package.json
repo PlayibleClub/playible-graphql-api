@@ -41,6 +41,7 @@
     "@types/cron": "^2.0.0",
     "@types/pg": "^8.10.2",
     "@types/ws": "^8.5.4",
+    "alchemy-sdk": "^2.9.2",
     "apollo-server-express": "^3.8.2",
     "argon2": "^0.28.5",
     "aws-sdk": "^2.1153.0",

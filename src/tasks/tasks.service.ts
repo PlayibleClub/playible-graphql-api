@@ -1,6 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common"
 import { Cron, Interval, Timeout } from "@nestjs/schedule"
 import S3 from "aws-sdk/clients/s3"
+import { Alchemy, Network, AlchemySubscription} from 'alchemy-sdk'
 import axios from "axios"
 import fs from "fs"
 import { startStream, types } from 'near-lake-framework'
@@ -4188,30 +4189,44 @@ export class TasksService {
     const network = "maticmum"
     const address = process.env.METAMASK_WALLET_ADDRESS ?? "default"
     const abi = abiJson
-    //const provider = new ethers.AlchemyProvider(network, process.env.POLYGON_MUMBAI_API_KEY)
-    const provider = new ethers.WebSocketProvider(`wss://polygon-mumbai.g.alchemy.com/v2/${process.env.POLYGON_MUMBAI_API_KEY}`)
-    //const provider = new ethers.provider
-    const contract = new ethers.Contract(address, abi, provider)
-    //console.log(await provider.getBlockNumber())
-    contract.on("storeValue", (num, text, event) => {
-      let result = {
-        storedNum: num,
-        storedText: text,
-        event: event,
-      }
-      console.log(JSON.stringify(result, null, 4))
-    })
-    // const filter = {
-    //   address: "0xa826C83200C07EAFf035397B71996C7fd32B15D8",
-    //   topics: [
-    //     ethers.id("storeValue(uint256, string)"),
-        
-    //   ]
+    // const settings = {
+    //   apiKey: process.env.POLYGON_MUMBAI_API_KEY,
+    //   network: Network.MATIC_MUMBAI
     // }
-    // provider.on(filter, (log, event) => {
-    //   console.log(log)
+    // const alchemy = new Alchemy(settings)
+    // const retrieveTopic = '0x311af4015d6657d30e1966b1f9ee3eb9dcf18c3d2ffcf0db5526771374708558'
+    // //const transferTopic = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'
+    // const logging = {
+    //   //address: process.env.METAMASK_WALLET_ADDRESS,
+    //   topics: [retrieveTopic]
+    // }
+    // alchemy.ws.on(logging, (event) => {
     //   console.log(event)
     // })
+    const provider = new ethers.AlchemyProvider(network, process.env.POLYGON_MUMBAI_API_KEY)
+    //const provider = new ethers.WebSocketProvider(`wss://polygon-mumbai.g.alchemy.com/v2/${process.env.POLYGON_MUMBAI_API_KEY}`)
+    //const provider = new ethers.provider
+    //const contract = new ethers.Contract(address, abi, provider)
+    //console.log(await provider.getBlockNumber())
+    // contract.on("storeValue", (num, text, event) => {
+    //   let result = {
+    //     storedNum: num,
+    //     storedText: text,
+    //     event: event,
+    //   }
+    //   console.log(JSON.stringify(result, null, 4))
+    // })
+    //console.log(ethers.id("StoreValue(uint256,string)"))
+    const filter = {
+      topics: [
+        ethers.id("StoreValue(uint256,string)"),
+        
+      ]
+    }
+    provider.on(filter, (log, event) => {
+      console.log(log)
+      console.log(event)
+    })
   }
   //@Timeout(1)
   async runNearMainnetBaseballWebSocketListener(){
