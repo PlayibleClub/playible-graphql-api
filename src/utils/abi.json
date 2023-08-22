@@ -9,7 +9,20 @@
 				"type": "uint256"
 			}
 		],
-		"name": "retrieveValue",
+		"name": "RetrieveValue",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "string[]",
+				"name": "lineup",
+				"type": "string[]"
+			}
+		],
+		"name": "StoreArray",
 		"type": "event"
 	},
 	{
@@ -28,8 +41,21 @@
 				"type": "string"
 			}
 		],
-		"name": "storeValue",
+		"name": "StoreValue",
 		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string[]",
+				"name": "lineupTest",
+				"type": "string[]"
+			}
+		],
+		"name": "lineupStore",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
 	},
 	{
 		"inputs": [],
