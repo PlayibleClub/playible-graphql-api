@@ -50,7 +50,11 @@ export async function submitLineupHandler(event: EventSubmitLineupType, sport: S
         },
         name: event.data[0].team_name,
         wallet_address: event.data[0].signer,
+      },
+      relations: {
+        game: true
       }
+      
     })
 
     if (!gameTeam){
