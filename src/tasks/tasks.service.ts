@@ -511,6 +511,133 @@ export class TasksService {
 
     this.logger.debug(`NFL Athletes Data: ${athletesCount ? "DID NOT SYNC" : "SYNCED SUCCESSFULLY"}`)
   }
+
+  @Timeout(1)
+  async syncNflData2(){
+    const teamsCount = await Team.count({
+      where: { sport: SportType.NFL}
+    })
+
+    if (teamsCount === 0){
+      const { data, status } = await axios.get(`${process.env.SPORTS_DATA_URL}nfl/scores/json/Teams?key=${process.env.SPORTS_DATA_NFL_KEY}`)
+
+      if (status === 200){
+        for (let team of data){
+          try {
+            await Team.create({
+              apiId: team["GlobalTeamId"],
+              name: team["Name"],
+              key: team["Key"],
+              location: team["City"],
+              sport: SportType.NFL,
+              primaryColor: `#${team["PrimaryColor"]}`,
+              secondaryColor: `#${team["SecondaryColor"]}`,
+            }).save()
+          } catch (e){
+            this.logger.error(e)
+          }
+        }
+      } else{
+        this.logger.error("NFL Teams Data: SPORTS DATA ERROR")
+      }
+    }
+    const athleteCount = await Athlete.count({
+      where: {
+        team: {
+          sport: SportType.NFL
+        }
+      }
+    })
+
+    if (athleteCount === 0){
+      const { data, status } = await axios.get(`${process.env.SPORTS_DATA_URL}nfl/scores/json/Players?key=${process.env.SPORTS_DATA_NFL_KEY}`)
+
+      if (status === 200){
+        for (let athlete of data) {
+          try {
+            const team = await Team.findOne({
+              where: {apiId: athlete["GlobalTeamID"]}
+            })
+
+            if (team){
+              await Athlete.create({
+                apiId: athlete["PlayerID"],
+                firstName: athlete["FirstName"],
+                lastName: athlete["LastName"],
+                position: athlete["Position"],
+                jersey: athlete["Number"],
+                team,
+                isActive: athlete["Status"] === "Active",
+                isInjured: athlete["InjuryStatus"],
+              }).save()
+              
+            }
+          } catch (err){
+            this.logger.error(err)
+          }
+        }
+      } else{
+        this.logger.error("NFL Athlete: SPORTS DATA ERROR")
+      }
+    } else{
+      const { data, status } = await axios.get(`${process.env.SPORTS_DATA_URL}nfl/scores/json/Players?key=${process.env.SPORTS_DATA_NFL_KEY}`)
+      if (status === 200){
+        const newAthlete: Athlete[] = []
+        const updateAthlete: Athlete[] = []
+
+        for (let athlete of data) {
+          try{
+            const team = await Team.findOne({
+              where: { apiId: athlete["GlobalTeamID"]},
+            })
+
+            if (team){
+              
+              const currAthlete = await Athlete.findOne({
+                where: { apiId: athlete["PlayerID"]}
+              })
+
+              if (currAthlete){
+                currAthlete.firstName = athlete["FirstName"]
+                currAthlete.lastName = athlete["LastName"]
+                currAthlete.position = athlete["Position"] !== null ? athlete["Position"] : "N/A"
+                currAthlete.jersey = athlete["Number"]
+                currAthlete.isActive = athlete["Status"] === "Active"
+                updateAthlete.push(currAthlete)
+              } else {
+                newAthlete.push(
+                  Athlete.create({
+                    apiId: athlete["PlayerID"],
+                    firstName: athlete["FirstName"],
+                    lastName: athlete["LastName"],
+                    position: athlete["Position"] !== null ? athlete["Position"] : "N/A",
+                    jersey: athlete["Number"],
+                    team,
+                    isActive: athlete["Status"] === "Active",
+                    isInjured: athlete["InjuryStatus"],
+                  })
+                )
+              }
+            }
+          } catch (err){
+            this.logger.error(err)
+          }
+        }
+
+        await Athlete.save([...newAthlete, ...updateAthlete], {chunk: 20})
+        this.logger.debug("NFL Athlete: UPDATED")
+
+        const athleteCount = await Athlete.count({
+          where: {team: { sport: SportType.NFL}}
+        })
+        this.logger.debug(`CURRENT NFL ATHLETE COUNT: ${athleteCount}`)
+      } else{
+        this.logger.error("NFL Athlete: SPORTS DATA ERROR")
+      }
+
+    }
+    this.logger.debug(`NFL Athlete: ${athleteCount ? ' ALREADY EXISTS' : 'SYNCED'}`)
+  }
   
   //@Timeout(1)
   async syncNbaData() {
@@ -2672,7 +2799,7 @@ export class TasksService {
     
   }
 
-  @Interval(300000) // runs every 5 minutes
+  //@Interval(300000) // runs every 5 minutes
   async updateMlbAthleteStatsPerDay(){
     this.logger.debug("Update MLB Athlete Stats Per Day: STARTED")
     
@@ -4034,7 +4161,7 @@ export class TasksService {
     }
   }
 
-  @Timeout(1)
+  //@Timeout(1)
   async runNearMainnetBaseballWebSocketListener(){
     function listenToMainnet(){
       const ws = new WebSocket('wss://events.near.stream/ws')
