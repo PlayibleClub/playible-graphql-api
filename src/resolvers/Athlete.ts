@@ -4,7 +4,7 @@ import { Contract } from "near-api-js"
 import { Arg, Authorized, Field, Mutation, ObjectType, Query, Resolver } from "type-graphql"
 import { AthleteSortOptions, GetAthletesArgs } from "../args/AthleteArgs"
 import { setup } from "../near-api"
-import axios from "axios"
+import axios, { AxiosResponse } from "axios"
 import { S3 } from 'aws-sdk'
 import { Athlete } from "../entities/Athlete"
 import { AthleteStat } from "../entities/AthleteStat"
@@ -216,6 +216,7 @@ export class AthleteResolver {
   @Mutation(() => Number)
   async addAthletesToFilebaseS3IPFSBucket(@Arg("sportType") sportType: SportType, @Arg("isPromo") isPromo: boolean = false ): Promise<Number> {
     let athleteIds: number[] = []
+    const nftImages = ['nftImage', 'nftImageLocked', 'nftImagePromo']
     console.log(isPromo)
     //setup AWS S3 bucket
     const s3Filebase = new S3({
@@ -243,61 +244,60 @@ export class AthleteResolver {
     })
 
     for (let athlete of athletes){
-      //const filePath = athlete.nftImage !== undefined ? athlete.nftImage : 'default' //temporarily has local filepath of NFT sample image
-
-      // fs.readFile(filePath, (err, data) => {
-
-      //   if (err) {
-      //     console.error(err)
-          
-      //   }
-      //   const params = {
-      //     Bucket: 'buckettest69',
-      //     ContentType: 'image/png',
-      //     Key: 'test.png',
-      //     Body: data,
-      //     ACL: 'public-read',
-      //     Metadata: { firstName: athlete.firstName, lastName: athlete.lastName, apiId: athlete.apiId.toString()}
-      //   }
-  
-      //   const request = s3.putObject(params)
-      //   request.on('httpHeaders', async (statusCode, headers) => {
-      //     console.log(`Status Code ${statusCode}`)
-      //     console.log(`CID: ${headers['x-amz-meta-cid']}`)
-      //     athlete.nftAnimation = headers['x-amz-meta-cid']
-      //     await Athlete.save(athlete)
-      //   })
-      //   request.send()
-      // })
-
-      console.log(`Reading athlete ${athlete.id}`)
       
-      // const request = s3Filebase.putObject(fileBaseParams)
-      // request.on('httpHeaders', async (statusCode, headers) => {
-      //   console.log(`Status Code ${statusCode}`)
-      //   console.log(`CID: ${headers['x-amz-meta-cid']}`)
-      //   athlete.nftAnimation = headers['x-amz-meta-cid']
-      //   await Athlete.save(athlete)
-      // })
-      // request.send()
-      const response = await axios.get(athlete.nftImage ?? 'default', { responseType: 'arraybuffer'})
-      const data = Buffer.from(response.data, "utf-8")
-      const fileBaseParams = {
-        Bucket: 'buckettest69',
-        ContentType: 'image/png',
-        Key: `${athlete.firstName}_${athlete.lastName}.png`,
-        ACL: 'public-read',
-        Body: data,
-        Metadata: { firstName: athlete.firstName, lastName: athlete.lastName, apiId: athlete.apiId.toString()}
+      for (let imageType of nftImages){
+
+        console.log(`Reading athlete ${athlete.id}`)
+      
+        // const request = s3Filebase.putObject(fileBaseParams)
+        // request.on('httpHeaders', async (statusCode, headers) => {
+        //   console.log(`Status Code ${statusCode}`)
+        //   console.log(`CID: ${headers['x-amz-meta-cid']}`)
+        //   athlete.nftAnimation = headers['x-amz-meta-cid']
+        //   await Athlete.save(athlete)
+        // })
+        // request.send()
+        let fileType = ''
+        let response: AxiosResponse
+        let link = ''
+        switch(imageType){
+          case 'nftImageLocked':
+            response = await axios.get(athlete.nftImageLocked ?? 'default', { responseType: 'arraybuffer'})
+            //link = athlete.nftImageLocked ?? 'default'
+            fileType = 'SB'
+            break
+          case 'nftImagePromo':
+            response = await axios.get(athlete.nftImagePromo ?? 'default', { responseType: 'arraybuffer'})
+            //link = athlete.nftImagePromo ?? 'default'
+            fileType = 'P'
+            break;
+          case 'nftImage': 
+          default: 
+            response = await axios.get(athlete.nftImage ?? 'default', {responseType: 'arraybuffer'})
+            //link = athlete.nftImage ?? 'default'
+            fileType = 'R'
+            break;
+        }
+        //const data = Buffer.from(response.data, "utf8")
+        const fileBaseParams = {
+          Bucket: 'buckettest69',
+          ContentType: 'image/svg+xml',
+          Key: `${fileType}_${athlete.firstName}_${athlete.lastName}`,
+          ACL: 'public-read',
+          Body: response,
+          Metadata: { firstName: athlete.firstName, lastName: athlete.lastName, apiId: athlete.apiId.toString()}
+        }
+        const request = s3Filebase.putObject(fileBaseParams)
+        request.on('httpHeaders', async (statusCode, headers) => {
+          console.log(`Status Code ${statusCode}`)
+          console.log(`Filename: ${fileType}_${athlete.firstName}_${athlete.lastName}`)
+          console.log(`CID: ${headers['x-amz-meta-cid']}`)
+          athlete.cid = headers['x-amz-meta-cid']
+          await Athlete.save(athlete)
+        })
+        request.send()
       }
-      const request = s3Filebase.putObject(fileBaseParams)
-      request.on('httpHeaders', async (statusCode, headers) => {
-        console.log(`Status Code ${statusCode}`)
-        console.log(`CID: ${headers['x-amz-meta-cid']}`)
-        athlete.nftAnimation = headers['x-amz-meta-cid']
-        await Athlete.save(athlete)
-      })
-      request.send()
+      
     }
     
     return athletes.length
