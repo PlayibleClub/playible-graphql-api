@@ -282,7 +282,7 @@ export class AthleteResolver {
         const fileBaseParams = {
           Bucket: 'buckettest69',
           ContentType: 'image/svg+xml',
-          Key: `${fileType}_${athlete.firstName}_${athlete.lastName}`,
+          Key: `${fileType}_${athlete.apiId}`,
           ACL: 'public-read',
           Body: response,
           Metadata: { firstName: athlete.firstName, lastName: athlete.lastName, apiId: athlete.apiId.toString()}
