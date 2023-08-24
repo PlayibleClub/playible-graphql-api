@@ -1,16 +1,17 @@
 import { AthleteStatType, SportType } from "./../utils/types"
 import { Contract } from "near-api-js"
+
 import { Arg, Authorized, Field, Mutation, ObjectType, Query, Resolver } from "type-graphql"
 import { AthleteSortOptions, GetAthletesArgs } from "../args/AthleteArgs"
 import { setup } from "../near-api"
 import axios from "axios"
-
+import { S3 } from 'aws-sdk'
 import { Athlete } from "../entities/Athlete"
 import { AthleteStat } from "../entities/AthleteStat"
 import { Team } from "../entities/Team"
-
+import fs from 'fs'
 import { In, MoreThanOrEqual, LessThanOrEqual} from "typeorm"
-import { NFL_ATHLETE_IDS, NBA_ATHLETE_IDS, NBA_ATHLETE_PROMO_IDS, MLB_ATHLETE_IDS, MLB_ATHLETE_PROMO_IDS } from "./../utils/athlete-ids"
+import { NFL_ATHLETE_IDS, NBA_ATHLETE_IDS, NBA_ATHLETE_PROMO_IDS, MLB_ATHLETE_IDS, MLB_ATHLETE_PROMO_IDS, TEST_ATHLETE_IDS } from "./../utils/athlete-ids"
 import moment from "moment"
 
 @ObjectType()
@@ -211,6 +212,96 @@ export class AthleteResolver {
     })
   }
 
+  //@Authorized("ADMIN")
+  @Mutation(() => Number)
+  async addAthletesToFilebaseS3IPFSBucket(@Arg("sportType") sportType: SportType, @Arg("isPromo") isPromo: boolean = false ): Promise<Number> {
+    let athleteIds: number[] = []
+    console.log(isPromo)
+    //setup AWS S3 bucket
+    const s3Filebase = new S3({
+      apiVersion: '2006-03-01',
+      endpoint: 'https://s3.filebase.com',
+      region: 'us-east-1',
+      accessKeyId: process.env.FILEBUCKET_ACCESS_KEY_ID,
+      secretAccessKey: process.env.FILEBUCKET_SECRET_ACCESS_KEY,
+      s3ForcePathStyle: true,
+    })
+    const s3Playible = new S3({
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    })
+    switch (sportType){
+      case SportType.TEST:
+        athleteIds = TEST_ATHLETE_IDS
+        break
+    }
+
+    const athletes = await Athlete.find({
+      where: {
+        apiId: In(athleteIds)
+      }
+    })
+
+    for (let athlete of athletes){
+      //const filePath = athlete.nftImage !== undefined ? athlete.nftImage : 'default' //temporarily has local filepath of NFT sample image
+
+      // fs.readFile(filePath, (err, data) => {
+
+      //   if (err) {
+      //     console.error(err)
+          
+      //   }
+      //   const params = {
+      //     Bucket: 'buckettest69',
+      //     ContentType: 'image/png',
+      //     Key: 'test.png',
+      //     Body: data,
+      //     ACL: 'public-read',
+      //     Metadata: { firstName: athlete.firstName, lastName: athlete.lastName, apiId: athlete.apiId.toString()}
+      //   }
+  
+      //   const request = s3.putObject(params)
+      //   request.on('httpHeaders', async (statusCode, headers) => {
+      //     console.log(`Status Code ${statusCode}`)
+      //     console.log(`CID: ${headers['x-amz-meta-cid']}`)
+      //     athlete.nftAnimation = headers['x-amz-meta-cid']
+      //     await Athlete.save(athlete)
+      //   })
+      //   request.send()
+      // })
+
+      console.log(`Reading athlete ${athlete.id}`)
+      
+      // const request = s3Filebase.putObject(fileBaseParams)
+      // request.on('httpHeaders', async (statusCode, headers) => {
+      //   console.log(`Status Code ${statusCode}`)
+      //   console.log(`CID: ${headers['x-amz-meta-cid']}`)
+      //   athlete.nftAnimation = headers['x-amz-meta-cid']
+      //   await Athlete.save(athlete)
+      // })
+      // request.send()
+      const response = await axios.get(athlete.nftImage ?? 'default', { responseType: 'arraybuffer'})
+      const data = Buffer.from(response.data, "utf-8")
+      const fileBaseParams = {
+        Bucket: 'buckettest69',
+        ContentType: 'image/png',
+        Key: `${athlete.firstName}_${athlete.lastName}.png`,
+        ACL: 'public-read',
+        Body: data,
+        Metadata: { firstName: athlete.firstName, lastName: athlete.lastName, apiId: athlete.apiId.toString()}
+      }
+      const request = s3Filebase.putObject(fileBaseParams)
+      request.on('httpHeaders', async (statusCode, headers) => {
+        console.log(`Status Code ${statusCode}`)
+        console.log(`CID: ${headers['x-amz-meta-cid']}`)
+        athlete.nftAnimation = headers['x-amz-meta-cid']
+        await Athlete.save(athlete)
+      })
+      request.send()
+    }
+    
+    return athletes.length
+  }
   @Authorized("ADMIN")
   @Mutation(() => Number)
   async addStarterAthletesToOpenPackContract(@Arg("sportType") sportType: SportType, @Arg("isPromo") isPromo: boolean = false): Promise<Number> {

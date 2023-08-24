@@ -1,0 +1,3 @@
+export const TEST_ATHLETE_IDS = [
+  727002, 727003, 727004, 727005
+]
