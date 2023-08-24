@@ -71,6 +71,10 @@ export class Athlete extends BaseEntity {
   @Column({ type: "text", nullable: true })
   nftAnimation?: string
 
+  @Field(() => String, { nullable: true})
+  @Column({ type: "text", nullable: true})
+  cid?: string
+
   @Field(() => [GameTeamAthlete])
   @OneToMany(() => GameTeamAthlete, (gameTeamAthlete) => gameTeamAthlete.athlete, {
     cascade: true,
