@@ -639,7 +639,7 @@ export class TasksService {
     );
   }
 
-  //@Timeout(1)
+  @Timeout(1)
   async syncNflData2() {
     const teamsCount = await Team.count({
       where: { sport: SportType.NFL },
@@ -720,7 +720,7 @@ export class TasksService {
         const updateAthlete: Athlete[] = [];
 
         for (let athlete of data) {
-          if (MLB_ATHLETE_IDS.includes(athlete['PlayerID'])) {
+          if (NFL_ATHLETE_IDS.includes(athlete['PlayerID'])) {
             try {
               const team = await Team.findOne({
                 where: { apiId: athlete['GlobalTeamID'] },
