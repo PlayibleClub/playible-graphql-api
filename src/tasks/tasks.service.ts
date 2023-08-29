@@ -639,7 +639,7 @@ export class TasksService {
     );
   }
 
-  @Timeout(1)
+  //@Timeout(1)
   async syncNflData2() {
     const teamsCount = await Team.count({
       where: { sport: SportType.NFL },
