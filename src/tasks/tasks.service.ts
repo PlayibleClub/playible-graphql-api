@@ -4901,7 +4901,7 @@ export class TasksService {
     }
   }
 
-  @Timeout(1)
+  //@Timeout(1)
   async runNearMainnetBaseballWebSocketListener() {
     function listenToMainnet() {
       const ws = new WebSocket('wss://events.near.stream/ws');
