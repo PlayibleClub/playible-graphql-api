@@ -639,7 +639,7 @@ export class TasksService {
     );
   }
 
-  @Timeout(1)
+  //@Timeout(1)
   async syncNflData2() {
     const teamsCount = await Team.count({
       where: { sport: SportType.NFL },
@@ -1988,7 +1988,7 @@ export class TasksService {
     this.logger.debug('Generate Athlete NFL Assets Promo: STARTED');
 
     const athletes = await Athlete.find({
-      where: { team: { sport: SportType.NFL } },
+      where: { apiId: In(NFL_ATHLETE_IDS), team: { sport: SportType.NFL } },
       relations: {
         team: true,
       },
@@ -2335,7 +2335,7 @@ export class TasksService {
     this.logger.debug('Generate Athlete NFL Assets Locked: STARTED');
 
     const athletes = await Athlete.find({
-      where: { team: { sport: SportType.NFL } },
+      where: { apiId: In(NFL_ATHLETE_IDS), team: { sport: SportType.NFL } },
       relations: {
         team: true,
       },
