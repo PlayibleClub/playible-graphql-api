@@ -738,7 +738,7 @@ export class TasksService {
                 if (currAthlete) {
                   if (currAthlete.team.apiId !== athlete['GlobalTeamID']) {
                     this.logger.debug(
-                      `Athlete transfered from ${currAthlete.team.key} to ${athlete['GlobalTeamID']}`
+                      `Athlete ${currAthlete.apiId} ${currAthlete.firstName} ${currAthlete.lastName} transfered from ${currAthlete.team.key} to ${athlete['GlobalTeamID']}`
                     );
                   }
                   currAthlete.firstName = athlete['FirstName'];
