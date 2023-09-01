@@ -639,7 +639,7 @@ export class TasksService {
     );
   }
 
-  //@Timeout(1)
+  @Timeout(1)
   async syncNflData2() {
     const teamsCount = await Team.count({
       where: { sport: SportType.NFL },
@@ -654,7 +654,7 @@ export class TasksService {
         for (let team of data) {
           try {
             await Team.create({
-              apiId: team['GlobalTeamId'],
+              apiId: team['GlobalTeamID'],
               name: team['Name'],
               key: team['Key'],
               location: team['City'],
