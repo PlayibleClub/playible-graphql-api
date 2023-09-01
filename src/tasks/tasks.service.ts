@@ -857,7 +857,7 @@ export class TasksService {
     );
   }
 
-  //@Timeout(300000)
+  @Timeout(300000)
   async generateAthleteNflAssets() {
     this.logger.debug('Generate Athlete NFL Assets: STARTED');
 
@@ -1545,7 +1545,7 @@ export class TasksService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`);
   }
 
-  //@Timeout(700000)
+  @Timeout(700000)
   async generateAthleteNflAssetsAnimation() {
     this.logger.debug('Generate Athlete NFL Assets Animation: STARTED');
     const athletes = await Athlete.find({
@@ -1983,7 +1983,7 @@ export class TasksService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`);
   }
 
-  //@Timeout(600000)
+  @Timeout(600000)
   async generateAthleteNflAssetsPromo() {
     this.logger.debug('Generate Athlete NFL Assets Promo: STARTED');
 
@@ -2244,7 +2244,7 @@ export class TasksService {
   }
 
   //@Timeout(1)
-  //@Interval(86400000) //runs every 1 day
+  @Interval(86400000) //runs every 1 day
   async updateNflAthleteHeadshots() {
     this.logger.debug('Update Athlete NFL Headshots: STARTED');
 
@@ -2330,7 +2330,7 @@ export class TasksService {
     }
   }
 
-  //@Timeout(450000)
+  @Timeout(450000)
   async generateAthleteNflAssetsLocked() {
     this.logger.debug('Generate Athlete NFL Assets Locked: STARTED');
 
@@ -3644,7 +3644,7 @@ export class TasksService {
     }
   }
   //@Timeout(1)
-  @Interval(300000) // Runs every 5 mins
+  //@Interval(300000) // Runs every 5 mins
   async updateNbaAthleteStatsPerDay() {
     this.logger.debug('Update NBA Athlete Stats Per Day: STARTED');
 
