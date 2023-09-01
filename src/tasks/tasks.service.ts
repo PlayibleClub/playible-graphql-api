@@ -730,9 +730,17 @@ export class TasksService {
               if (team) {
                 const currAthlete = await Athlete.findOne({
                   where: { apiId: athlete['PlayerID'] },
+                  relations: {
+                    team: true,
+                  },
                 });
 
                 if (currAthlete) {
+                  if (currAthlete.team.apiId !== athlete['GlobalTeamID']) {
+                    this.logger.debug(
+                      `Athlete transfered from ${currAthlete.team.key} to ${athlete['GlobalTeamID']}`
+                    );
+                  }
                   currAthlete.firstName = athlete['FirstName'];
                   currAthlete.lastName = athlete['LastName'];
                   currAthlete.position =
