@@ -641,6 +641,7 @@ export class TasksService {
 
   @Timeout(1)
   async syncNflData2() {
+    this.logger.debug('SYNC NFL START');
     const teamsCount = await Team.count({
       where: { sport: SportType.NFL },
     });
@@ -737,6 +738,7 @@ export class TasksService {
                   currAthlete.position =
                     athlete['Position'] !== null ? athlete['Position'] : 'N/A';
                   currAthlete.jersey = athlete['Number'];
+                  currAthlete.team = team;
                   currAthlete.isActive = athlete['Status'] === 'Active';
                   updateAthlete.push(currAthlete);
                 } else {
