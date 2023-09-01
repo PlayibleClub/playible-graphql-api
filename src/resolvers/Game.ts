@@ -3,15 +3,17 @@ import { Arg, Authorized, Field, Mutation, ObjectType, Query, Resolver } from "t
 import { Account } from "../entities/Account"
 import { Asset } from "../entities/Asset"
 import { Athlete } from "../entities/Athlete"
+import { AthleteStat } from '../entities/AthleteStat'
 import { Collection } from "../entities/Collection"
 import { Game } from "../entities/Game"
 import { GameTeam } from "../entities/GameTeam"
 import { GameTeamAthlete } from "../entities/GameTeamAthlete"
-
-import { LessThanOrEqual, MoreThan, MoreThanOrEqual } from "typeorm"
+import { LeaderboardResult} from '../utils/types'
+import { LessThanOrEqual, MoreThan, MoreThanOrEqual, QueryBuilder } from "typeorm"
 import { CreateGameArgs, CreateTeamArgs, GetGameArgs } from "../args/GameArgs"
-import { GameTab } from "../utils/types"
-
+import { GameTab, SportType } from "../utils/types"
+import { AppDataSource } from '../utils/db'
+import moment from "moment-timezone"
 @ObjectType()
 class GameResponse {
   @Field()
@@ -36,10 +38,10 @@ export class GameResolver {
       where: { id },
       relations: {
         teams: {
-          account: true,
+          //account: true,
           athletes: {
             athlete: { team: true, stats: true },
-            asset: { collection: true },
+            //asset: { collection: true },
           },
         },
       },
@@ -105,6 +107,19 @@ export class GameResolver {
     return { data, count }
   }
 
+  @Query(() => [LeaderboardResult])
+  async getLeaderboard(
+    @Arg("gameId") gameId: number,
+    @Arg("sport") sport: SportType,
+  ): Promise<LeaderboardResult[]> {
+    
+
+    const returnTeam = await AppDataSource.getRepository(Game).createQueryBuilder("g").groupBy("gt.id").orderBy("total", "DESC").select(['SUM(as.fantasyScore) as total', "gt.name as team_name", "gt.id as game_team_id", "gt.wallet_address as wallet_address"]).innerJoin("g.teams", "gt").innerJoin("gt.athletes", "gta").innerJoin("gta.athlete", "a").innerJoin("a.stats", "as")
+                        .where("g.gameId = :gameId", { gameId: gameId}).andWhere("as.gameDate >= g.startTime").andWhere("as.gameDate <= g.endTime").andWhere("g.sport = :sport", {sport: sport}).andWhere("as.played = 1").getRawMany()
+    return returnTeam
+
+  }
+
   @Authorized("ADMIN")
   @Mutation(() => Game)
   async createGame(
@@ -124,8 +139,8 @@ export class GameResolver {
       where: { id: game.id },
       relations: {
         teams: {
-          athletes: { asset: true, athlete: { team: true, stats: true } },
-          account: true,
+          athletes: { athlete: { team: true, stats: true } },
+          //account: true,
         },
       },
     })
@@ -184,7 +199,7 @@ export class GameResolver {
       let gameTeam = await GameTeam.create({
         name,
         game,
-        account,
+        //account,
       }).save()
 
       for (let athlete of athletes) {
@@ -212,7 +227,7 @@ export class GameResolver {
 
         await GameTeamAthlete.create({
           gameTeam,
-          asset,
+          //asset,
           athlete: curAthlete,
         }).save()
       }
@@ -221,10 +236,10 @@ export class GameResolver {
         where: { id: gameTeam.id },
         relations: {
           game: true,
-          account: true,
+          //account: true,
           athletes: {
             athlete: { team: true, stats: true },
-            asset: { collection: true },
+            //asset: { collection: true },
           },
         },
       })
