@@ -76,232 +76,6 @@ import e from 'express';
 export class TasksService {
   private readonly logger = new Logger(TasksService.name);
 
-  async testAnimation() {
-    const athlete = await Athlete.findOneOrFail({
-      where: { id: 1 },
-      relations: { team: true },
-    });
-    const baseImage = ATHLETE_MLB_BASE_IMG;
-    var options = { compact: true, ignoreComment: true, spaces: 4 };
-    var result: any = convert.xml2js(baseImage, options);
-    console.log(result['svg']['g']['4']['g'][3]['text'][0]['tspan']['_cdata']); // First name
-    console.log(
-      result['svg']['g']['4']['g'][3]['g']['text'][0]['tspan']['_cdata']
-    ); // First name
-
-    console.log(result['svg']['g'][4]['g'][3]['text'][1]['tspan']['_cdata']); // Last name
-    console.log(
-      result['svg']['g'][4]['g'][3]['g']['text'][1]['tspan']['_cdata']
-    ); // Last name
-
-    console.log(
-      result['svg']['g'][1]['g'][2]['g']['path']['_attributes']['fill']
-    ); // Primary color
-    console.log(
-      result['svg']['g'][1]['g'][0]['g']['path']['_attributes']['fill']
-    ); // Secondary color
-
-    console.log(result['svg']['g'][4]['g'][2]['g']['text']['tspan']['_cdata']); // Jersey
-    console.log(
-      result['svg']['g'][4]['g'][0]['g']['g']['text']['tspan']['_cdata']
-    ); // Position
-
-    result['svg']['g']['4']['g'][3]['text'][0]['tspan']['_cdata'] =
-      athlete.firstName;
-    result['svg']['g']['4']['g'][3]['g']['text'][0]['tspan']['_cdata'] =
-      athlete.firstName;
-    result['svg']['g'][4]['g'][3]['text'][1]['tspan']['_cdata'] =
-      athlete.lastName;
-    result['svg']['g'][4]['g'][3]['g']['text'][1]['tspan']['_cdata'] =
-      athlete.lastName;
-    result['svg']['g'][1]['g'][2]['g']['path']['_attributes']['fill'] =
-      athlete.team.primaryColor;
-    result['svg']['g'][1]['g'][0]['g']['path']['_attributes']['fill'] =
-      athlete.team.secondaryColor;
-    result['svg']['g'][4]['g'][2]['g']['text']['tspan']['_cdata'] =
-      athlete.jersey ? athlete.jersey.toString() : '00';
-    result['svg']['g'][4]['g'][0]['g']['g']['text']['tspan']['_cdata'] =
-      athlete.position;
-
-    const animation = convert.js2xml(result, options);
-    result = animation.replace('</svg>', ATHLETE_MLB_BASE_ANIMATION);
-    // fs.writeFileSync("./testAthleteAnimation.svg", result)
-  }
-
-  // @Timeout(1)
-  async syncMlbData() {
-    const teamsCount = await Team.count({
-      where: { sport: SportType.MLB },
-    });
-
-    if (teamsCount === 0) {
-      const { data, status } = await axios.get(
-        `${process.env.SPORTS_DATA_URL}mlb/scores/json/teams?key=${process.env.SPORTS_DATA_MLB_KEY}`
-      );
-
-      if (status === 200) {
-        for (let team of data) {
-          try {
-            await Team.create({
-              apiId: team['GlobalTeamID'],
-              name: team['Name'],
-              key: team['Key'],
-              location: team['City'],
-              sport: SportType.MLB,
-              primaryColor: `#${team['PrimaryColor']}`,
-              secondaryColor: `#${team['SecondaryColor']}`,
-            }).save();
-          } catch (e) {
-            this.logger.error(e);
-          }
-        }
-      } else {
-        this.logger.error('MLB Teams Data: SPORTS DATA ERROR');
-      }
-    }
-
-    this.logger.debug(
-      `MLB Teams Data: ${teamsCount ? 'DID NOT SYNC' : 'SYNCED SUCCESSFULLY'}`
-    );
-
-    const athletesCount = await Athlete.count({
-      where: { team: { sport: SportType.MLB } },
-    });
-
-    if (athletesCount === 0) {
-      const { data, status } = await axios.get(
-        `${process.env.SPORTS_DATA_URL}mlb/scores/json/Players?key=${process.env.SPORTS_DATA_MLB_KEY}`
-      );
-
-      if (status === 200) {
-        for (let athlete of data) {
-          try {
-            const team = await Team.findOneOrFail({
-              where: { apiId: athlete['GlobalTeamID'] },
-            });
-
-            var options = { compact: true, ignoreComment: true, spaces: 4 };
-            var result: any = convert.xml2js(ATHLETE_MLB_IMG, options);
-
-            result.svg.path[10]['_attributes']['fill'] = team.primaryColor;
-            result.svg.path[9]['_attributes']['fill'] = team.secondaryColor;
-            result.svg.g[0].text[0]['_text'] =
-              athlete['FirstName'].toUpperCase();
-            result.svg.g[0].text[1]['_text'] =
-              athlete['LastName'].toUpperCase();
-            result.svg.g[0].text[2]['_text'] =
-              athlete['Position'].toUpperCase();
-            result.svg.text['_text'] = athlete['Jersey']
-              ? athlete['Jersey']
-              : '00';
-
-            result = convert.js2xml(result, options);
-            var buffer = Buffer.from(result, 'utf8');
-            const s3 = new S3({
-              accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-              secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-            });
-            const filename = `${athlete['PlayerID']}.svg`;
-            const s3_location = 'media/athlete/mlb/';
-            const fileContent = buffer;
-            const params: any = {
-              Bucket: process.env.AWS_BUCKET_NAME,
-              Key: `${s3_location}${filename}`,
-              Body: fileContent,
-              ContentType: 'image/svg+xml',
-              CacheControl: 'no-cache',
-            };
-
-            s3.upload(params, async (err: any, data: any) => {
-              if (err) {
-                this.logger.error(err);
-              } else {
-                const nftImage = data['Location'];
-
-                const baseImage = ATHLETE_MLB_BASE_IMG;
-                var options = { compact: true, ignoreComment: true, spaces: 4 };
-                var result: any = convert.xml2js(baseImage, options);
-
-                result['svg']['g']['4']['g'][3]['text'][0]['tspan']['_cdata'] =
-                  athlete['FirstName'].toUpperCase();
-                result['svg']['g']['4']['g'][3]['g']['text'][0]['tspan'][
-                  '_cdata'
-                ] = athlete['FirstName'].toUpperCase();
-                result['svg']['g'][4]['g'][3]['text'][1]['tspan']['_cdata'] =
-                  athlete['LastName'].toUpperCase();
-                result['svg']['g'][4]['g'][3]['g']['text'][1]['tspan'][
-                  '_cdata'
-                ] = athlete['LastName'].toUpperCase();
-                result['svg']['g'][1]['g'][2]['g']['path']['_attributes'][
-                  'fill'
-                ] = team.primaryColor;
-                result['svg']['g'][1]['g'][0]['g']['path']['_attributes'][
-                  'fill'
-                ] = team.secondaryColor;
-                result['svg']['g'][4]['g'][2]['g']['text']['tspan']['_cdata'] =
-                  athlete['Jersey'] ? athlete['Jersey'].toString() : '00';
-                result['svg']['g'][4]['g'][0]['g']['g']['text']['tspan'][
-                  '_cdata'
-                ] = athlete['Position'].toUpperCase();
-
-                const animation = convert.js2xml(result, options);
-                result = animation.replace(
-                  '</svg>',
-                  ATHLETE_MLB_BASE_ANIMATION
-                );
-                var buffer = Buffer.from(result, 'utf8');
-                const s3 = new S3({
-                  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-                  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-                });
-                const filename = `${athlete['PlayerID']}.svg`;
-                const s3_location = 'media/athlete_animations/mlb/';
-                const fileContent = buffer;
-                const params: any = {
-                  Bucket: process.env.AWS_BUCKET_NAME,
-                  Key: `${s3_location}${filename}`,
-                  Body: fileContent,
-                  ContentType: 'image/svg+xml',
-                  CacheControl: 'no-cache',
-                };
-
-                s3.upload(params, async (err: any, data: any) => {
-                  if (err) {
-                    this.logger.error(err);
-                  } else {
-                    await Athlete.create({
-                      apiId: athlete['PlayerID'],
-                      firstName: athlete['FirstName'],
-                      lastName: athlete['LastName'],
-                      position: athlete['Position'],
-                      salary: athlete['Salary'],
-                      jersey: athlete['Jersey'],
-                      team,
-                      isActive: athlete['Status'] === 'Active',
-                      isInjured: athlete['InjuryStatus'],
-                      nftImage,
-                      nftAnimation: data['Location'],
-                    }).save();
-                  }
-                });
-              }
-            });
-          } catch (e) {
-            this.logger.error(e);
-          }
-        }
-      } else {
-        this.logger.error('MLB Athletes Data: SPORTS DATA ERROR');
-      }
-    }
-
-    this.logger.debug(
-      `MLB Athletes Data: ${
-        athletesCount ? 'DID NOT SYNC' : 'SYNCED SUCCESSFULLY'
-      }`
-    );
-  }
-
   //@Timeout(1)
   async syncMlbData2() {
     const teamCount = await Team.count({
@@ -434,208 +208,6 @@ export class TasksService {
     }
     this.logger.debug(
       `MLB Athlete: ${athleteCount ? 'ALREADY EXISTS' : 'SYNCED'}`
-    );
-  }
-  //@Timeout(1)
-  async syncNflData() {
-    const teamsCount = await Team.count({
-      where: { sport: SportType.NFL },
-    });
-
-    if (teamsCount === 0) {
-      const { data, status } = await axios.get(
-        `${process.env.SPORTS_DATA_URL}nfl/scores/json/Teams?key=${process.env.SPORTS_DATA_NFL_KEY}`
-      );
-
-      if (status === 200) {
-        for (let team of data) {
-          try {
-            await Team.create({
-              apiId: team['GlobalTeamID'],
-              name: team['Name'],
-              key: team['Key'],
-              location: team['City'],
-              sport: SportType.NFL,
-              primaryColor: `#${team['PrimaryColor']}`,
-              secondaryColor: `#${team['SecondaryColor']}`,
-            }).save();
-          } catch (e) {
-            this.logger.error(e);
-          }
-        }
-      } else {
-        this.logger.error('NFL Teams Data: SPORTS DATA ERROR');
-      }
-    }
-
-    this.logger.debug(
-      `NFL Teams Data: ${teamsCount ? 'DID NOT SYNC' : 'SYNCED SUCCESSFULLY'}`
-    );
-
-    const athletesCount = await Athlete.count({
-      where: { team: { sport: SportType.NFL } },
-    });
-
-    if (athletesCount === 0) {
-      const { data, status } = await axios.get(
-        `${process.env.SPORTS_DATA_URL}nfl/scores/json/Players?key=${process.env.SPORTS_DATA_NFL_KEY}`
-      );
-
-      if (status === 200) {
-        for (let athlete of data) {
-          try {
-            const team = await Team.findOne({
-              where: { apiId: athlete['GlobalTeamID'] },
-            });
-
-            if (team) {
-              var svgTemplate = fs.readFileSync(
-                `./src/utils/nfl-svg-teams-templates/${team.key}.svg`,
-                'utf-8'
-              );
-              var options = { compact: true, ignoreComment: true, spaces: 4 };
-              var result: any = convert.xml2js(svgTemplate, options);
-
-              try {
-                result.svg.g[5].text[2]['_text'] =
-                  athlete['FirstName'].toUpperCase();
-                result.svg.g[5].text[3]['_text'] =
-                  athlete['LastName'].toUpperCase();
-                result.svg.g[5].text[1]['_text'] =
-                  athlete['Position'].toUpperCase();
-                result.svg.g[5].text[0]['_text'] = '';
-              } catch (e) {
-                console.log(
-                  `FAILED AT ATHLETE ID: ${athlete['PlayerID']} and TEAM KEY: ${team.key}`
-                );
-              }
-
-              result = convert.js2xml(result, options);
-              // fs.writeFileSync(
-              //   `./nfl-images/${athlete["PlayerID"]}-${athlete["FirstName"].toLowerCase()}-${athlete[
-              //     "LastName"
-              //   ].toLowerCase()}.svg`,
-              //   result
-              // )
-              var buffer = Buffer.from(result, 'utf8');
-              const s3 = new S3({
-                accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-                secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-              });
-              const filename = `${athlete['PlayerID']}-${athlete[
-                'FirstName'
-              ].toLowerCase()}-${athlete['LastName'].toLowerCase()}.svg`;
-              const s3_location = 'media/athlete/nfl/images/';
-              const fileContent = buffer;
-              const params: any = {
-                Bucket: process.env.AWS_BUCKET_NAME,
-                Key: `${s3_location}${filename}`,
-                Body: fileContent,
-                ContentType: 'image/svg+xml',
-                CacheControl: 'no-cache',
-              };
-
-              s3.upload(params, async (err: any, data: any) => {
-                if (err) {
-                  this.logger.error(err);
-                } else {
-                  const nftImage = data['Location'];
-
-                  var svgAnimationTemplate = fs.readFileSync(
-                    `./src/utils/nfl-svg-teams-animation-templates/${team.key}.svg`,
-                    'utf-8'
-                  );
-                  var options = {
-                    compact: true,
-                    ignoreComment: true,
-                    spaces: 4,
-                  };
-                  var result: any = convert.xml2js(
-                    svgAnimationTemplate,
-                    options
-                  );
-
-                  try {
-                    result.svg.g[5].text[0].tspan['_cdata'] = '';
-                    result.svg.g[5].text[1].tspan['_cdata'] = '';
-                    result.svg.g[5].text[2].tspan['_cdata'] =
-                      athlete['FirstName'].toUpperCase();
-                    result.svg.g[5].text[3].tspan['_cdata'] =
-                      athlete['FirstName'].toUpperCase();
-                    result.svg.g[5].text[4].tspan['_cdata'] =
-                      athlete['LastName'].toUpperCase();
-                    result.svg.g[5].text[5].tspan['_cdata'] =
-                      athlete['LastName'].toUpperCase();
-                    result.svg.g[5].g[0].text[0].tspan['_cdata'] =
-                      athlete['Position'].toUpperCase();
-                    result.svg.g[5].g[0].text[1].tspan['_cdata'] =
-                      athlete['Position'].toUpperCase();
-                    result = convert.js2xml(result, options);
-                  } catch (e) {
-                    console.log(
-                      `FAILED AT ATHLETE ID: ${athlete['PlayerID']} and TEAM KEY: ${team.key}`
-                    );
-                    console.log(e);
-                  }
-
-                  // fs.writeFileSync(
-                  //   `./nfl-animations/${athlete["PlayerID"]}-${athlete["FirstName"].toLowerCase()}-${athlete[
-                  //     "LastName"
-                  //   ].toLowerCase()}.svg`,
-                  //   result
-                  // )
-                  var buffer = Buffer.from(result, 'utf8');
-                  const s3 = new S3({
-                    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-                    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-                  });
-                  const filename = `${athlete['PlayerID']}-${athlete[
-                    'FirstName'
-                  ].toLowerCase()}-${athlete['LastName'].toLowerCase()}.svg`;
-                  const s3_location = 'media/athlete/nfl/animations/';
-                  const fileContent = buffer;
-                  const params: any = {
-                    Bucket: process.env.AWS_BUCKET_NAME,
-                    Key: `${s3_location}${filename}`,
-                    Body: fileContent,
-                    ContentType: 'image/svg+xml',
-                    CacheControl: 'no-cache',
-                  };
-
-                  s3.upload(params, async (err: any, data: any) => {
-                    if (err) {
-                      this.logger.error(err);
-                    } else {
-                      await Athlete.create({
-                        apiId: athlete['PlayerID'],
-                        firstName: athlete['FirstName'],
-                        lastName: athlete['LastName'],
-                        position: athlete['Position'],
-                        jersey: athlete['Number'],
-                        team,
-                        isActive: athlete['Status'] === 'Active',
-                        isInjured: athlete['InjuryStatus'],
-                        nftImage,
-                        nftAnimation: data['Location'],
-                      }).save();
-                    }
-                  });
-                }
-              });
-            }
-          } catch (e) {
-            this.logger.error(e);
-          }
-        }
-      } else {
-        this.logger.error('NFL Athletes Data: SPORTS DATA ERROR');
-      }
-    }
-
-    this.logger.debug(
-      `NFL Athletes Data: ${
-        athletesCount ? 'DID NOT SYNC' : 'SYNCED SUCCESSFULLY'
-      }`
     );
   }
 
@@ -937,156 +509,6 @@ export class TasksService {
       });
     }
     this.logger.debug('Generate Athlete NFL ASSETS: Finished');
-    this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`);
-  }
-
-  async generateOldAthleteNflAssetsOld() {
-    this.logger.debug('Generate Athlete NFL Assets: STARTED');
-
-    const athletes = await Athlete.find({
-      where: { team: { sport: SportType.NFL } },
-      relations: {
-        team: true,
-      },
-    });
-
-    for (let athlete of athletes) {
-      var svgTemplate = fs.readFileSync(
-        `./src/utils/nfl-svg-teams-templates/${athlete.team.key}.svg`,
-        'utf-8'
-      );
-      var options = { compact: true, ignoreComment: true, spaces: 4 };
-      var result: any = convert.xml2js(svgTemplate, options);
-
-      try {
-        if (athlete.firstName.length > 11) {
-          result.svg.g[5].text[2]['_attributes']['style'] =
-            'font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700';
-        }
-        if (athlete.lastName.length > 11) {
-          result.svg.g[5].text[3]['_attributes']['style'] =
-            'font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700';
-        }
-
-        result.svg.g[5].text[2]['_text'] = athlete.firstName.toUpperCase();
-        result.svg.g[5].text[3]['_text'] = athlete.lastName.toUpperCase();
-        result.svg.g[5].text[1]['_text'] = athlete.position.toUpperCase();
-        result.svg.g[5].text[0]['_text'] = '';
-      } catch (e) {
-        console.log(
-          `FAILED AT ATHLETE ID: ${athlete.apiId} and TEAM KEY: ${athlete.team.key}`
-        );
-      }
-
-      result = convert.js2xml(result, options);
-      // fs.writeFileSync(
-      //   `./nfl-images/${athlete["PlayerID"]}-${athlete["FirstName"].toLowerCase()}-${athlete[
-      //     "LastName"
-      //   ].toLowerCase()}.svg`,
-      //   result
-      // )
-
-      var buffer = Buffer.from(result, 'utf8');
-      const s3 = new S3({
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-      });
-      const filename = `${
-        athlete.apiId
-      }-${athlete.firstName.toLowerCase()}-${athlete.lastName.toLowerCase()}.svg`;
-      const s3_location = 'media/athlete/nfl/images/';
-      const fileContent = buffer;
-      const params: any = {
-        Bucket: process.env.AWS_BUCKET_NAME,
-        Key: `${s3_location}${filename}`,
-        Body: fileContent,
-        ContentType: 'image/svg+xml',
-        CacheControl: 'no-cache',
-      };
-
-      s3.upload(params, async (err: any, data: any) => {
-        if (err) {
-          this.logger.error(err);
-        } else {
-          const nftImage = data['Location'];
-          athlete.nftImage = nftImage;
-
-          var svgAnimationTemplate = fs.readFileSync(
-            `./src/utils/nfl-svg-teams-animation-templates/${athlete.team.key}.svg`,
-            'utf-8'
-          );
-          var options = { compact: true, ignoreComment: true, spaces: 4 };
-          var result: any = convert.xml2js(svgAnimationTemplate, options);
-
-          try {
-            if (athlete.firstName.length > 11) {
-              result.svg.g[5].text[2].tspan['_attributes']['font-size'] = '50';
-              result.svg.g[5].text[3].tspan['_attributes']['font-size'] = '50';
-            }
-            if (athlete.lastName.length > 11) {
-              result.svg.g[5].text[4].tspan['_attributes']['font-size'] = '50';
-              result.svg.g[5].text[5].tspan['_attributes']['font-size'] = '50';
-            }
-
-            result.svg.g[5].text[0].tspan['_cdata'] = '';
-            result.svg.g[5].text[1].tspan['_cdata'] = '';
-            result.svg.g[5].text[2].tspan['_cdata'] =
-              athlete.firstName.toUpperCase();
-            result.svg.g[5].text[3].tspan['_cdata'] =
-              athlete.firstName.toUpperCase();
-            result.svg.g[5].text[4].tspan['_cdata'] =
-              athlete.lastName.toUpperCase();
-            result.svg.g[5].text[5].tspan['_cdata'] =
-              athlete.lastName.toUpperCase();
-            result.svg.g[5].g[0].text[0].tspan['_cdata'] =
-              athlete.position.toUpperCase();
-            result.svg.g[5].g[0].text[1].tspan['_cdata'] =
-              athlete.position.toUpperCase();
-            result = convert.js2xml(result, options);
-          } catch (e) {
-            console.log(
-              `FAILED AT ATHLETE ID: ${athlete.apiId} and TEAM KEY: ${athlete.team.key}`
-            );
-            console.log(e);
-          }
-
-          // fs.writeFileSync(
-          //   `./nfl-animations/${athlete["PlayerID"]}-${athlete["FirstName"].toLowerCase()}-${athlete[
-          //     "LastName"
-          //   ].toLowerCase()}.svg`,
-          //   result
-          // )
-          var buffer = Buffer.from(result, 'utf8');
-          const s3 = new S3({
-            accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-            secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-          });
-          const filename = `${
-            athlete.apiId
-          }-${athlete.firstName.toLowerCase()}-${athlete.lastName.toLowerCase()}.svg`;
-          const s3_location = 'media/athlete/nfl/animations/';
-          const fileContent = buffer;
-          const params: any = {
-            Bucket: process.env.AWS_BUCKET_NAME,
-            Key: `${s3_location}${filename}`,
-            Body: fileContent,
-            ContentType: 'image/svg+xml',
-            CacheControl: 'no-cache',
-          };
-
-          s3.upload(params, async (err: any, data: any) => {
-            if (err) {
-              this.logger.error(err);
-            } else {
-              athlete.nftAnimation = data['Location'];
-              await Athlete.save(athlete);
-            }
-          });
-        }
-      });
-    }
-
-    this.logger.debug('Generate Athlete NFL Assets: FINISHED');
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`);
   }
 
@@ -2671,7 +2093,7 @@ export class TasksService {
   }
 
   // @Timeout(1)
-  //@Interval(900000) // Runs every 15 mins
+  @Interval(900000) // Runs every 15 mins
   async updateNflAthleteStatsPerSeason() {
     this.logger.debug('Update NFL Athlete Stats: STARTED');
 
@@ -2785,7 +2207,7 @@ export class TasksService {
     }
   }
 
-  //@Interval(300000) // Runs every 5 mins
+  @Interval(300000) // Runs every 5 mins
   async updateNflAthleteStatsPerWeek() {
     this.logger.debug('Update NFL Athlete Stats Per Week: STARTED');
 
@@ -2823,6 +2245,13 @@ export class TasksService {
               },
             });
 
+            const apiDate = moment.tz(
+              athleteStat['GameDate'],
+              'America/New_York'
+            );
+
+            const utcDate = apiDate.utc().format();
+
             if (curStat) {
               // Update stats here
               curStat.fantasyScore = athleteStat['FantasyPointsDraftKings'];
@@ -2838,6 +2267,10 @@ export class TasksService {
               curStat.targets = athleteStat['ReceivingTargets'];
               curStat.receptions = athleteStat['Receptions'];
               curStat.played = athleteStat['Played'];
+              curStat.gameDate =
+                athleteStat['GameDate'] !== null
+                  ? new Date(utcDate)
+                  : athleteStat['GameDate'];
               updateStats.push(curStat);
             } else {
               const curAthlete = await Athlete.findOne({
@@ -2855,7 +2288,10 @@ export class TasksService {
                     season: season,
                     week: week,
                     opponent: opponent,
-                    gameDate: new Date(athleteStat['GameDate']),
+                    gameDate:
+                      athleteStat['GameDate'] !== null
+                        ? new Date(utcDate)
+                        : athleteStat['GameDate'],
                     type: AthleteStatType.WEEKLY,
                     played: athleteStat['Played'],
                     position: athleteStat['Position'],
@@ -3995,7 +3431,8 @@ export class TasksService {
     }
   }
 
-  //////@Interval(259200000) //Runs every 3 days
+  @Timeout(1)
+  /////@Interval(259200000) //Runs every 3 days
   async updateNflTimeframe() {
     this.logger.debug('Update NFL Timeframe: STARTED');
 
@@ -4019,14 +3456,26 @@ export class TasksService {
           },
         });
 
+        const startApiDate = moment
+          .tz(timeframe['StartDate'], 'America/New_York')
+          .utc()
+          .format();
+        const endApiDate = moment
+          .tz(timeframe['EndDate'], 'America/New_York')
+          .utc()
+          .format();
         if (currTimeframe) {
           currTimeframe.apiName = timeframe['Name'];
           currTimeframe.season = timeframe['Season'];
           currTimeframe.seasonType = timeframe['SeasonType'];
           currTimeframe.apiWeek = timeframe['ApiWeek'];
           currTimeframe.apiSeason = timeframe['ApiSeason'];
-          currTimeframe.startDate = timeframe['StartDate'];
-          currTimeframe.endDate = timeframe['EndDate'];
+          currTimeframe.startDate =
+            timeframe['StartDate'] !== null
+              ? startApiDate
+              : timeframe['StartDate'];
+          currTimeframe.endDate =
+            timeframe['EndDate'] !== null ? endApiDate : timeframe['EndDate'];
           updateTimeframe.push(currTimeframe);
         } else {
           newTimeframe.push(
@@ -4037,8 +3486,14 @@ export class TasksService {
               apiWeek: timeframe['ApiWeek'],
               apiSeason: timeframe['ApiSeason'],
               sport: SportType.NFL,
-              startDate: timeframe['StartDate'],
-              endDate: timeframe['EndDate'],
+              startDate:
+                timeframe['StartDate'] !== null
+                  ? startApiDate
+                  : timeframe['StartDate'],
+              endDate:
+                timeframe['EndDate'] !== null
+                  ? endApiDate
+                  : timeframe['EndDate'],
             })
           );
         }
@@ -4051,6 +3506,8 @@ export class TasksService {
       this.logger.error('Update NFL Timeframe: SPORTS DATA ERROR');
     }
   }
+
+  async updateNflCurrentSeason() {}
 
   //@Timeout(1)
   ////@Interval(3600000) //Runs every 1 hour
@@ -4438,82 +3895,6 @@ export class TasksService {
       this.logger.error('CRICKET AUTHENTICATION FAIL !!!');
     }
   }
-
-  // @Timeout(1)
-  // async getCricketDataFromJson(){
-
-  //   this.logger.debug("START CRICKET DATA SYNC")
-  //   const data = cricketTournamentJson.data
-  //   const tourneyCount = await CricketTournament.count({
-  //     where: { key: data.tournament.key}
-  //   })
-  //   if (tourneyCount === 0){
-  //     try{
-  //       await CricketTournament.create({
-  //         key: data.tournament.key,
-  //         name: data.tournament.name,
-  //         start_date: moment.unix(data.tournament.start_date),
-  //         sport: SportType.CRICKET,
-  //       }).save()
-  //     } catch(e){
-  //       this.logger.error(e)
-  //     }
-  //   }
-  //   this.logger.debug(`CRICKET TOURNAMENT ${tourneyCount ? 'DID NOT SYNC' : 'SYNCED SUCCESSFULLY'} `)
-
-  //   const teamCount = await CricketTeam.count({
-  //     where: {tournament: {key: data.tournament.key}}
-  //   })
-
-  //   if(teamCount === 0){
-  //     const tourney = await CricketTournament.findOneOrFail({
-  //       where: {key: data.tournament.key}
-  //     })
-
-  //     for (let [key, value] of Object.entries(data.teams)){
-  //       try{
-  //         await CricketTeam.create({
-  //           key: value.key,
-  //           name: value.name,
-  //           tournament: tourney,
-  //           sport: SportType.CRICKET,
-  //         }).save()
-  //       } catch(err){
-  //         this.logger.error(err)
-  //       }
-  //     }
-  //   }
-  //   this.logger.debug(`Cricket Teams: ${teamCount ? "ALREADY EXISTS" : "SYNCED"}`)
-
-  //   const athleteList = cricketAthletesJson
-  //   const athleteCount = await CricketAthlete.count({
-  //     where: {cricketTeam: {sport: SportType.CRICKET}}
-  //   })
-
-  //   if(athleteCount === 0){
-  //     for (let [key, value] of Object.entries(athleteList)){
-  //       const team = await CricketTeam.findOneOrFail({
-  //         where: {key: value.data.team.key}
-  //       })
-  //       for(let [key, player] of Object.entries(value.data.tournament_team.players)){
-  //         try{
-  //           await CricketAthlete.create({
-  //             playerKey: player.key,
-  //             name: player.name,
-  //             jerseyName: player.jersey_name,
-  //             gender: player.gender,
-  //             nationality: player.nationality.name,
-  //             seasonalRole: player.seasonal_role,
-  //             cricketTeam: team,
-  //           }).save()
-  //         } catch(err){
-  //           this.logger.error(err)
-  //         }
-  //       }
-  //     }
-  //   }
-  //   this.logger.debug(`Cricket Athletes: ${athleteCount ? "ALREADY EXISTS" : 'SYNCED'}`)
-  // }
 
   //@Interval(3600000)
   async updateCricketMatches() {
