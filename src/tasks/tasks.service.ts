@@ -211,7 +211,7 @@ export class TasksService {
     );
   }
 
-  @Timeout(1)
+  //@Timeout(1)
   async syncNflData2() {
     this.logger.debug('SYNC NFL START');
     const teamsCount = await Team.count({
