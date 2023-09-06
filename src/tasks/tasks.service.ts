@@ -3431,7 +3431,7 @@ export class TasksService {
     }
   }
 
-  @Timeout(1)
+  //@Timeout(1)
   /////@Interval(259200000) //Runs every 3 days
   async updateNflTimeframe() {
     this.logger.debug('Update NFL Timeframe: STARTED');
@@ -3690,6 +3690,87 @@ export class TasksService {
     }
   }
 
+  @Timeout(1)
+  async updateNflSchedules() {
+    this.logger.debug('UPDATE NFL Schedules: STARTED');
+
+    const currSeason = await axios.get(
+      `${process.env.SPORTS_DATA_URL}nfl/scores/json/CurrentSeason?key=${process.env.SPORTS_DATA_NFL_KEY}`
+    );
+
+    if (currSeason.status === 200) {
+      const { data, status } = await axios.get(
+        `${process.env.SPORTS_DATA_URL}nfl/scores/json/Schedules/${currSeason.data}?key=${process.env.SPORTS_DATA_NFL_KEY}`
+      );
+      if (status === 200) {
+        const newSchedule: Schedule[] = [];
+        const updateSchedule: Schedule[] = [];
+
+        for (let schedule of data) {
+          const gameId: number = schedule['GlobalGameID'];
+
+          const currSchedule = await Schedule.findOne({
+            where: { gameId: gameId, sport: SportType.NFL },
+          });
+
+          const timeFromAPI = moment.tz(
+            schedule['DateTime'],
+            'America/New_York'
+          );
+          const utcDate = timeFromAPI.utc().format();
+
+          if (currSchedule) {
+            currSchedule.season = schedule['Season'];
+            currSchedule.seasonType = schedule['SeasonType'];
+            currSchedule.status = schedule['Status'];
+            currSchedule.awayTeam = schedule['AwayTeam'];
+            currSchedule.homeTeam = schedule['HomeTeam'];
+            currSchedule.isClosed =
+              schedule['IsClosed'] !== null ? schedule['IsClosed'] : false;
+            currSchedule.dateTime =
+              schedule['DateTime'] !== null
+                ? new Date(utcDate)
+                : schedule['DateTime'];
+            currSchedule.dateTimeUTC =
+              schedule['DateTime'] !== null
+                ? new Date(utcDate)
+                : schedule['DateTime'];
+            updateSchedule.push(currSchedule);
+          } else {
+            newSchedule.push(
+              Schedule.create({
+                gameId: schedule['GlobalGameID'],
+                season: schedule['Season'],
+                seasonType: schedule['SeasonType'],
+                status: schedule['Status'],
+                awayTeam: schedule['AwayTeam'],
+                homeTeam: schedule['HomeTeam'],
+                isClosed:
+                  schedule['IsClosed'] !== null ? schedule['IsClosed'] : false,
+                dateTime:
+                  schedule['DateTime'] !== null
+                    ? new Date(utcDate)
+                    : schedule['DateTime'],
+                dateTimeUTC:
+                  schedule['DateTime'] !== null
+                    ? new Date(utcDate)
+                    : schedule['DateTime'],
+                sport: SportType.NFL,
+              })
+            );
+          }
+        }
+        await Schedule.save([...newSchedule, ...updateSchedule], { chunk: 20 });
+        this.logger.debug('Update NFL Schedules: FINISHED');
+      } else {
+        this.logger.debug('Update NFL Schedules: SPORTS DATA ERROR');
+      }
+    } else {
+      this.logger.debug(
+        'Update NFL Schedules: Could not get current season from sportsdata'
+      );
+    }
+  }
   @Interval(4200000) // runs every 1 hour 20 minutes
   async updateMlbSchedules() {
     this.logger.debug('UPDATE MLB Schedules: STARTED');
