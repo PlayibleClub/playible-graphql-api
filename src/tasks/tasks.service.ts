@@ -3690,7 +3690,7 @@ export class TasksService {
     }
   }
 
-  @Timeout(1)
+  @Interval(4200000)
   async updateNflSchedules() {
     this.logger.debug('UPDATE NFL Schedules: STARTED');
 
