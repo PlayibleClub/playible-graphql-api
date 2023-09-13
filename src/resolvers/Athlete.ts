@@ -28,7 +28,7 @@ import {
   TEST_ATHLETE_IDS,
 } from "./../utils/athlete-ids";
 import moment from "moment";
-import ethers from "ethers";
+import { ethers } from "ethers";
 import nflOpenPackABI from "./../utils/polygon-contract-abis/nfl_open_pack_abi.json";
 
 @ObjectType()
@@ -357,7 +357,7 @@ export class AthleteResolver {
     return athletes.length;
   }
 
-  @Authorized("ADMIN")
+  //@Authorized("ADMIN")
   @Mutation(() => Number)
   async addStarterAthletesToOpenPackContractPolygon(
     @Arg("sportType") sportType: SportType,
@@ -373,48 +373,59 @@ export class AthleteResolver {
         break;
     }
     const network = "maticmum"; // polygon testnet
-    const provider = new ethers.AlchemyProvider(
-      network,
-      process.env.POLYGON_MUMBAI_API_KEY
-    );
-    const signer = new ethers.Wallet(
-      process.env.METAMASK_PRIVATE_KEY ?? "",
-      provider
-    );
-    const contract = new ethers.Contract(contractAddress, contractABI, signer);
+    try {
+      const provider = new ethers.AlchemyProvider(
+        network,
+        process.env.POLYGON_MUMBAI_API_KEY
+      );
+      const signer = new ethers.Wallet(
+        process.env.METAMASK_PRIVATE_KEY ?? "",
+        provider
+      );
+      const contract = new ethers.Contract(
+        contractAddress,
+        contractABI,
+        signer
+      );
 
-    const athletes = (
-      await Athlete.find({
-        where: { apiId: In(athleteIds) },
-        order: { id: "ASC" },
-        relations: { team: true },
-      })
-    ).map((athlete) => {
-      if (isPromo) {
-        return {
-          athleteId: athlete.id.toString(),
-          soulboundTokenUri: athlete.nftImageLocked,
-          singleUseTokenUri: athlete.nftImagePromo,
-          symbol: athlete.apiId.toString(),
-          name: `${athlete.firstName} ${athlete.lastName}`,
-          team: athlete.team.key,
-          position: athlete.position,
-        };
-      } else {
-        return {
-          athleteId: athlete.id.toString(),
-          token_uri: athlete.tokenURI,
-          symbol: athlete.apiId.toString(),
-          name: `${athlete.firstName} ${athlete.lastName}`,
-          team: athlete.team.key,
-          position: athlete.position,
-        };
-      }
-    });
+      const athletes = (
+        await Athlete.find({
+          where: { apiId: In(athleteIds) },
+          order: { id: "ASC" },
+          relations: { team: true },
+        })
+      ).map((athlete) => {
+        if (isPromo) {
+          return {
+            athleteId: athlete.id.toString(),
+            soulboundTokenUri: athlete.nftImageLocked,
+            singleUseTokenUri: athlete.nftImagePromo,
+            symbol: athlete.apiId.toString(),
+            name: `${athlete.firstName} ${athlete.lastName}`,
+            team: athlete.team.key,
+            position: athlete.position,
+          };
+        } else {
+          return {
+            athleteId: athlete.id.toString(),
+            tokenUri: athlete.tokenURI,
+            symbol: athlete.apiId.toString(),
+            name: `${athlete.firstName} ${athlete.lastName}`,
+            team: athlete.team.key,
+            position: athlete.position,
+          };
+        }
+      });
 
-    await contract.execute_add_athletes(athletes);
-
-    return athletes.length;
+      await contract.executeAddAthletes(athletes, {
+        from: process.env.METAMASK_WALLET_ADDRESS,
+        gasPrice: 100000000000,
+      });
+      return athletes.length;
+    } catch (error) {
+      console.log(error);
+    }
+    return 0;
   }
   @Authorized("ADMIN")
   @Mutation(() => Number)
