@@ -1,4 +1,4 @@
-import { InputType, Field } from "type-graphql"
+import { InputType, Field } from "type-graphql";
 
 export enum SportType {
   MLB = "mlb",
@@ -29,33 +29,48 @@ export enum ResponseStatus {
 }
 
 export type SubmitLineupType = {
-  game_id: number,
-  team_name: string,
-  token_ids: string[],
-  token_promo_ids: string[],
-}
+  game_id: number;
+  team_name: string;
+  token_ids: string[];
+  token_promo_ids: string[];
+};
 
 export type SportMap = {
-  'baseball' : SportType,
-  'basketball': SportType,
-  'nfl': SportType
-}
+  baseball: SportType;
+  basketball: SportType;
+  nfl: SportType;
+};
+
+export type IPFSMetadata = {
+  name: string;
+  description: string;
+  image: string;
+  properties: {
+    athleteId: string;
+    symbol: string;
+    name: string;
+    team: string;
+    position: string;
+  };
+};
 
 export type AddGameType = {
-  game_id: number,
-  game_time_start: number,
-  game_time_end: number,
-  whitelist: string[],
-  positions: [{
-    positions: string[],
-    amount: number,
-  }]
-}
+  game_id: number;
+  game_time_start: number;
+  game_time_end: number;
+  whitelist: string[];
+  positions: [
+    {
+      positions: string[];
+      amount: number;
+    }
+  ];
+};
 
 @InputType()
 export class LimitOffset {
   @Field({ nullable: true })
-  limit?: number
+  limit?: number;
   @Field({ nullable: true })
-  offset?: number
+  offset?: number;
 }
