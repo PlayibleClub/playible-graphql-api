@@ -124,6 +124,43 @@ export class AthleteResolver {
     return athlete;
   }
 
+  @Query(() => Athlete)
+  async getAthleteByApiId(
+    @Arg('id') apiId: number,
+    @Arg('from', { nullable: true }) from?: Date,
+    @Arg('to', { nullable: true }) to?: Date,
+    @Arg('season', { nullable: true }) season?: string
+  ): Promise<Athlete> {
+    const athlete = await Athlete.findOneOrFail({
+      where: { apiId: apiId },
+      relations: {
+        stats: { opponent: true },
+        team: true,
+      },
+    });
+
+    if (season) {
+      athlete.stats = athlete.stats.filter((stat) => stat.season === season);
+    }
+
+    if (from) {
+      //athlete.stats = athlete.stats.filter((stat) => stat.gameDate && stat.gameDate.toISOString() >= from.toISOString())
+      athlete.stats = athlete.stats.filter(
+        (stat) =>
+          stat.gameDate && moment(stat.gameDate).unix() >= moment(from).unix()
+      );
+    }
+
+    if (to) {
+      athlete.stats = athlete.stats.filter(
+        (stat) =>
+          stat.gameDate && moment(stat.gameDate).unix() <= moment(to).unix()
+      );
+    }
+
+    return athlete;
+  }
+
   @Query(() => [Athlete])
   async getAthleteByIds(
     @Arg('ids', () => [Number]) ids: number[]
