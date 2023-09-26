@@ -4369,6 +4369,71 @@ export class TasksService {
     }
   }
 
+  @Timeout(1)
+  async runPolygonMainnetAthleteWebSocketListener() {
+    console.log('Start polygon athlete listen');
+    const network = 'maticmum';
+    const address = process.env.METAMASK_WALLET_ADDRESS ?? 'default';
+    const abi = athleteABI;
+    const provider = new ethers.AlchemyProvider(
+      network,
+      process.env.POLYGON_MUMBAI_API_KEY
+    );
+    const athleteContract = new Contract(
+      process.env.POLYGON_ATHLETE_ADDRESS ?? 'contract',
+      abi,
+      provider
+    );
+
+    athleteContract.on('TokensMinted', (address, tokens, event) => {
+      console.log(`Receiver address: ${address}`);
+      console.log(tokens);
+      console.log(event.log);
+    });
+  }
+  @Timeout(1)
+  async runPolygonMainnetGameWebSocketListener() {
+    console.log('Start polygon listen');
+    const network = 'maticmum';
+    const address = process.env.METAMASK_WALLET_ADDRESS ?? 'default';
+    const abi = gameABI;
+    const provider = new ethers.AlchemyProvider(
+      network,
+      process.env.POLYGON_MUMBAI_API_KEY
+    );
+    const gameContract = new Contract(
+      process.env.POLYGON_GAME_ADDRESS ?? 'contract',
+      abi,
+      provider
+    );
+    gameContract.on('AddGame', (gameId, gameTimeStart, gameTimeEnd, event) => {
+      console.log(`gameId: ${gameId}`);
+      console.log(`game start: ${gameTimeStart}`);
+      console.log(`game end: ${gameTimeEnd}`);
+
+      console.log(event.log);
+    });
+
+    gameContract.on(
+      'SucceedLineupSubmission',
+      (result, gameId, teamName, address, event) => {
+        console.log(`result: ${result}`);
+        console.log(`gameId: ${gameId}`);
+        console.log(`teamName: ${teamName}`);
+        console.log(`address: ${address}`);
+        console.log(event.log);
+      }
+    );
+    // const filter = {
+    //   topics: [
+    //     "0xf67cbd2d2262c1c99a110c17514f7e1c866ec08c3becf5ab2f4986c1ea01a56b",
+    //   ],
+    // };
+    // provider.on(filter, (log, event) => {
+    //   console.log(log);
+    //   console.log(event);
+    // });
+  }
   //@Timeout(1)
   async runNearMainnetBaseballWebSocketListener() {
     function listenToMainnet() {
