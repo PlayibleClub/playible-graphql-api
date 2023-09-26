@@ -87,6 +87,14 @@ export class Athlete extends BaseEntity {
   @Column({ type: "text", nullable: true })
   tokenURI: string;
 
+  @Field(() => String, { nullable: true })
+  @Column({ type: "text", nullable: true })
+  tokenSoulboundURI: string;
+
+  @Field(() => String, { nullable: true })
+  @Column({ type: "text", nullable: true })
+  tokenPromoURI: string;
+
   @Field(() => [GameTeamAthlete])
   @OneToMany(
     () => GameTeamAthlete,
