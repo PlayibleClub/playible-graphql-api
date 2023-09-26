@@ -1,10 +1,10 @@
-import { Injectable, Logger } from "@nestjs/common";
-import { Cron, Interval, Timeout } from "@nestjs/schedule";
-import S3 from "aws-sdk/clients/s3";
-import { Alchemy, Network, AlchemySubscription } from "alchemy-sdk";
-import axios from "axios";
-import fs from "fs";
-import { startStream, types } from "near-lake-framework";
+import { Injectable, Logger } from '@nestjs/common';
+import { Cron, Interval, Timeout } from '@nestjs/schedule';
+import S3 from 'aws-sdk/clients/s3';
+import { Alchemy, Network, AlchemySubscription } from 'alchemy-sdk';
+import axios from 'axios';
+import fs from 'fs';
+import { startStream, types } from 'near-lake-framework';
 import {
   LessThanOrEqual,
   MoreThanOrEqual,
@@ -13,31 +13,31 @@ import {
   In,
   QueryBuilder,
   ArrayContains,
-} from "typeorm";
-import convert from "xml-js";
-import moment from "moment-timezone";
-import WebSocket from "ws";
-import { Contract, ethers } from "ethers";
-import { Athlete } from "../entities/Athlete";
-import { AthleteStat } from "../entities/AthleteStat";
-import { Game } from "../entities/Game";
-import { GameTeam } from "../entities/GameTeam";
-import { GameTeamAthlete } from "../entities/GameTeamAthlete";
-import { Team } from "../entities/Team";
-import { Timeframe } from "../entities/Timeframe";
-import { Schedule } from "../entities/Schedule";
-import { CricketAuth } from "../entities/CricketAuth";
-import { CricketTournament } from "../entities/CricketTournament";
-import { CricketTeam } from "../entities/CricketTeam";
-import { CricketAthlete } from "../entities/CricketAthlete";
-import { CricketAthleteStat } from "../entities/CricketAthleteStat";
-import { CricketMatch } from "../entities/CricketMatch";
-import { getSeasonType } from "../helpers/Timeframe";
+} from 'typeorm';
+import convert from 'xml-js';
+import moment from 'moment-timezone';
+import WebSocket from 'ws';
+import { Contract, ethers } from 'ethers';
+import { Athlete } from '../entities/Athlete';
+import { AthleteStat } from '../entities/AthleteStat';
+import { Game } from '../entities/Game';
+import { GameTeam } from '../entities/GameTeam';
+import { GameTeamAthlete } from '../entities/GameTeamAthlete';
+import { Team } from '../entities/Team';
+import { Timeframe } from '../entities/Timeframe';
+import { Schedule } from '../entities/Schedule';
+import { CricketAuth } from '../entities/CricketAuth';
+import { CricketTournament } from '../entities/CricketTournament';
+import { CricketTeam } from '../entities/CricketTeam';
+import { CricketAthlete } from '../entities/CricketAthlete';
+import { CricketAthleteStat } from '../entities/CricketAthleteStat';
+import { CricketMatch } from '../entities/CricketMatch';
+import { getSeasonType } from '../helpers/Timeframe';
 import {
   ATHLETE_MLB_BASE_ANIMATION,
   ATHLETE_MLB_BASE_IMG,
   ATHLETE_MLB_IMG,
-} from "../utils/svgTemplates";
+} from '../utils/svgTemplates';
 import {
   AthleteStatType,
   SportType,
@@ -45,14 +45,14 @@ import {
   AddGameType,
   ResponseStatus,
   SportMap,
-} from "../utils/types";
+} from '../utils/types';
 import {
   CricketTeamInterface,
   CricketAthleteInterface,
   CricketPointsBreakup,
-} from "../interfaces/Cricket";
-import { NearBlock } from "../entities/NearBlock";
-import { NearResponse } from "../entities/NearResponse";
+} from '../interfaces/Cricket';
+import { NearBlock } from '../entities/NearBlock';
+import { NearResponse } from '../entities/NearResponse';
 import {
   NFL_ATHLETE_IDS,
   NBA_ATHLETE_IDS,
@@ -60,14 +60,14 @@ import {
   MLB_ATHLETE_IDS,
   MLB_ATHLETE_PROMO_IDS,
   IPL2023_ATHLETE_IDS,
-} from "./../utils/athlete-ids";
-import { AppDataSource } from "../utils/db";
-import { ReceiptEnum, ExecutionStatus } from "near-lake-framework/dist/types";
-import { getSportType } from "../helpers/Sport";
-import { computeShoheiOhtaniScores } from "../helpers/Athlete";
-import e from "express";
-import gameABI from "../utils/polygon-contract-abis/game_abi.json";
-import athleteABI from "../utils/polygon-contract-abis/athlete_logic_abi.json";
+} from './../utils/athlete-ids';
+import { AppDataSource } from '../utils/db';
+import { ReceiptEnum, ExecutionStatus } from 'near-lake-framework/dist/types';
+import { getSportType } from '../helpers/Sport';
+import { computeShoheiOhtaniScores } from '../helpers/Athlete';
+import e from 'express';
+import gameABI from '../utils/polygon-contract-abis/game_abi.json';
+import athleteABI from '../utils/polygon-contract-abis/athlete_logic_abi.json';
 @Injectable()
 export class TasksService {
   private readonly logger = new Logger(TasksService.name);
@@ -80,47 +80,47 @@ export class TasksService {
     const baseImage = ATHLETE_MLB_BASE_IMG;
     var options = { compact: true, ignoreComment: true, spaces: 4 };
     var result: any = convert.xml2js(baseImage, options);
-    console.log(result["svg"]["g"]["4"]["g"][3]["text"][0]["tspan"]["_cdata"]); // First name
+    console.log(result['svg']['g']['4']['g'][3]['text'][0]['tspan']['_cdata']); // First name
     console.log(
-      result["svg"]["g"]["4"]["g"][3]["g"]["text"][0]["tspan"]["_cdata"]
+      result['svg']['g']['4']['g'][3]['g']['text'][0]['tspan']['_cdata']
     ); // First name
 
-    console.log(result["svg"]["g"][4]["g"][3]["text"][1]["tspan"]["_cdata"]); // Last name
+    console.log(result['svg']['g'][4]['g'][3]['text'][1]['tspan']['_cdata']); // Last name
     console.log(
-      result["svg"]["g"][4]["g"][3]["g"]["text"][1]["tspan"]["_cdata"]
+      result['svg']['g'][4]['g'][3]['g']['text'][1]['tspan']['_cdata']
     ); // Last name
 
     console.log(
-      result["svg"]["g"][1]["g"][2]["g"]["path"]["_attributes"]["fill"]
+      result['svg']['g'][1]['g'][2]['g']['path']['_attributes']['fill']
     ); // Primary color
     console.log(
-      result["svg"]["g"][1]["g"][0]["g"]["path"]["_attributes"]["fill"]
+      result['svg']['g'][1]['g'][0]['g']['path']['_attributes']['fill']
     ); // Secondary color
 
-    console.log(result["svg"]["g"][4]["g"][2]["g"]["text"]["tspan"]["_cdata"]); // Jersey
+    console.log(result['svg']['g'][4]['g'][2]['g']['text']['tspan']['_cdata']); // Jersey
     console.log(
-      result["svg"]["g"][4]["g"][0]["g"]["g"]["text"]["tspan"]["_cdata"]
+      result['svg']['g'][4]['g'][0]['g']['g']['text']['tspan']['_cdata']
     ); // Position
 
-    result["svg"]["g"]["4"]["g"][3]["text"][0]["tspan"]["_cdata"] =
+    result['svg']['g']['4']['g'][3]['text'][0]['tspan']['_cdata'] =
       athlete.firstName;
-    result["svg"]["g"]["4"]["g"][3]["g"]["text"][0]["tspan"]["_cdata"] =
+    result['svg']['g']['4']['g'][3]['g']['text'][0]['tspan']['_cdata'] =
       athlete.firstName;
-    result["svg"]["g"][4]["g"][3]["text"][1]["tspan"]["_cdata"] =
+    result['svg']['g'][4]['g'][3]['text'][1]['tspan']['_cdata'] =
       athlete.lastName;
-    result["svg"]["g"][4]["g"][3]["g"]["text"][1]["tspan"]["_cdata"] =
+    result['svg']['g'][4]['g'][3]['g']['text'][1]['tspan']['_cdata'] =
       athlete.lastName;
-    result["svg"]["g"][1]["g"][2]["g"]["path"]["_attributes"]["fill"] =
+    result['svg']['g'][1]['g'][2]['g']['path']['_attributes']['fill'] =
       athlete.team.primaryColor;
-    result["svg"]["g"][1]["g"][0]["g"]["path"]["_attributes"]["fill"] =
+    result['svg']['g'][1]['g'][0]['g']['path']['_attributes']['fill'] =
       athlete.team.secondaryColor;
-    result["svg"]["g"][4]["g"][2]["g"]["text"]["tspan"]["_cdata"] =
-      athlete.jersey ? athlete.jersey.toString() : "00";
-    result["svg"]["g"][4]["g"][0]["g"]["g"]["text"]["tspan"]["_cdata"] =
+    result['svg']['g'][4]['g'][2]['g']['text']['tspan']['_cdata'] =
+      athlete.jersey ? athlete.jersey.toString() : '00';
+    result['svg']['g'][4]['g'][0]['g']['g']['text']['tspan']['_cdata'] =
       athlete.position;
 
     const animation = convert.js2xml(result, options);
-    result = animation.replace("</svg>", ATHLETE_MLB_BASE_ANIMATION);
+    result = animation.replace('</svg>', ATHLETE_MLB_BASE_ANIMATION);
     // fs.writeFileSync("./testAthleteAnimation.svg", result)
   }
 
@@ -139,25 +139,25 @@ export class TasksService {
         for (let team of data) {
           try {
             await Team.create({
-              apiId: team["GlobalTeamID"],
-              name: team["Name"],
-              key: team["Key"],
-              location: team["City"],
+              apiId: team['GlobalTeamID'],
+              name: team['Name'],
+              key: team['Key'],
+              location: team['City'],
               sport: SportType.MLB,
-              primaryColor: `#${team["PrimaryColor"]}`,
-              secondaryColor: `#${team["SecondaryColor"]}`,
+              primaryColor: `#${team['PrimaryColor']}`,
+              secondaryColor: `#${team['SecondaryColor']}`,
             }).save();
           } catch (e) {
             this.logger.error(e);
           }
         }
       } else {
-        this.logger.error("MLB Teams Data: SPORTS DATA ERROR");
+        this.logger.error('MLB Teams Data: SPORTS DATA ERROR');
       }
     }
 
     this.logger.debug(
-      `MLB Teams Data: ${teamsCount ? "DID NOT SYNC" : "SYNCED SUCCESSFULLY"}`
+      `MLB Teams Data: ${teamsCount ? 'DID NOT SYNC' : 'SYNCED SUCCESSFULLY'}`
     );
 
     const athletesCount = await Athlete.count({
@@ -173,92 +173,92 @@ export class TasksService {
         for (let athlete of data) {
           try {
             const team = await Team.findOneOrFail({
-              where: { apiId: athlete["GlobalTeamID"] },
+              where: { apiId: athlete['GlobalTeamID'] },
             });
 
             var options = { compact: true, ignoreComment: true, spaces: 4 };
             var result: any = convert.xml2js(ATHLETE_MLB_IMG, options);
 
-            result.svg.path[10]["_attributes"]["fill"] = team.primaryColor;
-            result.svg.path[9]["_attributes"]["fill"] = team.secondaryColor;
-            result.svg.g[0].text[0]["_text"] =
-              athlete["FirstName"].toUpperCase();
-            result.svg.g[0].text[1]["_text"] =
-              athlete["LastName"].toUpperCase();
-            result.svg.g[0].text[2]["_text"] =
-              athlete["Position"].toUpperCase();
-            result.svg.text["_text"] = athlete["Jersey"]
-              ? athlete["Jersey"]
-              : "00";
+            result.svg.path[10]['_attributes']['fill'] = team.primaryColor;
+            result.svg.path[9]['_attributes']['fill'] = team.secondaryColor;
+            result.svg.g[0].text[0]['_text'] =
+              athlete['FirstName'].toUpperCase();
+            result.svg.g[0].text[1]['_text'] =
+              athlete['LastName'].toUpperCase();
+            result.svg.g[0].text[2]['_text'] =
+              athlete['Position'].toUpperCase();
+            result.svg.text['_text'] = athlete['Jersey']
+              ? athlete['Jersey']
+              : '00';
 
             result = convert.js2xml(result, options);
-            var buffer = Buffer.from(result, "utf8");
+            var buffer = Buffer.from(result, 'utf8');
             const s3 = new S3({
               accessKeyId: process.env.AWS_ACCESS_KEY_ID,
               secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
             });
-            const filename = `${athlete["PlayerID"]}.svg`;
-            const s3_location = "media/athlete/mlb/";
+            const filename = `${athlete['PlayerID']}.svg`;
+            const s3_location = 'media/athlete/mlb/';
             const fileContent = buffer;
             const params: any = {
               Bucket: process.env.AWS_BUCKET_NAME,
               Key: `${s3_location}${filename}`,
               Body: fileContent,
-              ContentType: "image/svg+xml",
-              CacheControl: "no-cache",
+              ContentType: 'image/svg+xml',
+              CacheControl: 'no-cache',
             };
 
             s3.upload(params, async (err: any, data: any) => {
               if (err) {
                 this.logger.error(err);
               } else {
-                const nftImage = data["Location"];
+                const nftImage = data['Location'];
 
                 const baseImage = ATHLETE_MLB_BASE_IMG;
                 var options = { compact: true, ignoreComment: true, spaces: 4 };
                 var result: any = convert.xml2js(baseImage, options);
 
-                result["svg"]["g"]["4"]["g"][3]["text"][0]["tspan"]["_cdata"] =
-                  athlete["FirstName"].toUpperCase();
-                result["svg"]["g"]["4"]["g"][3]["g"]["text"][0]["tspan"][
-                  "_cdata"
-                ] = athlete["FirstName"].toUpperCase();
-                result["svg"]["g"][4]["g"][3]["text"][1]["tspan"]["_cdata"] =
-                  athlete["LastName"].toUpperCase();
-                result["svg"]["g"][4]["g"][3]["g"]["text"][1]["tspan"][
-                  "_cdata"
-                ] = athlete["LastName"].toUpperCase();
-                result["svg"]["g"][1]["g"][2]["g"]["path"]["_attributes"][
-                  "fill"
+                result['svg']['g']['4']['g'][3]['text'][0]['tspan']['_cdata'] =
+                  athlete['FirstName'].toUpperCase();
+                result['svg']['g']['4']['g'][3]['g']['text'][0]['tspan'][
+                  '_cdata'
+                ] = athlete['FirstName'].toUpperCase();
+                result['svg']['g'][4]['g'][3]['text'][1]['tspan']['_cdata'] =
+                  athlete['LastName'].toUpperCase();
+                result['svg']['g'][4]['g'][3]['g']['text'][1]['tspan'][
+                  '_cdata'
+                ] = athlete['LastName'].toUpperCase();
+                result['svg']['g'][1]['g'][2]['g']['path']['_attributes'][
+                  'fill'
                 ] = team.primaryColor;
-                result["svg"]["g"][1]["g"][0]["g"]["path"]["_attributes"][
-                  "fill"
+                result['svg']['g'][1]['g'][0]['g']['path']['_attributes'][
+                  'fill'
                 ] = team.secondaryColor;
-                result["svg"]["g"][4]["g"][2]["g"]["text"]["tspan"]["_cdata"] =
-                  athlete["Jersey"] ? athlete["Jersey"].toString() : "00";
-                result["svg"]["g"][4]["g"][0]["g"]["g"]["text"]["tspan"][
-                  "_cdata"
-                ] = athlete["Position"].toUpperCase();
+                result['svg']['g'][4]['g'][2]['g']['text']['tspan']['_cdata'] =
+                  athlete['Jersey'] ? athlete['Jersey'].toString() : '00';
+                result['svg']['g'][4]['g'][0]['g']['g']['text']['tspan'][
+                  '_cdata'
+                ] = athlete['Position'].toUpperCase();
 
                 const animation = convert.js2xml(result, options);
                 result = animation.replace(
-                  "</svg>",
+                  '</svg>',
                   ATHLETE_MLB_BASE_ANIMATION
                 );
-                var buffer = Buffer.from(result, "utf8");
+                var buffer = Buffer.from(result, 'utf8');
                 const s3 = new S3({
                   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
                   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
                 });
-                const filename = `${athlete["PlayerID"]}.svg`;
-                const s3_location = "media/athlete_animations/mlb/";
+                const filename = `${athlete['PlayerID']}.svg`;
+                const s3_location = 'media/athlete_animations/mlb/';
                 const fileContent = buffer;
                 const params: any = {
                   Bucket: process.env.AWS_BUCKET_NAME,
                   Key: `${s3_location}${filename}`,
                   Body: fileContent,
-                  ContentType: "image/svg+xml",
-                  CacheControl: "no-cache",
+                  ContentType: 'image/svg+xml',
+                  CacheControl: 'no-cache',
                 };
 
                 s3.upload(params, async (err: any, data: any) => {
@@ -266,17 +266,17 @@ export class TasksService {
                     this.logger.error(err);
                   } else {
                     await Athlete.create({
-                      apiId: athlete["PlayerID"],
-                      firstName: athlete["FirstName"],
-                      lastName: athlete["LastName"],
-                      position: athlete["Position"],
-                      salary: athlete["Salary"],
-                      jersey: athlete["Jersey"],
+                      apiId: athlete['PlayerID'],
+                      firstName: athlete['FirstName'],
+                      lastName: athlete['LastName'],
+                      position: athlete['Position'],
+                      salary: athlete['Salary'],
+                      jersey: athlete['Jersey'],
                       team,
-                      isActive: athlete["Status"] === "Active",
-                      isInjured: athlete["InjuryStatus"],
+                      isActive: athlete['Status'] === 'Active',
+                      isInjured: athlete['InjuryStatus'],
                       nftImage,
-                      nftAnimation: data["Location"],
+                      nftAnimation: data['Location'],
                     }).save();
                   }
                 });
@@ -287,13 +287,13 @@ export class TasksService {
           }
         }
       } else {
-        this.logger.error("MLB Athletes Data: SPORTS DATA ERROR");
+        this.logger.error('MLB Athletes Data: SPORTS DATA ERROR');
       }
     }
 
     this.logger.debug(
       `MLB Athletes Data: ${
-        athletesCount ? "DID NOT SYNC" : "SYNCED SUCCESSFULLY"
+        athletesCount ? 'DID NOT SYNC' : 'SYNCED SUCCESSFULLY'
       }`
     );
   }
@@ -314,23 +314,23 @@ export class TasksService {
         for (let team of data) {
           try {
             await Team.create({
-              apiId: team["GlobalTeamID"],
-              name: team["Name"],
-              key: team["Key"],
-              location: team["City"],
+              apiId: team['GlobalTeamID'],
+              name: team['Name'],
+              key: team['Key'],
+              location: team['City'],
               sport: SportType.MLB,
-              primaryColor: `#${team["PrimaryColor"]}`,
-              secondaryColor: `#${team["SecondaryColor"]}`,
+              primaryColor: `#${team['PrimaryColor']}`,
+              secondaryColor: `#${team['SecondaryColor']}`,
             }).save();
           } catch (err) {
             this.logger.error(err);
           }
         }
       } else {
-        this.logger.error("MLB Teams Data: SPORTS DATA ERROR");
+        this.logger.error('MLB Teams Data: SPORTS DATA ERROR');
       }
     }
-    this.logger.debug(`MLB Teams: ${teamCount ? "ALREADY EXISTS" : "SYNCED"}`);
+    this.logger.debug(`MLB Teams: ${teamCount ? 'ALREADY EXISTS' : 'SYNCED'}`);
 
     const athleteCount = await Athlete.count({
       where: { team: { sport: SportType.MLB } },
@@ -342,22 +342,22 @@ export class TasksService {
       );
       if (status === 200) {
         for (let athlete of data) {
-          if (MLB_ATHLETE_IDS.includes(athlete["PlayerID"])) {
+          if (MLB_ATHLETE_IDS.includes(athlete['PlayerID'])) {
             try {
               const team = await Team.findOne({
-                where: { apiId: athlete["GlobalTeamID"] },
+                where: { apiId: athlete['GlobalTeamID'] },
               });
 
               if (team) {
                 await Athlete.create({
-                  apiId: athlete["PlayerID"],
-                  firstName: athlete["FirstName"],
-                  lastName: athlete["LastName"],
-                  position: athlete["Position"],
-                  jersey: athlete["Jersey"],
+                  apiId: athlete['PlayerID'],
+                  firstName: athlete['FirstName'],
+                  lastName: athlete['LastName'],
+                  position: athlete['Position'],
+                  jersey: athlete['Jersey'],
                   team,
-                  isActive: athlete["Status"] === "Active",
-                  isInjured: athlete["InjuryStatus"],
+                  isActive: athlete['Status'] === 'Active',
+                  isInjured: athlete['InjuryStatus'],
                 }).save();
               }
             } catch (err) {
@@ -366,7 +366,7 @@ export class TasksService {
           }
         }
       } else {
-        this.logger.error("MLB Athlete: SPORTS DATA ERROR");
+        this.logger.error('MLB Athlete: SPORTS DATA ERROR');
       }
     } else {
       const { data, status } = await axios.get(
@@ -378,37 +378,37 @@ export class TasksService {
         for (let athlete of data) {
           try {
             const team = await Team.findOne({
-              where: { apiId: athlete["GlobalTeamID"] },
+              where: { apiId: athlete['GlobalTeamID'] },
             });
 
             if (team) {
               const currAthlete = await Athlete.findOne({
-                where: { apiId: athlete["PlayerID"] },
+                where: { apiId: athlete['PlayerID'] },
               });
 
               if (currAthlete) {
-                currAthlete.firstName = athlete["FirstName"];
-                currAthlete.lastName = athlete["LastName"];
+                currAthlete.firstName = athlete['FirstName'];
+                currAthlete.lastName = athlete['LastName'];
                 currAthlete.position =
-                  athlete["Position"] !== null ? athlete["Position"] : "N/A";
-                currAthlete.jersey = athlete["Jersey"];
-                currAthlete.isActive = athlete["Status"] === "Active";
-                currAthlete.isInjured = athlete["InjuryStatus"];
+                  athlete['Position'] !== null ? athlete['Position'] : 'N/A';
+                currAthlete.jersey = athlete['Jersey'];
+                currAthlete.isActive = athlete['Status'] === 'Active';
+                currAthlete.isInjured = athlete['InjuryStatus'];
                 updateAthlete.push(currAthlete);
               } else {
                 newAthlete.push(
                   Athlete.create({
-                    apiId: athlete["PlayerID"],
-                    firstName: athlete["FirstName"],
-                    lastName: athlete["LastName"],
+                    apiId: athlete['PlayerID'],
+                    firstName: athlete['FirstName'],
+                    lastName: athlete['LastName'],
                     position:
-                      athlete["Position"] !== null
-                        ? athlete["Position"]
-                        : "N/A",
-                    jersey: athlete["Jersey"],
+                      athlete['Position'] !== null
+                        ? athlete['Position']
+                        : 'N/A',
+                    jersey: athlete['Jersey'],
                     team,
-                    isActive: athlete["Status"] === "Active",
-                    isInjured: athlete["InjuryStatus"],
+                    isActive: athlete['Status'] === 'Active',
+                    isInjured: athlete['InjuryStatus'],
                   })
                 );
               }
@@ -418,18 +418,18 @@ export class TasksService {
           }
         }
         await Athlete.save([...newAthlete, ...updateAthlete], { chunk: 20 });
-        this.logger.debug("MLB Athlete: UPDATED ");
+        this.logger.debug('MLB Athlete: UPDATED ');
 
         const athleteCount = await Athlete.count({
           where: { team: { sport: SportType.MLB } },
         });
-        this.logger.debug("CURRENT MLB ATHLETE COUNT: " + athleteCount);
+        this.logger.debug('CURRENT MLB ATHLETE COUNT: ' + athleteCount);
       } else {
-        this.logger.error("MLB Athlete: SPORTS DATA ERROR");
+        this.logger.error('MLB Athlete: SPORTS DATA ERROR');
       }
     }
     this.logger.debug(
-      `MLB Athlete: ${athleteCount ? "ALREADY EXISTS" : "SYNCED"}`
+      `MLB Athlete: ${athleteCount ? 'ALREADY EXISTS' : 'SYNCED'}`
     );
   }
   //@Timeout(1)
@@ -447,25 +447,25 @@ export class TasksService {
         for (let team of data) {
           try {
             await Team.create({
-              apiId: team["GlobalTeamID"],
-              name: team["Name"],
-              key: team["Key"],
-              location: team["City"],
+              apiId: team['GlobalTeamID'],
+              name: team['Name'],
+              key: team['Key'],
+              location: team['City'],
               sport: SportType.NFL,
-              primaryColor: `#${team["PrimaryColor"]}`,
-              secondaryColor: `#${team["SecondaryColor"]}`,
+              primaryColor: `#${team['PrimaryColor']}`,
+              secondaryColor: `#${team['SecondaryColor']}`,
             }).save();
           } catch (e) {
             this.logger.error(e);
           }
         }
       } else {
-        this.logger.error("NFL Teams Data: SPORTS DATA ERROR");
+        this.logger.error('NFL Teams Data: SPORTS DATA ERROR');
       }
     }
 
     this.logger.debug(
-      `NFL Teams Data: ${teamsCount ? "DID NOT SYNC" : "SYNCED SUCCESSFULLY"}`
+      `NFL Teams Data: ${teamsCount ? 'DID NOT SYNC' : 'SYNCED SUCCESSFULLY'}`
     );
 
     const athletesCount = await Athlete.count({
@@ -481,28 +481,28 @@ export class TasksService {
         for (let athlete of data) {
           try {
             const team = await Team.findOne({
-              where: { apiId: athlete["GlobalTeamID"] },
+              where: { apiId: athlete['GlobalTeamID'] },
             });
 
             if (team) {
               var svgTemplate = fs.readFileSync(
                 `./src/utils/nfl-svg-teams-templates/${team.key}.svg`,
-                "utf-8"
+                'utf-8'
               );
               var options = { compact: true, ignoreComment: true, spaces: 4 };
               var result: any = convert.xml2js(svgTemplate, options);
 
               try {
-                result.svg.g[5].text[2]["_text"] =
-                  athlete["FirstName"].toUpperCase();
-                result.svg.g[5].text[3]["_text"] =
-                  athlete["LastName"].toUpperCase();
-                result.svg.g[5].text[1]["_text"] =
-                  athlete["Position"].toUpperCase();
-                result.svg.g[5].text[0]["_text"] = "";
+                result.svg.g[5].text[2]['_text'] =
+                  athlete['FirstName'].toUpperCase();
+                result.svg.g[5].text[3]['_text'] =
+                  athlete['LastName'].toUpperCase();
+                result.svg.g[5].text[1]['_text'] =
+                  athlete['Position'].toUpperCase();
+                result.svg.g[5].text[0]['_text'] = '';
               } catch (e) {
                 console.log(
-                  `FAILED AT ATHLETE ID: ${athlete["PlayerID"]} and TEAM KEY: ${team.key}`
+                  `FAILED AT ATHLETE ID: ${athlete['PlayerID']} and TEAM KEY: ${team.key}`
                 );
               }
 
@@ -513,33 +513,33 @@ export class TasksService {
               //   ].toLowerCase()}.svg`,
               //   result
               // )
-              var buffer = Buffer.from(result, "utf8");
+              var buffer = Buffer.from(result, 'utf8');
               const s3 = new S3({
                 accessKeyId: process.env.AWS_ACCESS_KEY_ID,
                 secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
               });
-              const filename = `${athlete["PlayerID"]}-${athlete[
-                "FirstName"
-              ].toLowerCase()}-${athlete["LastName"].toLowerCase()}.svg`;
-              const s3_location = "media/athlete/nfl/images/";
+              const filename = `${athlete['PlayerID']}-${athlete[
+                'FirstName'
+              ].toLowerCase()}-${athlete['LastName'].toLowerCase()}.svg`;
+              const s3_location = 'media/athlete/nfl/images/';
               const fileContent = buffer;
               const params: any = {
                 Bucket: process.env.AWS_BUCKET_NAME,
                 Key: `${s3_location}${filename}`,
                 Body: fileContent,
-                ContentType: "image/svg+xml",
-                CacheControl: "no-cache",
+                ContentType: 'image/svg+xml',
+                CacheControl: 'no-cache',
               };
 
               s3.upload(params, async (err: any, data: any) => {
                 if (err) {
                   this.logger.error(err);
                 } else {
-                  const nftImage = data["Location"];
+                  const nftImage = data['Location'];
 
                   var svgAnimationTemplate = fs.readFileSync(
                     `./src/utils/nfl-svg-teams-animation-templates/${team.key}.svg`,
-                    "utf-8"
+                    'utf-8'
                   );
                   var options = {
                     compact: true,
@@ -552,24 +552,24 @@ export class TasksService {
                   );
 
                   try {
-                    result.svg.g[5].text[0].tspan["_cdata"] = "";
-                    result.svg.g[5].text[1].tspan["_cdata"] = "";
-                    result.svg.g[5].text[2].tspan["_cdata"] =
-                      athlete["FirstName"].toUpperCase();
-                    result.svg.g[5].text[3].tspan["_cdata"] =
-                      athlete["FirstName"].toUpperCase();
-                    result.svg.g[5].text[4].tspan["_cdata"] =
-                      athlete["LastName"].toUpperCase();
-                    result.svg.g[5].text[5].tspan["_cdata"] =
-                      athlete["LastName"].toUpperCase();
-                    result.svg.g[5].g[0].text[0].tspan["_cdata"] =
-                      athlete["Position"].toUpperCase();
-                    result.svg.g[5].g[0].text[1].tspan["_cdata"] =
-                      athlete["Position"].toUpperCase();
+                    result.svg.g[5].text[0].tspan['_cdata'] = '';
+                    result.svg.g[5].text[1].tspan['_cdata'] = '';
+                    result.svg.g[5].text[2].tspan['_cdata'] =
+                      athlete['FirstName'].toUpperCase();
+                    result.svg.g[5].text[3].tspan['_cdata'] =
+                      athlete['FirstName'].toUpperCase();
+                    result.svg.g[5].text[4].tspan['_cdata'] =
+                      athlete['LastName'].toUpperCase();
+                    result.svg.g[5].text[5].tspan['_cdata'] =
+                      athlete['LastName'].toUpperCase();
+                    result.svg.g[5].g[0].text[0].tspan['_cdata'] =
+                      athlete['Position'].toUpperCase();
+                    result.svg.g[5].g[0].text[1].tspan['_cdata'] =
+                      athlete['Position'].toUpperCase();
                     result = convert.js2xml(result, options);
                   } catch (e) {
                     console.log(
-                      `FAILED AT ATHLETE ID: ${athlete["PlayerID"]} and TEAM KEY: ${team.key}`
+                      `FAILED AT ATHLETE ID: ${athlete['PlayerID']} and TEAM KEY: ${team.key}`
                     );
                     console.log(e);
                   }
@@ -580,22 +580,22 @@ export class TasksService {
                   //   ].toLowerCase()}.svg`,
                   //   result
                   // )
-                  var buffer = Buffer.from(result, "utf8");
+                  var buffer = Buffer.from(result, 'utf8');
                   const s3 = new S3({
                     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
                     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
                   });
-                  const filename = `${athlete["PlayerID"]}-${athlete[
-                    "FirstName"
-                  ].toLowerCase()}-${athlete["LastName"].toLowerCase()}.svg`;
-                  const s3_location = "media/athlete/nfl/animations/";
+                  const filename = `${athlete['PlayerID']}-${athlete[
+                    'FirstName'
+                  ].toLowerCase()}-${athlete['LastName'].toLowerCase()}.svg`;
+                  const s3_location = 'media/athlete/nfl/animations/';
                   const fileContent = buffer;
                   const params: any = {
                     Bucket: process.env.AWS_BUCKET_NAME,
                     Key: `${s3_location}${filename}`,
                     Body: fileContent,
-                    ContentType: "image/svg+xml",
-                    CacheControl: "no-cache",
+                    ContentType: 'image/svg+xml',
+                    CacheControl: 'no-cache',
                   };
 
                   s3.upload(params, async (err: any, data: any) => {
@@ -603,16 +603,16 @@ export class TasksService {
                       this.logger.error(err);
                     } else {
                       await Athlete.create({
-                        apiId: athlete["PlayerID"],
-                        firstName: athlete["FirstName"],
-                        lastName: athlete["LastName"],
-                        position: athlete["Position"],
-                        jersey: athlete["Number"],
+                        apiId: athlete['PlayerID'],
+                        firstName: athlete['FirstName'],
+                        lastName: athlete['LastName'],
+                        position: athlete['Position'],
+                        jersey: athlete['Number'],
                         team,
-                        isActive: athlete["Status"] === "Active",
-                        isInjured: athlete["InjuryStatus"],
+                        isActive: athlete['Status'] === 'Active',
+                        isInjured: athlete['InjuryStatus'],
                         nftImage,
-                        nftAnimation: data["Location"],
+                        nftAnimation: data['Location'],
                       }).save();
                     }
                   });
@@ -624,13 +624,13 @@ export class TasksService {
           }
         }
       } else {
-        this.logger.error("NFL Athletes Data: SPORTS DATA ERROR");
+        this.logger.error('NFL Athletes Data: SPORTS DATA ERROR');
       }
     }
 
     this.logger.debug(
       `NFL Athletes Data: ${
-        athletesCount ? "DID NOT SYNC" : "SYNCED SUCCESSFULLY"
+        athletesCount ? 'DID NOT SYNC' : 'SYNCED SUCCESSFULLY'
       }`
     );
   }
@@ -650,25 +650,25 @@ export class TasksService {
         for (let team of data) {
           try {
             await Team.create({
-              apiId: team["GlobalTeamID"],
-              name: team["Name"],
-              key: team["Key"],
-              location: team["City"],
+              apiId: team['GlobalTeamID'],
+              name: team['Name'],
+              key: team['Key'],
+              location: team['City'],
               sport: SportType.NBA,
-              primaryColor: `#${team["PrimaryColor"]}`,
-              secondaryColor: `#${team["SecondaryColor"]}`,
+              primaryColor: `#${team['PrimaryColor']}`,
+              secondaryColor: `#${team['SecondaryColor']}`,
             }).save();
           } catch (e) {
             this.logger.error(e);
           }
         }
       } else {
-        this.logger.error("NBA Teams Data: SPORTS DATA ERROR");
+        this.logger.error('NBA Teams Data: SPORTS DATA ERROR');
       }
     }
 
     this.logger.debug(
-      `NBA Teams Data: ${teamsCount ? "DID NOT SYNC" : "SYNCED SUCCESSFULLY"}`
+      `NBA Teams Data: ${teamsCount ? 'DID NOT SYNC' : 'SYNCED SUCCESSFULLY'}`
     );
 
     const athletesCount = await Athlete.count({
@@ -684,19 +684,19 @@ export class TasksService {
         for (let athlete of data) {
           try {
             const team = await Team.findOne({
-              where: { apiId: athlete["GlobalTeamID"] },
+              where: { apiId: athlete['GlobalTeamID'] },
             });
 
             if (team) {
               await Athlete.create({
-                apiId: athlete["PlayerID"],
-                firstName: athlete["FirstName"],
-                lastName: athlete["LastName"],
-                position: athlete["Position"],
-                jersey: athlete["Jersey"],
+                apiId: athlete['PlayerID'],
+                firstName: athlete['FirstName'],
+                lastName: athlete['LastName'],
+                position: athlete['Position'],
+                jersey: athlete['Jersey'],
                 team,
-                isActive: athlete["Status"] === "Active",
-                isInjured: athlete["InjuryStatus"],
+                isActive: athlete['Status'] === 'Active',
+                isInjured: athlete['InjuryStatus'],
               }).save();
             }
           } catch (e) {
@@ -708,14 +708,14 @@ export class TasksService {
 
     this.logger.debug(
       `NBA Athletes Data: ${
-        athletesCount ? "DID NOT SYNC" : "SYNCED SUCCESSFULLY"
+        athletesCount ? 'DID NOT SYNC' : 'SYNCED SUCCESSFULLY'
       }`
     );
   }
 
   // @Timeout(1)
   async generateAthleteNflAssets() {
-    this.logger.debug("Generate Athlete NFL Assets: STARTED");
+    this.logger.debug('Generate Athlete NFL Assets: STARTED');
 
     const athletes = await Athlete.find({
       where: { team: { sport: SportType.NFL } },
@@ -727,25 +727,25 @@ export class TasksService {
     for (let athlete of athletes) {
       var svgTemplate = fs.readFileSync(
         `./src/utils/nfl-svg-teams-templates/${athlete.team.key}.svg`,
-        "utf-8"
+        'utf-8'
       );
       var options = { compact: true, ignoreComment: true, spaces: 4 };
       var result: any = convert.xml2js(svgTemplate, options);
 
       try {
         if (athlete.firstName.length > 11) {
-          result.svg.g[5].text[2]["_attributes"]["style"] =
-            "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700";
+          result.svg.g[5].text[2]['_attributes']['style'] =
+            'font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700';
         }
         if (athlete.lastName.length > 11) {
-          result.svg.g[5].text[3]["_attributes"]["style"] =
-            "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700";
+          result.svg.g[5].text[3]['_attributes']['style'] =
+            'font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700';
         }
 
-        result.svg.g[5].text[2]["_text"] = athlete.firstName.toUpperCase();
-        result.svg.g[5].text[3]["_text"] = athlete.lastName.toUpperCase();
-        result.svg.g[5].text[1]["_text"] = athlete.position.toUpperCase();
-        result.svg.g[5].text[0]["_text"] = "";
+        result.svg.g[5].text[2]['_text'] = athlete.firstName.toUpperCase();
+        result.svg.g[5].text[3]['_text'] = athlete.lastName.toUpperCase();
+        result.svg.g[5].text[1]['_text'] = athlete.position.toUpperCase();
+        result.svg.g[5].text[0]['_text'] = '';
       } catch (e) {
         console.log(
           `FAILED AT ATHLETE ID: ${athlete.apiId} and TEAM KEY: ${athlete.team.key}`
@@ -760,7 +760,7 @@ export class TasksService {
       //   result
       // )
 
-      var buffer = Buffer.from(result, "utf8");
+      var buffer = Buffer.from(result, 'utf8');
       const s3 = new S3({
         accessKeyId: process.env.AWS_ACCESS_KEY_ID,
         secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
@@ -768,53 +768,53 @@ export class TasksService {
       const filename = `${
         athlete.apiId
       }-${athlete.firstName.toLowerCase()}-${athlete.lastName.toLowerCase()}.svg`;
-      const s3_location = "media/athlete/nfl/images/";
+      const s3_location = 'media/athlete/nfl/images/';
       const fileContent = buffer;
       const params: any = {
         Bucket: process.env.AWS_BUCKET_NAME,
         Key: `${s3_location}${filename}`,
         Body: fileContent,
-        ContentType: "image/svg+xml",
-        CacheControl: "no-cache",
+        ContentType: 'image/svg+xml',
+        CacheControl: 'no-cache',
       };
 
       s3.upload(params, async (err: any, data: any) => {
         if (err) {
           this.logger.error(err);
         } else {
-          const nftImage = data["Location"];
+          const nftImage = data['Location'];
           athlete.nftImage = nftImage;
 
           var svgAnimationTemplate = fs.readFileSync(
             `./src/utils/nfl-svg-teams-animation-templates/${athlete.team.key}.svg`,
-            "utf-8"
+            'utf-8'
           );
           var options = { compact: true, ignoreComment: true, spaces: 4 };
           var result: any = convert.xml2js(svgAnimationTemplate, options);
 
           try {
             if (athlete.firstName.length > 11) {
-              result.svg.g[5].text[2].tspan["_attributes"]["font-size"] = "50";
-              result.svg.g[5].text[3].tspan["_attributes"]["font-size"] = "50";
+              result.svg.g[5].text[2].tspan['_attributes']['font-size'] = '50';
+              result.svg.g[5].text[3].tspan['_attributes']['font-size'] = '50';
             }
             if (athlete.lastName.length > 11) {
-              result.svg.g[5].text[4].tspan["_attributes"]["font-size"] = "50";
-              result.svg.g[5].text[5].tspan["_attributes"]["font-size"] = "50";
+              result.svg.g[5].text[4].tspan['_attributes']['font-size'] = '50';
+              result.svg.g[5].text[5].tspan['_attributes']['font-size'] = '50';
             }
 
-            result.svg.g[5].text[0].tspan["_cdata"] = "";
-            result.svg.g[5].text[1].tspan["_cdata"] = "";
-            result.svg.g[5].text[2].tspan["_cdata"] =
+            result.svg.g[5].text[0].tspan['_cdata'] = '';
+            result.svg.g[5].text[1].tspan['_cdata'] = '';
+            result.svg.g[5].text[2].tspan['_cdata'] =
               athlete.firstName.toUpperCase();
-            result.svg.g[5].text[3].tspan["_cdata"] =
+            result.svg.g[5].text[3].tspan['_cdata'] =
               athlete.firstName.toUpperCase();
-            result.svg.g[5].text[4].tspan["_cdata"] =
+            result.svg.g[5].text[4].tspan['_cdata'] =
               athlete.lastName.toUpperCase();
-            result.svg.g[5].text[5].tspan["_cdata"] =
+            result.svg.g[5].text[5].tspan['_cdata'] =
               athlete.lastName.toUpperCase();
-            result.svg.g[5].g[0].text[0].tspan["_cdata"] =
+            result.svg.g[5].g[0].text[0].tspan['_cdata'] =
               athlete.position.toUpperCase();
-            result.svg.g[5].g[0].text[1].tspan["_cdata"] =
+            result.svg.g[5].g[0].text[1].tspan['_cdata'] =
               athlete.position.toUpperCase();
             result = convert.js2xml(result, options);
           } catch (e) {
@@ -830,7 +830,7 @@ export class TasksService {
           //   ].toLowerCase()}.svg`,
           //   result
           // )
-          var buffer = Buffer.from(result, "utf8");
+          var buffer = Buffer.from(result, 'utf8');
           const s3 = new S3({
             accessKeyId: process.env.AWS_ACCESS_KEY_ID,
             secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
@@ -838,21 +838,21 @@ export class TasksService {
           const filename = `${
             athlete.apiId
           }-${athlete.firstName.toLowerCase()}-${athlete.lastName.toLowerCase()}.svg`;
-          const s3_location = "media/athlete/nfl/animations/";
+          const s3_location = 'media/athlete/nfl/animations/';
           const fileContent = buffer;
           const params: any = {
             Bucket: process.env.AWS_BUCKET_NAME,
             Key: `${s3_location}${filename}`,
             Body: fileContent,
-            ContentType: "image/svg+xml",
-            CacheControl: "no-cache",
+            ContentType: 'image/svg+xml',
+            CacheControl: 'no-cache',
           };
 
           s3.upload(params, async (err: any, data: any) => {
             if (err) {
               this.logger.error(err);
             } else {
-              athlete.nftAnimation = data["Location"];
+              athlete.nftAnimation = data['Location'];
               await Athlete.save(athlete);
             }
           });
@@ -860,7 +860,7 @@ export class TasksService {
       });
     }
 
-    this.logger.debug("Generate Athlete NFL Assets: FINISHED");
+    this.logger.debug('Generate Athlete NFL Assets: FINISHED');
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`);
   }
 
@@ -868,8 +868,8 @@ export class TasksService {
 
   async syncNearDataTest() {
     const lakeConfig: types.LakeConfig = {
-      s3BucketName: "near-lake-data-mainnet",
-      s3RegionName: "eu-central-1",
+      s3BucketName: 'near-lake-data-mainnet',
+      s3RegionName: 'eu-central-1',
       startBlockHeight: 97856453, //97239922//97159134 //97236933
     };
 
@@ -881,8 +881,8 @@ export class TasksService {
       //console.log("Inside async loop")
       console.log(`Block height: ${streamerMessage.block.header.height}`);
       if (count === 10) {
-        console.log("Exiting loop");
-        throw "Aborted";
+        console.log('Exiting loop');
+        throw 'Aborted';
       }
       for (let shard of streamerMessage.shards) {
         if (shard.chunk !== undefined && shard.chunk !== null) {
@@ -893,10 +893,10 @@ export class TasksService {
             let filteredTrxns = shard.chunk.transactions.filter(
               (x) =>
                 x.transaction !== null &&
-                x.transaction.receiverId === "game.baseball.playible.near"
+                x.transaction.receiverId === 'game.baseball.playible.near'
             );
             if (filteredTrxns !== null && filteredTrxns.length > 0) {
-              console.log("hello");
+              console.log('hello');
             }
           }
         }
@@ -905,8 +905,8 @@ export class TasksService {
     try {
       await startStream(lakeConfig, handleStreamerMessage);
     } catch (e) {
-      if (e === "Aborted") {
-        console.log("Block height limit reached");
+      if (e === 'Aborted') {
+        console.log('Block height limit reached');
       }
     }
   }
@@ -916,8 +916,8 @@ export class TasksService {
     //for mainnet
     const lakeConfig: types.LakeConfig = {
       //credentials
-      s3BucketName: "near-lake-data-testnet",
-      s3RegionName: "eu-central-1",
+      s3BucketName: 'near-lake-data-testnet',
+      s3RegionName: 'eu-central-1',
       startBlockHeight: 133726304, // for testnet
       //startBlockHeight: 97856450//97543661//97856450, //97239921 old
     };
@@ -939,7 +939,7 @@ export class TasksService {
       if (count === 300) {
         await NearBlock.save([...nearBlocks], { chunk: 20 });
         await NearResponse.save([...nearResponses], { chunk: 20 });
-        throw "Aborted";
+        throw 'Aborted';
       }
       //check if current block height is existing within the database
       const blockHeight = streamerMessage.block.header.height;
@@ -963,7 +963,7 @@ export class TasksService {
               let filteredTrxns = shard.chunk.transactions.filter(
                 (x) =>
                   x.transaction !== null &&
-                  x.transaction.receiverId === "game.baseball.playible.testnet"
+                  x.transaction.receiverId === 'game.baseball.playible.testnet'
               );
               if (filteredTrxns.length > 0) {
                 //to know if the array isn't empty -> create a NearBlock entity to store data
@@ -980,12 +980,12 @@ export class TasksService {
                   );
                   //filter only function calls that we need for leaderboards for now, then create a response entry
                   if (
-                    action.FunctionCall.methodName === "submit_lineup" ||
-                    action.FunctionCall.methodName === "add_game"
+                    action.FunctionCall.methodName === 'submit_lineup' ||
+                    action.FunctionCall.methodName === 'add_game'
                   ) {
                     //creates a new NearResponse holding all the necessary details. Will be processed inside receiptExecutionOutcome
                     if (
-                      "SuccessReceiptId" in
+                      'SuccessReceiptId' in
                       transaction.outcome.executionOutcome.outcome.status
                     ) {
                       const saveResponse = await NearResponse.create({
@@ -1041,7 +1041,7 @@ export class TasksService {
 
             //console.log(`Filtered receipts length for height ${blockHeight}: ${filteredReceipts.length}`)
             if (filteredReceipts.length > 0) {
-              Logger.debug("Found playible receipt");
+              Logger.debug('Found playible receipt');
               for (let receipt of filteredReceipts) {
                 // let pending = await NearResponse.findOneOrFail({
                 //   where: {
@@ -1072,36 +1072,36 @@ export class TasksService {
                     })
                   );
 
-                  if ("Failure" in receipt.executionOutcome.outcome.status) {
+                  if ('Failure' in receipt.executionOutcome.outcome.status) {
                     //delete entry tied to pending NearResponse?
                     //or keep records of arguments then execute them here
                     pending.status = ResponseStatus.FAILED;
                     //await NearResponse.save(pending)
                   } else if (
-                    "SuccessReceiptId" in
+                    'SuccessReceiptId' in
                     receipt.executionOutcome.outcome.status
                   ) {
                     //The receipt chain continues, append receiptId to array, status stays pending
-                    Logger.debug("Found another receiptId, continuing chain");
+                    Logger.debug('Found another receiptId, continuing chain');
                     pending.receiptIds.push(
                       receipt.executionOutcome.outcome.status.SuccessReceiptId
                     );
                     //pending.receiptIds.push(JSON.parse(receipt.executionOutcome.outcome.status).SuccessValue)
                     //await NearResponse.save(pending)
                   } else if (
-                    "SuccessValue" in receipt.executionOutcome.outcome.status
+                    'SuccessValue' in receipt.executionOutcome.outcome.status
                   ) {
                     //The receipt chain ends as a success, set status to Success and process arguments
-                    Logger.debug("SuccessValue found, processing...");
+                    Logger.debug('SuccessValue found, processing...');
                     pending.status = ResponseStatus.SUCCESS;
                     //await NearResponse.save(pending)
                     if (
                       pending.methodName !== undefined &&
                       pending.methodArgs !== undefined
                     ) {
-                      if (pending.methodName === "submit_lineup") {
+                      if (pending.methodName === 'submit_lineup') {
                         const args: SubmitLineupType = JSON.parse(
-                          Buffer.from(pending.methodArgs, "base64").toString()
+                          Buffer.from(pending.methodArgs, 'base64').toString()
                         );
                         /*
                           TODO: convert this big chunk of code and the code in websocket to handle methods into a helper function
@@ -1148,18 +1148,18 @@ export class TasksService {
                             console.log(lineup);
                             lineup.forEach(async (athleteId) => {
                               if (
-                                athleteId.includes("PR") ||
-                                athleteId.includes("SB")
+                                athleteId.includes('PR') ||
+                                athleteId.includes('SB')
                               ) {
                                 //retrieve the apiID from athleteId via string manipulation
-                                athleteId = athleteId.split("_")[1];
+                                athleteId = athleteId.split('_')[1];
                               }
-                              let apiId = athleteId.split("CR")[0];
+                              let apiId = athleteId.split('CR')[0];
 
                               const athlete = await Athlete.findOne({
                                 where: { apiId: parseInt(apiId) },
                               });
-                              console.log("Adding athlete...");
+                              console.log('Adding athlete...');
                               if (athlete) {
                                 try {
                                   await GameTeamAthlete.create({
@@ -1170,19 +1170,19 @@ export class TasksService {
                                   Logger.error(e);
                                 }
                               } else {
-                                Logger.error("ERROR athlete apiId not found");
+                                Logger.error('ERROR athlete apiId not found');
                               }
                             });
-                            Logger.debug("Submit lineup finished");
+                            Logger.debug('Submit lineup finished');
                           } else {
-                            Logger.error("Game not found");
+                            Logger.error('Game not found');
                           }
                         } else {
-                          Logger.error("Team already exists");
+                          Logger.error('Team already exists');
                         }
-                      } else if (pending.methodName === "add_game") {
+                      } else if (pending.methodName === 'add_game') {
                         const args: AddGameType = JSON.parse(
-                          Buffer.from(pending.methodArgs, "base64").toString()
+                          Buffer.from(pending.methodArgs, 'base64').toString()
                         );
                         const sport = getSportType(pending.receiverId);
                         const game = await Game.findOne({
@@ -1195,8 +1195,8 @@ export class TasksService {
                         if (!game) {
                           await Game.create({
                             gameId: args.game_id,
-                            name: "Game " + args.game_id,
-                            description: "on-going",
+                            name: 'Game ' + args.game_id,
+                            description: 'on-going',
                             startTime: moment(args.game_time_start),
                             endTime: moment(args.game_time_end),
                             sport: sport,
@@ -1212,7 +1212,7 @@ export class TasksService {
                     }
                   }
                 } else {
-                  Logger.error("Receipt ID mismatch!");
+                  Logger.error('Receipt ID mismatch!');
                 }
               }
             } else {
@@ -1231,7 +1231,7 @@ export class TasksService {
           }
         }
       } else {
-        console.log("Block already exists.");
+        console.log('Block already exists.');
       }
     }
 
@@ -1243,7 +1243,7 @@ export class TasksService {
   }
   // @Timeout(1)
   async generateAthleteNbaAssets() {
-    this.logger.debug("Generate Athlete NBA Assets: STARTED");
+    this.logger.debug('Generate Athlete NBA Assets: STARTED');
 
     const athletes = await Athlete.find({
       where: { team: { sport: SportType.NBA } },
@@ -1255,26 +1255,26 @@ export class TasksService {
     for (let athlete of athletes) {
       var svgTemplate = fs.readFileSync(
         `./src/utils/nba-svg-teams-templates/${athlete.team.key}.svg`,
-        "utf-8"
+        'utf-8'
       );
       var options = { compact: true, ignoreComment: true, spaces: 4 };
       var result: any = convert.xml2js(svgTemplate, options);
 
       try {
         if (athlete.firstName.length > 11) {
-          result.svg.g[6].text[1]["_attributes"]["style"] =
-            "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700";
+          result.svg.g[6].text[1]['_attributes']['style'] =
+            'font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700';
         }
         if (athlete.lastName.length > 11) {
-          result.svg.g[6].text[2]["_attributes"]["style"] =
-            "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700";
+          result.svg.g[6].text[2]['_attributes']['style'] =
+            'font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700';
         }
 
-        result.svg.g[6]["text"][1]["tspan"]["_text"] =
+        result.svg.g[6]['text'][1]['tspan']['_text'] =
           athlete.firstName.toUpperCase();
-        result.svg.g[6]["text"][2]["tspan"]["_text"] =
+        result.svg.g[6]['text'][2]['tspan']['_text'] =
           athlete.lastName.toUpperCase();
-        result.svg.g[6]["text"][0]["tspan"]["_text"] =
+        result.svg.g[6]['text'][0]['tspan']['_text'] =
           athlete.position.toUpperCase();
       } catch (e) {
         console.log(
@@ -1288,7 +1288,7 @@ export class TasksService {
       //   result
       // )
 
-      var buffer = Buffer.from(result, "utf8");
+      var buffer = Buffer.from(result, 'utf8');
 
       const s3 = new S3({
         accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -1297,34 +1297,34 @@ export class TasksService {
       const filename = `${
         athlete.apiId
       }-${athlete.firstName.toLowerCase()}-${athlete.lastName.toLowerCase()}.svg`;
-      const s3_location = "media/athlete/nba/images/";
+      const s3_location = 'media/athlete/nba/images/';
       const fileContent = buffer;
       const params: any = {
         Bucket: process.env.AWS_BUCKET_NAME,
         Key: `${s3_location}${filename}`,
         Body: fileContent,
-        ContentType: "image/svg+xml",
-        CacheControl: "no-cache",
+        ContentType: 'image/svg+xml',
+        CacheControl: 'no-cache',
       };
 
       s3.upload(params, async (err: any, data: any) => {
         if (err) {
           this.logger.error(err);
         } else {
-          athlete.nftImage = data["Location"];
+          athlete.nftImage = data['Location'];
 
           await Athlete.save(athlete);
         }
       });
     }
 
-    this.logger.debug("Generate Athlete NBA Assets: FINISHED");
+    this.logger.debug('Generate Athlete NBA Assets: FINISHED');
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`);
   }
 
   //@Timeout(300000)
   async generateAthleteMlbAssets() {
-    this.logger.debug("Generate Athlete MLB Assets: STARTED");
+    this.logger.debug('Generate Athlete MLB Assets: STARTED');
 
     const athletes = await Athlete.find({
       where: {
@@ -1339,26 +1339,26 @@ export class TasksService {
     for (let athlete of athletes) {
       var svgTemplate = fs.readFileSync(
         `./src/utils/mlb-svg-teams-templates/${athlete.team.key}.svg`,
-        "utf-8"
+        'utf-8'
       );
       var options = { compact: true, ignoreComment: true, spaces: 4 };
       var result: any = convert.xml2js(svgTemplate, options);
 
       try {
         if (athlete.firstName.length > 11) {
-          result.svg.g[6].text[1]["_attributes"]["style"] =
-            "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700";
+          result.svg.g[6].text[1]['_attributes']['style'] =
+            'font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700';
         }
         if (athlete.lastName.length > 11) {
-          result.svg.g[6].text[2]["_attributes"]["style"] =
-            "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700";
+          result.svg.g[6].text[2]['_attributes']['style'] =
+            'font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700';
         }
 
-        result.svg.g[6]["text"][1]["tspan"]["_text"] =
+        result.svg.g[6]['text'][1]['tspan']['_text'] =
           athlete.firstName.toUpperCase();
-        result.svg.g[6]["text"][2]["tspan"]["_text"] =
+        result.svg.g[6]['text'][2]['tspan']['_text'] =
           athlete.lastName.toUpperCase();
-        result.svg.g[6]["text"][0]["tspan"]["_text"] =
+        result.svg.g[6]['text'][0]['tspan']['_text'] =
           athlete.position.toUpperCase();
       } catch (e) {
         console.log(
@@ -1372,7 +1372,7 @@ export class TasksService {
       //   result
       // )
 
-      var buffer = Buffer.from(result, "utf8");
+      var buffer = Buffer.from(result, 'utf8');
 
       const s3 = new S3({
         accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -1381,34 +1381,34 @@ export class TasksService {
       const filename = `${
         athlete.apiId
       }-${athlete.firstName.toLowerCase()}-${athlete.lastName.toLowerCase()}.svg`;
-      const s3_location = "media/athlete/mlb/images/";
+      const s3_location = 'media/athlete/mlb/images/';
       const fileContent = buffer;
       const params: any = {
         Bucket: process.env.AWS_BUCKET_NAME,
         Key: `${s3_location}${filename}`,
         Body: fileContent,
-        ContentType: "image/svg+xml",
-        CacheControl: "no-cache",
+        ContentType: 'image/svg+xml',
+        CacheControl: 'no-cache',
       };
 
       s3.upload(params, async (err: any, data: any) => {
         if (err) {
           this.logger.error(err);
         } else {
-          athlete.nftImage = data["Location"];
+          athlete.nftImage = data['Location'];
 
           await Athlete.save(athlete);
         }
       });
     }
 
-    this.logger.debug("Generate Athlete MLB Assets: FINISHED");
+    this.logger.debug('Generate Athlete MLB Assets: FINISHED');
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`);
   }
 
   //@Timeout(300000)
   async generateAthleteCricketAssets() {
-    this.logger.debug("Generate Athlete Cricket Assets: STARTED");
+    this.logger.debug('Generate Athlete Cricket Assets: STARTED');
 
     const athletes = await CricketAthlete.find({
       where: {
@@ -1423,7 +1423,7 @@ export class TasksService {
     for (let athlete of athletes) {
       var svgTemplate = fs.readFileSync(
         `./src/utils/cricket-svg-teams-templates/${athlete.cricketTeam.key.toUpperCase()}.svg`,
-        "utf-8"
+        'utf-8'
       );
       var options = { compact: true, ignoreComment: true, spaces: 4 };
       var result: any = convert.xml2js(svgTemplate, options);
@@ -1432,33 +1432,33 @@ export class TasksService {
       const lastName = name[1];
       try {
         if (firstName.length > 11) {
-          result.svg.g[6].text[1]["_attributes"]["style"] =
-            "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700";
+          result.svg.g[6].text[1]['_attributes']['style'] =
+            'font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700';
         }
         if (lastName.length > 11) {
-          result.svg.g[6].text[2]["_attributes"]["style"] =
-            "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700";
+          result.svg.g[6].text[2]['_attributes']['style'] =
+            'font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700';
         }
 
-        let position: string = "";
+        let position: string = '';
         switch (athlete.seasonalRole) {
-          case "bowler":
-            position = "BOWL";
+          case 'bowler':
+            position = 'BOWL';
             break;
-          case "batsman":
-            position = "BAT";
+          case 'batsman':
+            position = 'BAT';
             break;
-          case "all_rounder":
-            position = "AR";
+          case 'all_rounder':
+            position = 'AR';
             break;
-          case "keeper":
-            position = "WK";
+          case 'keeper':
+            position = 'WK';
             break;
         }
 
-        result.svg.g[6]["text"][1]["tspan"]["_text"] = firstName.toUpperCase();
-        result.svg.g[6]["text"][2]["tspan"]["_text"] = lastName.toUpperCase();
-        result.svg.g[6]["text"][0]["tspan"]["_text"] = position;
+        result.svg.g[6]['text'][1]['tspan']['_text'] = firstName.toUpperCase();
+        result.svg.g[6]['text'][2]['tspan']['_text'] = lastName.toUpperCase();
+        result.svg.g[6]['text'][0]['tspan']['_text'] = position;
       } catch (e) {
         this.logger.debug(
           `FAILED AT ATHLETE KEY: ${athlete.playerKey} and TEAM KEY: ${athlete.cricketTeam.key}`
@@ -1472,7 +1472,7 @@ export class TasksService {
       //   result
       // )
 
-      var buffer = Buffer.from(result, "utf8");
+      var buffer = Buffer.from(result, 'utf8');
 
       const s3 = new S3({
         accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -1481,33 +1481,33 @@ export class TasksService {
       const filename = `${
         athlete.playerKey
       }-${firstName.toLowerCase()}-${lastName.toLowerCase()}.svg`;
-      const s3_location = "media/athlete/ipl/images/";
+      const s3_location = 'media/athlete/ipl/images/';
       const fileContent = buffer;
       const params: any = {
         Bucket: process.env.AWS_BUCKET_NAME,
         Key: `${s3_location}${filename}`,
         Body: fileContent,
-        ContentType: "image/svg+xml",
-        CacheControl: "no-cache",
+        ContentType: 'image/svg+xml',
+        CacheControl: 'no-cache',
       };
 
       s3.upload(params, async (err: any, data: any) => {
         if (err) {
           this.logger.error(err);
         } else {
-          athlete.nftImage = data["Location"];
+          athlete.nftImage = data['Location'];
           await CricketAthlete.save(athlete);
         }
       });
     }
 
-    this.logger.debug("Generate Athlete Cricket Assets: FINISHED");
+    this.logger.debug('Generate Athlete Cricket Assets: FINISHED');
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`);
   }
 
   // @Timeout(1)
   async generateAthleteNbaAssetsAnimation() {
-    this.logger.debug("Generate Athlete NBA Assets Animation: STARTED");
+    this.logger.debug('Generate Athlete NBA Assets Animation: STARTED');
 
     const athletes = await Athlete.find({
       where: { team: { sport: SportType.NBA } },
@@ -1519,29 +1519,29 @@ export class TasksService {
     for (let athlete of athletes) {
       var svgAnimationTemplate = fs.readFileSync(
         `./src/utils/nba-svg-teams-animation-templates/${athlete.team.key}.svg`,
-        "utf-8"
+        'utf-8'
       );
       var options = { compact: true, ignoreComment: true, spaces: 4 };
       var result: any = convert.xml2js(svgAnimationTemplate, options);
 
       try {
         if (athlete.firstName.length > 11) {
-          result.svg.g[4].text[2].tspan["_attributes"]["font-size"] = "50";
-          result.svg.g[4].text[3].tspan["_attributes"]["font-size"] = "50";
+          result.svg.g[4].text[2].tspan['_attributes']['font-size'] = '50';
+          result.svg.g[4].text[3].tspan['_attributes']['font-size'] = '50';
         }
         if (athlete.lastName.length > 11) {
-          result.svg.g[4].text[4].tspan["_attributes"]["font-size"] = "50";
-          result.svg.g[4].text[5].tspan["_attributes"]["font-size"] = "50";
+          result.svg.g[4].text[4].tspan['_attributes']['font-size'] = '50';
+          result.svg.g[4].text[5].tspan['_attributes']['font-size'] = '50';
         }
 
-        result.svg.g[4].text[0].tspan["_text"] = athlete.position.toUpperCase();
-        result.svg.g[4].text[1].tspan["_text"] = athlete.position.toUpperCase();
-        result.svg.g[4].text[2].tspan["_text"] =
+        result.svg.g[4].text[0].tspan['_text'] = athlete.position.toUpperCase();
+        result.svg.g[4].text[1].tspan['_text'] = athlete.position.toUpperCase();
+        result.svg.g[4].text[2].tspan['_text'] =
           athlete.firstName.toUpperCase();
-        result.svg.g[4].text[3].tspan["_text"] =
+        result.svg.g[4].text[3].tspan['_text'] =
           athlete.firstName.toUpperCase();
-        result.svg.g[4].text[4].tspan["_text"] = athlete.lastName.toUpperCase();
-        result.svg.g[4].text[5].tspan["_text"] = athlete.lastName.toUpperCase();
+        result.svg.g[4].text[4].tspan['_text'] = athlete.lastName.toUpperCase();
+        result.svg.g[4].text[5].tspan['_text'] = athlete.lastName.toUpperCase();
         result = convert.js2xml(result, options);
       } catch (e) {
         console.log(
@@ -1556,7 +1556,7 @@ export class TasksService {
       //   ].toLowerCase()}.svg`,
       //   result
       // )
-      var buffer = Buffer.from(result, "utf8");
+      var buffer = Buffer.from(result, 'utf8');
       const s3 = new S3({
         accessKeyId: process.env.AWS_ACCESS_KEY_ID,
         secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
@@ -1564,33 +1564,33 @@ export class TasksService {
       const filename = `${
         athlete.apiId
       }-${athlete.firstName.toLowerCase()}-${athlete.lastName.toLowerCase()}.svg`;
-      const s3_location = "media/athlete/nba/animations/";
+      const s3_location = 'media/athlete/nba/animations/';
       const fileContent = buffer;
       const params: any = {
         Bucket: process.env.AWS_BUCKET_NAME,
         Key: `${s3_location}${filename}`,
         Body: fileContent,
-        ContentType: "image/svg+xml",
-        CacheControl: "no-cache",
+        ContentType: 'image/svg+xml',
+        CacheControl: 'no-cache',
       };
 
       s3.upload(params, async (err: any, data: any) => {
         if (err) {
           this.logger.error(err);
         } else {
-          athlete.nftAnimation = data["Location"];
+          athlete.nftAnimation = data['Location'];
           await Athlete.save(athlete);
         }
       });
     }
 
-    this.logger.debug("Generate Athlete NBA Assets Animations: FINISHED");
+    this.logger.debug('Generate Athlete NBA Assets Animations: FINISHED');
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`);
   }
 
   //@Timeout(450000)
   async generateAthleteMlbAssetsAnimation() {
-    this.logger.debug("Generate Athlete MLB Assets Animation: STARTED");
+    this.logger.debug('Generate Athlete MLB Assets Animation: STARTED');
 
     const athletes = await Athlete.find({
       where: {
@@ -1605,32 +1605,32 @@ export class TasksService {
     for (let athlete of athletes) {
       var svgAnimationTemplate = fs.readFileSync(
         `./src/utils/mlb-svg-teams-animation-templates/${athlete.team.key}.svg`,
-        "utf-8"
+        'utf-8'
       );
       var options = { compact: true, ignoreComment: true, spaces: 4 };
       var result: any = convert.xml2js(svgAnimationTemplate, options);
 
       try {
         if (athlete.firstName.length > 11) {
-          result.svg.g[4].text[2].tspan["_attributes"]["font-size"] = "50";
-          result.svg.g[4].text[3].tspan["_attributes"]["font-size"] = "50";
+          result.svg.g[4].text[2].tspan['_attributes']['font-size'] = '50';
+          result.svg.g[4].text[3].tspan['_attributes']['font-size'] = '50';
         }
         if (athlete.lastName.length > 11) {
-          result.svg.g[4].text[4].tspan["_attributes"]["font-size"] = "50";
-          result.svg.g[4].text[5].tspan["_attributes"]["font-size"] = "50";
+          result.svg.g[4].text[4].tspan['_attributes']['font-size'] = '50';
+          result.svg.g[4].text[5].tspan['_attributes']['font-size'] = '50';
         }
 
-        result.svg.g[4].text[0].tspan["_cdata"] =
+        result.svg.g[4].text[0].tspan['_cdata'] =
           athlete.position.toUpperCase();
-        result.svg.g[4].text[1].tspan["_cdata"] =
+        result.svg.g[4].text[1].tspan['_cdata'] =
           athlete.position.toUpperCase();
-        result.svg.g[4].text[2].tspan["_cdata"] =
+        result.svg.g[4].text[2].tspan['_cdata'] =
           athlete.firstName.toUpperCase();
-        result.svg.g[4].text[3].tspan["_cdata"] =
+        result.svg.g[4].text[3].tspan['_cdata'] =
           athlete.firstName.toUpperCase();
-        result.svg.g[4].text[4].tspan["_cdata"] =
+        result.svg.g[4].text[4].tspan['_cdata'] =
           athlete.lastName.toUpperCase();
-        result.svg.g[4].text[5].tspan["_cdata"] =
+        result.svg.g[4].text[5].tspan['_cdata'] =
           athlete.lastName.toUpperCase();
         result = convert.js2xml(result, options);
       } catch (e) {
@@ -1645,7 +1645,7 @@ export class TasksService {
       //   .toLowerCase()}.svg`,
       //   result
       // )
-      var buffer = Buffer.from(result, "utf8");
+      var buffer = Buffer.from(result, 'utf8');
       const s3 = new S3({
         accessKeyId: process.env.AWS_ACCESS_KEY_ID,
         secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
@@ -1653,33 +1653,33 @@ export class TasksService {
       const filename = `${
         athlete.apiId
       }-${athlete.firstName.toLowerCase()}-${athlete.lastName.toLowerCase()}.svg`;
-      const s3_location = "media/athlete/mlb/animations/";
+      const s3_location = 'media/athlete/mlb/animations/';
       const fileContent = buffer;
       const params: any = {
         Bucket: process.env.AWS_BUCKET_NAME,
         Key: `${s3_location}${filename}`,
         Body: fileContent,
-        ContentType: "image/svg+xml",
-        CacheControl: "no-cache",
+        ContentType: 'image/svg+xml',
+        CacheControl: 'no-cache',
       };
 
       s3.upload(params, async (err: any, data: any) => {
         if (err) {
           this.logger.error(err);
         } else {
-          athlete.nftAnimation = data["Location"];
+          athlete.nftAnimation = data['Location'];
           await Athlete.save(athlete);
         }
       });
     }
 
-    this.logger.debug("Generate Athlete MLB Assets Animations: FINISHED");
+    this.logger.debug('Generate Athlete MLB Assets Animations: FINISHED');
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`);
   }
 
   //@Timeout(450000)
   async generateAthleteCricketAssetsAnimation() {
-    this.logger.debug("Generate Athlete Cricket Assets Animation: STARTED");
+    this.logger.debug('Generate Athlete Cricket Assets Animation: STARTED');
 
     const athletes = await CricketAthlete.find({
       where: {
@@ -1694,7 +1694,7 @@ export class TasksService {
     for (let athlete of athletes) {
       var svgAnimationTemplate = fs.readFileSync(
         `./src/utils/cricket-svg-teams-animation-templates/${athlete.cricketTeam.key.toUpperCase()}.svg`,
-        "utf-8"
+        'utf-8'
       );
       var options = { compact: true, ignoreComment: true, spaces: 4 };
       var result: any = convert.xml2js(svgAnimationTemplate, options);
@@ -1705,36 +1705,36 @@ export class TasksService {
 
       try {
         if (firstName.length > 11) {
-          result.svg.g[4].text[2].tspan["_attributes"]["font-size"] = "50";
-          result.svg.g[4].text[3].tspan["_attributes"]["font-size"] = "50";
+          result.svg.g[4].text[2].tspan['_attributes']['font-size'] = '50';
+          result.svg.g[4].text[3].tspan['_attributes']['font-size'] = '50';
         }
         if (lastName.length > 11) {
-          result.svg.g[4].text[4].tspan["_attributes"]["font-size"] = "50";
-          result.svg.g[4].text[5].tspan["_attributes"]["font-size"] = "50";
+          result.svg.g[4].text[4].tspan['_attributes']['font-size'] = '50';
+          result.svg.g[4].text[5].tspan['_attributes']['font-size'] = '50';
         }
 
-        let position: string = "";
+        let position: string = '';
         switch (athlete.seasonalRole) {
-          case "bowler":
-            position = "BOWL";
+          case 'bowler':
+            position = 'BOWL';
             break;
-          case "batsman":
-            position = "BAT";
+          case 'batsman':
+            position = 'BAT';
             break;
-          case "all_rounder":
-            position = "AR";
+          case 'all_rounder':
+            position = 'AR';
             break;
-          case "keeper":
-            position = "WK";
+          case 'keeper':
+            position = 'WK';
             break;
         }
 
-        result.svg.g[4].text[0].tspan["_cdata"] = position; //check if template is cdata or text
-        result.svg.g[4].text[1].tspan["_cdata"] = position;
-        result.svg.g[4].text[2].tspan["_cdata"] = firstName.toUpperCase();
-        result.svg.g[4].text[3].tspan["_cdata"] = firstName.toUpperCase();
-        result.svg.g[4].text[4].tspan["_cdata"] = lastName.toUpperCase();
-        result.svg.g[4].text[5].tspan["_cdata"] = lastName.toUpperCase();
+        result.svg.g[4].text[0].tspan['_cdata'] = position; //check if template is cdata or text
+        result.svg.g[4].text[1].tspan['_cdata'] = position;
+        result.svg.g[4].text[2].tspan['_cdata'] = firstName.toUpperCase();
+        result.svg.g[4].text[3].tspan['_cdata'] = firstName.toUpperCase();
+        result.svg.g[4].text[4].tspan['_cdata'] = lastName.toUpperCase();
+        result.svg.g[4].text[5].tspan['_cdata'] = lastName.toUpperCase();
         result = convert.js2xml(result, options);
       } catch (e) {
         console.log(
@@ -1748,7 +1748,7 @@ export class TasksService {
       //   result
       // )
 
-      var buffer = Buffer.from(result, "utf8");
+      var buffer = Buffer.from(result, 'utf8');
       const s3 = new S3({
         accessKeyId: process.env.AWS_ACCESS_KEY_ID,
         secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
@@ -1756,31 +1756,31 @@ export class TasksService {
       const filename = `${
         athlete.playerKey
       }-${firstName.toLowerCase()}-${lastName.toLowerCase()}.svg`;
-      const s3_location = "media/athlete/ipl/animations/";
+      const s3_location = 'media/athlete/ipl/animations/';
       const fileContent = buffer;
       const params: any = {
         Bucket: process.env.AWS_BUCKET_NAME,
         Key: `${s3_location}${filename}`,
         Body: fileContent,
-        ContentType: "image/svg+xml",
-        CacheControl: "no-cache",
+        ContentType: 'image/svg+xml',
+        CacheControl: 'no-cache',
       };
       s3.upload(params, async (err: any, data: any) => {
         if (err) {
           this.logger.error(err);
         } else {
-          athlete.nftAnimation = data["Location"];
+          athlete.nftAnimation = data['Location'];
           await CricketAthlete.save(athlete);
         }
       });
     }
-    this.logger.debug("Generate Athlete Cricket Assets Animations: FINISHED");
+    this.logger.debug('Generate Athlete Cricket Assets Animations: FINISHED');
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`);
   }
 
   // @Timeout(1)
   async generateAthleteNbaAssetsPromo() {
-    this.logger.debug("Generate Athlete NBA Assets Promo: STARTED");
+    this.logger.debug('Generate Athlete NBA Assets Promo: STARTED');
 
     const athletes = await Athlete.find({
       where: { team: { sport: SportType.NBA } },
@@ -1792,26 +1792,26 @@ export class TasksService {
     for (let athlete of athletes) {
       var svgTemplate = fs.readFileSync(
         `./src/utils/nba-svg-teams-promo-templates/${athlete.team.key}.svg`,
-        "utf-8"
+        'utf-8'
       );
       var options = { compact: true, ignoreComment: true, spaces: 4 };
       var result: any = convert.xml2js(svgTemplate, options);
 
       try {
         if (athlete.firstName.length > 11) {
-          result.svg.g[6].text[1]["_attributes"]["style"] =
-            "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700";
+          result.svg.g[6].text[1]['_attributes']['style'] =
+            'font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700';
         }
         if (athlete.lastName.length > 11) {
-          result.svg.g[6].text[2]["_attributes"]["style"] =
-            "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700";
+          result.svg.g[6].text[2]['_attributes']['style'] =
+            'font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700';
         }
 
-        result.svg.g[6]["text"][1]["tspan"]["_text"] =
+        result.svg.g[6]['text'][1]['tspan']['_text'] =
           athlete.firstName.toUpperCase();
-        result.svg.g[6]["text"][2]["tspan"]["_text"] =
+        result.svg.g[6]['text'][2]['tspan']['_text'] =
           athlete.lastName.toUpperCase();
-        result.svg.g[6]["text"][0]["tspan"]["_text"] =
+        result.svg.g[6]['text'][0]['tspan']['_text'] =
           athlete.position.toUpperCase();
       } catch (e) {
         console.log(
@@ -1825,7 +1825,7 @@ export class TasksService {
       //   result
       // )
 
-      var buffer = Buffer.from(result, "utf8");
+      var buffer = Buffer.from(result, 'utf8');
       const s3 = new S3({
         accessKeyId: process.env.AWS_ACCESS_KEY_ID,
         secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
@@ -1833,33 +1833,33 @@ export class TasksService {
       const filename = `${
         athlete.apiId
       }-${athlete.firstName.toLowerCase()}-${athlete.lastName.toLowerCase()}.svg`;
-      const s3_location = "media/athlete/nba/promo_images/";
+      const s3_location = 'media/athlete/nba/promo_images/';
       const fileContent = buffer;
       const params: any = {
         Bucket: process.env.AWS_BUCKET_NAME,
         Key: `${s3_location}${filename}`,
         Body: fileContent,
-        ContentType: "image/svg+xml",
-        CacheControl: "no-cache",
+        ContentType: 'image/svg+xml',
+        CacheControl: 'no-cache',
       };
 
       s3.upload(params, async (err: any, data: any) => {
         if (err) {
           this.logger.error(err);
         } else {
-          athlete.nftImagePromo = data["Location"];
+          athlete.nftImagePromo = data['Location'];
           await Athlete.save(athlete);
         }
       });
     }
 
-    this.logger.debug("Generate Athlete NBA Assets Promo: FINISHED");
+    this.logger.debug('Generate Athlete NBA Assets Promo: FINISHED');
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`);
   }
 
   // @Timeout(1)
   async generateAthleteNflAssetsPromo() {
-    this.logger.debug("Generate Athlete NFL Assets Promo: STARTED");
+    this.logger.debug('Generate Athlete NFL Assets Promo: STARTED');
 
     const athletes = await Athlete.find({
       where: { team: { sport: SportType.NFL } },
@@ -1871,26 +1871,26 @@ export class TasksService {
     for (let athlete of athletes) {
       var svgTemplate = fs.readFileSync(
         `./src/utils/nfl-svg-teams-promo-templates/${athlete.team.key}.svg`,
-        "utf-8"
+        'utf-8'
       );
       var options = { compact: true, ignoreComment: true, spaces: 4 };
       var result: any = convert.xml2js(svgTemplate, options);
 
       try {
         if (athlete.firstName.length > 11) {
-          result.svg.g[5].text[1]["_attributes"]["style"] =
-            "fill:#fff; font-family:Arimo-Bold, Arimo; font-size:50px;";
+          result.svg.g[5].text[1]['_attributes']['style'] =
+            'fill:#fff; font-family:Arimo-Bold, Arimo; font-size:50px;';
         }
         if (athlete.lastName.length > 11) {
-          result.svg.g[5].text[2]["_attributes"]["style"] =
-            "fill:#fff; font-family:Arimo-Bold, Arimo; font-size:50px;";
+          result.svg.g[5].text[2]['_attributes']['style'] =
+            'fill:#fff; font-family:Arimo-Bold, Arimo; font-size:50px;';
         }
 
-        result.svg.g[5]["text"][1]["tspan"]["_text"] =
+        result.svg.g[5]['text'][1]['tspan']['_text'] =
           athlete.firstName.toUpperCase();
-        result.svg.g[5]["text"][2]["tspan"]["_text"] =
+        result.svg.g[5]['text'][2]['tspan']['_text'] =
           athlete.lastName.toUpperCase();
-        result.svg.g[5]["text"][0]["tspan"]["_text"] =
+        result.svg.g[5]['text'][0]['tspan']['_text'] =
           athlete.position.toUpperCase();
       } catch (e) {
         console.log(
@@ -1904,7 +1904,7 @@ export class TasksService {
       //   result
       // )
 
-      var buffer = Buffer.from(result, "utf8");
+      var buffer = Buffer.from(result, 'utf8');
       const s3 = new S3({
         accessKeyId: process.env.AWS_ACCESS_KEY_ID,
         secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
@@ -1912,33 +1912,33 @@ export class TasksService {
       const filename = `${
         athlete.apiId
       }-${athlete.firstName.toLowerCase()}-${athlete.lastName.toLowerCase()}.svg`;
-      const s3_location = "media/athlete/nfl/promo_images/";
+      const s3_location = 'media/athlete/nfl/promo_images/';
       const fileContent = buffer;
       const params: any = {
         Bucket: process.env.AWS_BUCKET_NAME,
         Key: `${s3_location}${filename}`,
         Body: fileContent,
-        ContentType: "image/svg+xml",
-        CacheControl: "no-cache",
+        ContentType: 'image/svg+xml',
+        CacheControl: 'no-cache',
       };
 
       s3.upload(params, async (err: any, data: any) => {
         if (err) {
           this.logger.error(err);
         } else {
-          athlete.nftImagePromo = data["Location"];
+          athlete.nftImagePromo = data['Location'];
           await Athlete.save(athlete);
         }
       });
     }
 
-    this.logger.debug("Generate Athlete NFL Assets Promo: FINISHED");
+    this.logger.debug('Generate Athlete NFL Assets Promo: FINISHED');
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`);
   }
 
   //@Timeout(600000)
   async generateAthleteMlbAssetsPromo() {
-    this.logger.debug("Generate Athlete MLB Assets Promo: STARTED");
+    this.logger.debug('Generate Athlete MLB Assets Promo: STARTED');
 
     const athletes = await Athlete.find({
       where: {
@@ -1953,26 +1953,26 @@ export class TasksService {
     for (let athlete of athletes) {
       var svgTemplate = fs.readFileSync(
         `./src/utils/mlb-svg-teams-promo-templates/${athlete.team.key}.svg`,
-        "utf-8"
+        'utf-8'
       );
       var options = { compact: true, ignoreComment: true, spaces: 4 };
       var result: any = convert.xml2js(svgTemplate, options);
 
       try {
         if (athlete.firstName.length > 11) {
-          result.svg.g[6].text[1]["_attributes"]["style"] =
-            "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700";
+          result.svg.g[6].text[1]['_attributes']['style'] =
+            'font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700';
         }
         if (athlete.lastName.length > 11) {
-          result.svg.g[6].text[2]["_attributes"]["style"] =
-            "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700";
+          result.svg.g[6].text[2]['_attributes']['style'] =
+            'font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700';
         }
 
-        result.svg.g[6]["text"][1]["tspan"]["_text"] =
+        result.svg.g[6]['text'][1]['tspan']['_text'] =
           athlete.firstName.toUpperCase();
-        result.svg.g[6]["text"][2]["tspan"]["_text"] =
+        result.svg.g[6]['text'][2]['tspan']['_text'] =
           athlete.lastName.toUpperCase();
-        result.svg.g[6]["text"][0]["tspan"]["_text"] =
+        result.svg.g[6]['text'][0]['tspan']['_text'] =
           athlete.position.toUpperCase();
       } catch (e) {
         console.log(
@@ -1986,7 +1986,7 @@ export class TasksService {
       //   result
       // )
 
-      var buffer = Buffer.from(result, "utf8");
+      var buffer = Buffer.from(result, 'utf8');
       const s3 = new S3({
         accessKeyId: process.env.AWS_ACCESS_KEY_ID,
         secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
@@ -1994,33 +1994,33 @@ export class TasksService {
       const filename = `${
         athlete.apiId
       }-${athlete.firstName.toLowerCase()}-${athlete.lastName.toLowerCase()}.svg`;
-      const s3_location = "media/athlete/mlb/promo_images/";
+      const s3_location = 'media/athlete/mlb/promo_images/';
       const fileContent = buffer;
       const params: any = {
         Bucket: process.env.AWS_BUCKET_NAME,
         Key: `${s3_location}${filename}`,
         Body: fileContent,
-        ContentType: "image/svg+xml",
-        CacheControl: "no-cache",
+        ContentType: 'image/svg+xml',
+        CacheControl: 'no-cache',
       };
 
       s3.upload(params, async (err: any, data: any) => {
         if (err) {
           this.logger.error(err);
         } else {
-          athlete.nftImagePromo = data["Location"];
+          athlete.nftImagePromo = data['Location'];
           await Athlete.save(athlete);
         }
       });
     }
 
-    this.logger.debug("Generate Athlete MLB Assets Promo: FINISHED");
+    this.logger.debug('Generate Athlete MLB Assets Promo: FINISHED');
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`);
   }
 
   //@Timeout(300000)
   async generateAthleteCricketAssetsPromo() {
-    this.logger.debug("Generate Athlete Cricket Assets Promo: STARTED");
+    this.logger.debug('Generate Athlete Cricket Assets Promo: STARTED');
 
     const athletes = await CricketAthlete.find({
       where: {
@@ -2035,7 +2035,7 @@ export class TasksService {
     for (let athlete of athletes) {
       var svgTemplate = fs.readFileSync(
         `./src/utils/cricket-svg-teams-promo-templates/${athlete.cricketTeam.key.toUpperCase()}.svg`,
-        "utf-8"
+        'utf-8'
       );
       var options = { compact: true, ignoreComment: true, spaces: 4 };
       var result: any = convert.xml2js(svgTemplate, options);
@@ -2046,33 +2046,33 @@ export class TasksService {
 
       try {
         if (firstName.length > 11) {
-          result.svg.g[6].text[1]["_attributes"]["style"] =
-            "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700";
+          result.svg.g[6].text[1]['_attributes']['style'] =
+            'font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700';
         }
         if (lastName.length > 11) {
-          result.svg.g[6].text[2]["_attributes"]["style"] =
-            "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700";
+          result.svg.g[6].text[2]['_attributes']['style'] =
+            'font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700';
         }
 
-        let position: string = "";
+        let position: string = '';
         switch (athlete.seasonalRole) {
-          case "bowler":
-            position = "BOWL";
+          case 'bowler':
+            position = 'BOWL';
             break;
-          case "batsman":
-            position = "BAT";
+          case 'batsman':
+            position = 'BAT';
             break;
-          case "all_rounder":
-            position = "AR";
+          case 'all_rounder':
+            position = 'AR';
             break;
-          case "keeper":
-            position = "WK";
+          case 'keeper':
+            position = 'WK';
             break;
         }
 
-        result.svg.g[6]["text"][1]["tspan"]["_text"] = firstName.toUpperCase();
-        result.svg.g[6]["text"][2]["tspan"]["_text"] = lastName.toUpperCase();
-        result.svg.g[6]["text"][0]["tspan"]["_text"] = position;
+        result.svg.g[6]['text'][1]['tspan']['_text'] = firstName.toUpperCase();
+        result.svg.g[6]['text'][2]['tspan']['_text'] = lastName.toUpperCase();
+        result.svg.g[6]['text'][0]['tspan']['_text'] = position;
       } catch (e) {
         console.log(
           `FAILED AT ATHLETE ID: ${athlete.playerKey} and TEAM KEY: ${athlete.cricketTeam.key}`
@@ -2085,7 +2085,7 @@ export class TasksService {
       //   result
       // )
 
-      var buffer = Buffer.from(result, "utf8");
+      var buffer = Buffer.from(result, 'utf8');
       const s3 = new S3({
         accessKeyId: process.env.AWS_ACCESS_KEY_ID,
         secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
@@ -2093,34 +2093,34 @@ export class TasksService {
       const filename = `${
         athlete.playerKey
       }-${firstName.toLowerCase()}-${lastName.toLowerCase()}.svg`;
-      const s3_location = "media/athlete/ipl/promo_images/";
+      const s3_location = 'media/athlete/ipl/promo_images/';
       const fileContent = buffer;
       const params: any = {
         Bucket: process.env.AWS_BUCKET_NAME,
         Key: `${s3_location}${filename}`,
         Body: fileContent,
-        ContentType: "image/svg+xml",
-        CacheControl: "no-cache",
+        ContentType: 'image/svg+xml',
+        CacheControl: 'no-cache',
       };
 
       s3.upload(params, async (err: any, data: any) => {
         if (err) {
           this.logger.error(err);
         } else {
-          athlete.nftImagePromo = data["Location"];
+          athlete.nftImagePromo = data['Location'];
           await CricketAthlete.save(athlete);
         }
       });
     }
 
-    this.logger.debug("Generate Athlete Cricket Assets Promo: FINISHED");
+    this.logger.debug('Generate Athlete Cricket Assets Promo: FINISHED');
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`);
   }
 
   //@Timeout(1)
   //@Interval(86400000) //runs every 1 day
   async updateNflAthleteHeadshots() {
-    this.logger.debug("Update Athlete NFL Headshots: STARTED");
+    this.logger.debug('Update Athlete NFL Headshots: STARTED');
 
     const { data, status } = await axios.get(
       `${process.env.SPORTS_DATA_URL}nfl/headshots/json/Headshots?key=${process.env.SPORTS_DATA_NFL_KEY}`
@@ -2129,27 +2129,27 @@ export class TasksService {
     if (status === 200) {
       const updateAthlete: Athlete[] = [];
       for (let athlete of data) {
-        const apiId: number = athlete["PlayerID"];
+        const apiId: number = athlete['PlayerID'];
         const curAthlete = await Athlete.findOne({
           where: { apiId: apiId },
         });
 
         if (curAthlete) {
-          curAthlete.playerHeadshot = athlete["PreferredHostedHeadshotUrl"];
+          curAthlete.playerHeadshot = athlete['PreferredHostedHeadshotUrl'];
           updateAthlete.push(curAthlete);
         }
       }
       await Athlete.save(updateAthlete, { chunk: 20 });
-      this.logger.debug("Update Athlete NFL Headshots: FINISHED");
+      this.logger.debug('Update Athlete NFL Headshots: FINISHED');
     } else {
-      this.logger.error("NFL Athlete Headshot Data: SPORTS DATA ERROR");
+      this.logger.error('NFL Athlete Headshot Data: SPORTS DATA ERROR');
     }
   }
 
   //@Timeout(1)
   //@Interval(86400000) //runs every 1 day
   async updateMlbAthleteHeadshots() {
-    this.logger.debug("Update Athlete MLB Headshots: STARTED");
+    this.logger.debug('Update Athlete MLB Headshots: STARTED');
 
     const { data, status } = await axios.get(
       `${process.env.SPORTS_DATA_URL}mlb/headshots/json/Headshots?key=${process.env.SPORTS_DATA_MLB_KEY}`
@@ -2158,27 +2158,27 @@ export class TasksService {
     if (status === 200) {
       const updateAthlete: Athlete[] = [];
       for (let athlete of data) {
-        const apiId: number = athlete["PlayerID"];
+        const apiId: number = athlete['PlayerID'];
         const curAthlete = await Athlete.findOne({
           where: { apiId: apiId },
         });
 
         if (curAthlete) {
-          curAthlete.playerHeadshot = athlete["PreferredHostedHeadshotUrl"];
+          curAthlete.playerHeadshot = athlete['PreferredHostedHeadshotUrl'];
           updateAthlete.push(curAthlete);
         }
       }
       await Athlete.save(updateAthlete, { chunk: 20 });
-      this.logger.debug("Update Athlete MLB Headshots: FINISHED");
+      this.logger.debug('Update Athlete MLB Headshots: FINISHED');
     } else {
-      this.logger.error("MLB Athlete Headshot Data: SPORTS DATA ERROR");
+      this.logger.error('MLB Athlete Headshot Data: SPORTS DATA ERROR');
     }
   }
 
   //@Timeout(1)
   //@Interval(86400000) //runs every 1 day
   async updateNbaAthleteHeadshots() {
-    this.logger.debug("Update Athlete NBA Headshots: STARTED");
+    this.logger.debug('Update Athlete NBA Headshots: STARTED');
 
     const { data, status } = await axios.get(
       `${process.env.SPORTS_DATA_URL}nba/headshots/json/Headshots?key=${process.env.SPORTS_DATA_NBA_KEY}`
@@ -2187,26 +2187,26 @@ export class TasksService {
     if (status === 200) {
       const updateAthlete: Athlete[] = [];
       for (let athlete of data) {
-        const apiId: number = athlete["PlayerID"];
+        const apiId: number = athlete['PlayerID'];
         const curAthlete = await Athlete.findOne({
           where: { apiId: apiId },
         });
 
         if (curAthlete) {
-          curAthlete.playerHeadshot = athlete["PreferredHostedHeadshotUrl"];
+          curAthlete.playerHeadshot = athlete['PreferredHostedHeadshotUrl'];
           updateAthlete.push(curAthlete);
         }
       }
       await Athlete.save(updateAthlete, { chunk: 20 });
-      this.logger.debug("Update Athlete NBA Headshots: FINISHED");
+      this.logger.debug('Update Athlete NBA Headshots: FINISHED');
     } else {
-      this.logger.error("NBA Athlete Headshot Data: SPORTS DATA ERROR");
+      this.logger.error('NBA Athlete Headshot Data: SPORTS DATA ERROR');
     }
   }
 
   // @Timeout(1)
   async generateAthleteNflAssetsLocked() {
-    this.logger.debug("Generate Athlete NFL Assets Locked: STARTED");
+    this.logger.debug('Generate Athlete NFL Assets Locked: STARTED');
 
     const athletes = await Athlete.find({
       where: { team: { sport: SportType.NFL } },
@@ -2218,26 +2218,26 @@ export class TasksService {
     for (let athlete of athletes) {
       var svgTemplate = fs.readFileSync(
         `./src/utils/nfl-svg-teams-lock-templates/${athlete.team.key}.svg`,
-        "utf-8"
+        'utf-8'
       );
       var options = { compact: true, ignoreComment: true, spaces: 4 };
       var result: any = convert.xml2js(svgTemplate, options);
 
       try {
         if (athlete.firstName.length > 11) {
-          result.svg.g[5].text[1]["_attributes"]["style"] =
-            "fill:#fff; font-family:Arimo-Bold, Arimo; font-size:50px;";
+          result.svg.g[5].text[1]['_attributes']['style'] =
+            'fill:#fff; font-family:Arimo-Bold, Arimo; font-size:50px;';
         }
         if (athlete.lastName.length > 11) {
-          result.svg.g[5].text[2]["_attributes"]["style"] =
-            "fill:#fff; font-family:Arimo-Bold, Arimo; font-size:50px;";
+          result.svg.g[5].text[2]['_attributes']['style'] =
+            'fill:#fff; font-family:Arimo-Bold, Arimo; font-size:50px;';
         }
 
-        result.svg.g[5]["text"][1]["tspan"]["_text"] =
+        result.svg.g[5]['text'][1]['tspan']['_text'] =
           athlete.firstName.toUpperCase();
-        result.svg.g[5]["text"][2]["tspan"]["_text"] =
+        result.svg.g[5]['text'][2]['tspan']['_text'] =
           athlete.lastName.toUpperCase();
-        result.svg.g[5]["text"][0]["tspan"]["_text"] =
+        result.svg.g[5]['text'][0]['tspan']['_text'] =
           athlete.position.toUpperCase();
       } catch (e) {
         console.log(
@@ -2251,7 +2251,7 @@ export class TasksService {
       //   result
       // )
 
-      var buffer = Buffer.from(result, "utf8");
+      var buffer = Buffer.from(result, 'utf8');
       const s3 = new S3({
         accessKeyId: process.env.AWS_ACCESS_KEY_ID,
         secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
@@ -2259,33 +2259,33 @@ export class TasksService {
       const filename = `${
         athlete.apiId
       }-${athlete.firstName.toLowerCase()}-${athlete.lastName.toLowerCase()}.svg`;
-      const s3_location = "media/athlete/nfl/locked_images/";
+      const s3_location = 'media/athlete/nfl/locked_images/';
       const fileContent = buffer;
       const params: any = {
         Bucket: process.env.AWS_BUCKET_NAME,
         Key: `${s3_location}${filename}`,
         Body: fileContent,
-        ContentType: "image/svg+xml",
-        CacheControl: "no-cache",
+        ContentType: 'image/svg+xml',
+        CacheControl: 'no-cache',
       };
 
       s3.upload(params, async (err: any, data: any) => {
         if (err) {
           this.logger.error(err);
         } else {
-          athlete.nftImageLocked = data["Location"];
+          athlete.nftImageLocked = data['Location'];
           await Athlete.save(athlete);
         }
       });
     }
 
-    this.logger.debug("Generate Athlete NFL Assets Locked: FINISHED");
+    this.logger.debug('Generate Athlete NFL Assets Locked: FINISHED');
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`);
   }
 
   // @Timeout(1)
   async generateAthleteNbaAssetsLocked() {
-    this.logger.debug("Generate Athlete NBA Assets Locked: STARTED");
+    this.logger.debug('Generate Athlete NBA Assets Locked: STARTED');
 
     const athletes = await Athlete.find({
       where: { team: { sport: SportType.NBA } },
@@ -2297,26 +2297,26 @@ export class TasksService {
     for (let athlete of athletes) {
       var svgTemplate = fs.readFileSync(
         `./src/utils/nba-svg-teams-lock-templates/${athlete.team.key}.svg`,
-        "utf-8"
+        'utf-8'
       );
       var options = { compact: true, ignoreComment: true, spaces: 4 };
       var result: any = convert.xml2js(svgTemplate, options);
 
       try {
         if (athlete.firstName.length > 11) {
-          result.svg.g[6].text[1]["_attributes"]["style"] =
-            "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700";
+          result.svg.g[6].text[1]['_attributes']['style'] =
+            'font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700';
         }
         if (athlete.lastName.length > 11) {
-          result.svg.g[6].text[2]["_attributes"]["style"] =
-            "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700";
+          result.svg.g[6].text[2]['_attributes']['style'] =
+            'font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700';
         }
 
-        result.svg.g[6]["text"][1]["tspan"]["_text"] =
+        result.svg.g[6]['text'][1]['tspan']['_text'] =
           athlete.firstName.toUpperCase();
-        result.svg.g[6]["text"][2]["tspan"]["_text"] =
+        result.svg.g[6]['text'][2]['tspan']['_text'] =
           athlete.lastName.toUpperCase();
-        result.svg.g[6]["text"][0]["tspan"]["_text"] =
+        result.svg.g[6]['text'][0]['tspan']['_text'] =
           athlete.position.toUpperCase();
       } catch (e) {
         console.log(
@@ -2330,7 +2330,7 @@ export class TasksService {
       //   result
       // )
 
-      var buffer = Buffer.from(result, "utf8");
+      var buffer = Buffer.from(result, 'utf8');
       const s3 = new S3({
         accessKeyId: process.env.AWS_ACCESS_KEY_ID,
         secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
@@ -2338,33 +2338,33 @@ export class TasksService {
       const filename = `${
         athlete.apiId
       }-${athlete.firstName.toLowerCase()}-${athlete.lastName.toLowerCase()}.svg`;
-      const s3_location = "media/athlete/nba/locked_images/";
+      const s3_location = 'media/athlete/nba/locked_images/';
       const fileContent = buffer;
       const params: any = {
         Bucket: process.env.AWS_BUCKET_NAME,
         Key: `${s3_location}${filename}`,
         Body: fileContent,
-        ContentType: "image/svg+xml",
-        CacheControl: "no-cache",
+        ContentType: 'image/svg+xml',
+        CacheControl: 'no-cache',
       };
 
       s3.upload(params, async (err: any, data: any) => {
         if (err) {
           this.logger.error(err);
         } else {
-          athlete.nftImageLocked = data["Location"];
+          athlete.nftImageLocked = data['Location'];
           await Athlete.save(athlete);
         }
       });
     }
 
-    this.logger.debug("Generate Athlete NBA Assets Locked: FINISHED");
+    this.logger.debug('Generate Athlete NBA Assets Locked: FINISHED');
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`);
   }
 
   //@Timeout(750000)
   async generateAthleteMlbAssetsLocked() {
-    this.logger.debug("Generate Athlete MLB Assets Locked: STARTED");
+    this.logger.debug('Generate Athlete MLB Assets Locked: STARTED');
 
     const athletes = await Athlete.find({
       where: {
@@ -2379,26 +2379,26 @@ export class TasksService {
     for (let athlete of athletes) {
       var svgTemplate = fs.readFileSync(
         `./src/utils/mlb-svg-teams-lock-templates/${athlete.team.key}.svg`,
-        "utf-8"
+        'utf-8'
       );
       var options = { compact: true, ignoreComment: true, spaces: 4 };
       var result: any = convert.xml2js(svgTemplate, options);
 
       try {
         if (athlete.firstName.length > 11) {
-          result.svg.g[6].text[1]["_attributes"]["style"] =
-            "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700";
+          result.svg.g[6].text[1]['_attributes']['style'] =
+            'font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700';
         }
         if (athlete.lastName.length > 11) {
-          result.svg.g[6].text[2]["_attributes"]["style"] =
-            "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700";
+          result.svg.g[6].text[2]['_attributes']['style'] =
+            'font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700';
         }
 
-        result.svg.g[6]["text"][1]["tspan"]["_text"] =
+        result.svg.g[6]['text'][1]['tspan']['_text'] =
           athlete.firstName.toUpperCase();
-        result.svg.g[6]["text"][2]["tspan"]["_text"] =
+        result.svg.g[6]['text'][2]['tspan']['_text'] =
           athlete.lastName.toUpperCase();
-        result.svg.g[6]["text"][0]["tspan"]["_text"] =
+        result.svg.g[6]['text'][0]['tspan']['_text'] =
           athlete.position.toUpperCase();
       } catch (e) {
         console.log(
@@ -2412,7 +2412,7 @@ export class TasksService {
       //   result
       // )
 
-      var buffer = Buffer.from(result, "utf8");
+      var buffer = Buffer.from(result, 'utf8');
       const s3 = new S3({
         accessKeyId: process.env.AWS_ACCESS_KEY_ID,
         secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
@@ -2420,33 +2420,33 @@ export class TasksService {
       const filename = `${
         athlete.apiId
       }-${athlete.firstName.toLowerCase()}-${athlete.lastName.toLowerCase()}.svg`;
-      const s3_location = "media/athlete/mlb/locked_images/";
+      const s3_location = 'media/athlete/mlb/locked_images/';
       const fileContent = buffer;
       const params: any = {
         Bucket: process.env.AWS_BUCKET_NAME,
         Key: `${s3_location}${filename}`,
         Body: fileContent,
-        ContentType: "image/svg+xml",
-        CacheControl: "no-cache",
+        ContentType: 'image/svg+xml',
+        CacheControl: 'no-cache',
       };
 
       s3.upload(params, async (err: any, data: any) => {
         if (err) {
           this.logger.error(err);
         } else {
-          athlete.nftImageLocked = data["Location"];
+          athlete.nftImageLocked = data['Location'];
           await Athlete.save(athlete);
         }
       });
     }
 
-    this.logger.debug("Generate Athlete MLB Assets Locked: FINISHED");
+    this.logger.debug('Generate Athlete MLB Assets Locked: FINISHED');
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`);
   }
 
   //@Timeout(450000)
   async generateAthleteCricketAssetsLocked() {
-    this.logger.debug("Generate Athlete Cricket Assets Locked: STARTED");
+    this.logger.debug('Generate Athlete Cricket Assets Locked: STARTED');
 
     const athletes = await CricketAthlete.find({
       where: {
@@ -2461,7 +2461,7 @@ export class TasksService {
     for (let athlete of athletes) {
       var svgTemplate = fs.readFileSync(
         `./src/utils/cricket-svg-teams-lock-templates/${athlete.cricketTeam.key.toUpperCase()}.svg`,
-        "utf-8"
+        'utf-8'
       );
       var options = { compact: true, ignoreComment: true, spaces: 4 };
       var result: any = convert.xml2js(svgTemplate, options);
@@ -2472,32 +2472,32 @@ export class TasksService {
 
       try {
         if (firstName.length > 11) {
-          result.svg.g[6].text[1]["_attributes"]["style"] =
-            "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700";
+          result.svg.g[6].text[1]['_attributes']['style'] =
+            'font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700';
         }
         if (lastName.length > 11) {
-          result.svg.g[6].text[2]["_attributes"]["style"] =
-            "font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700";
+          result.svg.g[6].text[2]['_attributes']['style'] =
+            'font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700';
         }
 
-        let position: string = "";
+        let position: string = '';
         switch (athlete.seasonalRole) {
-          case "bowler":
-            position = "BOWL";
+          case 'bowler':
+            position = 'BOWL';
             break;
-          case "batsman":
-            position = "BAT";
+          case 'batsman':
+            position = 'BAT';
             break;
-          case "all_rounder":
-            position = "AR";
+          case 'all_rounder':
+            position = 'AR';
             break;
-          case "keeper":
-            position = "WK";
+          case 'keeper':
+            position = 'WK';
             break;
         }
-        result.svg.g[6]["text"][1]["tspan"]["_text"] = firstName.toUpperCase();
-        result.svg.g[6]["text"][2]["tspan"]["_text"] = lastName.toUpperCase();
-        result.svg.g[6]["text"][0]["tspan"]["_text"] = position;
+        result.svg.g[6]['text'][1]['tspan']['_text'] = firstName.toUpperCase();
+        result.svg.g[6]['text'][2]['tspan']['_text'] = lastName.toUpperCase();
+        result.svg.g[6]['text'][0]['tspan']['_text'] = position;
       } catch (e) {
         console.log(
           `FAILED AT ATHLETE ID: ${athlete.playerKey} and TEAM KEY: ${athlete.cricketTeam.key}`
@@ -2510,7 +2510,7 @@ export class TasksService {
       //   result
       // )
 
-      var buffer = Buffer.from(result, "utf8");
+      var buffer = Buffer.from(result, 'utf8');
       const s3 = new S3({
         accessKeyId: process.env.AWS_ACCESS_KEY_ID,
         secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
@@ -2518,34 +2518,34 @@ export class TasksService {
       const filename = `${
         athlete.playerKey
       }-${firstName.toLowerCase()}-${lastName.toLowerCase()}.svg`;
-      const s3_location = "media/athlete/ipl/locked_images/";
+      const s3_location = 'media/athlete/ipl/locked_images/';
       const fileContent = buffer;
       const params: any = {
         Bucket: process.env.AWS_BUCKET_NAME,
         Key: `${s3_location}${filename}`,
         Body: fileContent,
-        ContentType: "image/svg+xml",
-        CacheControl: "no-cache",
+        ContentType: 'image/svg+xml',
+        CacheControl: 'no-cache',
       };
 
       s3.upload(params, async (err: any, data: any) => {
         if (err) {
           this.logger.error(err);
         } else {
-          athlete.nftImageLocked = data["Location"];
+          athlete.nftImageLocked = data['Location'];
           await CricketAthlete.save(athlete);
         }
       });
     }
 
-    this.logger.debug("Generate Athlete Cricket Assets Locked: FINISHED");
+    this.logger.debug('Generate Athlete Cricket Assets Locked: FINISHED');
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`);
   }
 
   // @Timeout(1)
   //@Interval(900000) // Runs every 15 mins
   async updateNflAthleteStatsPerSeason() {
-    this.logger.debug("Update NFL Athlete Stats: STARTED");
+    this.logger.debug('Update NFL Athlete Stats: STARTED');
 
     const timeFrames = await axios.get(
       `${process.env.SPORTS_DATA_URL}nfl/scores/json/Timeframes/current?key=${process.env.SPORTS_DATA_NFL_KEY}`
@@ -2567,9 +2567,9 @@ export class TasksService {
           const updateStats: AthleteStat[] = [];
 
           for (let athleteStat of data) {
-            const apiId: number = athleteStat["PlayerID"];
+            const apiId: number = athleteStat['PlayerID'];
             const numberOfGames: number =
-              athleteStat["Played"] > 0 ? athleteStat["Played"] : 1;
+              athleteStat['Played'] > 0 ? athleteStat['Played'] : 1;
             const curStat = await AthleteStat.findOne({
               where: {
                 athlete: { apiId },
@@ -2584,27 +2584,27 @@ export class TasksService {
             if (curStat) {
               // Update stats here
               curStat.fantasyScore =
-                athleteStat["FantasyPointsDraftKings"] / numberOfGames;
+                athleteStat['FantasyPointsDraftKings'] / numberOfGames;
               curStat.completion =
-                athleteStat["PassingCompletionPercentage"] / numberOfGames;
-              curStat.carries = athleteStat["RushingAttempts"] / numberOfGames;
+                athleteStat['PassingCompletionPercentage'] / numberOfGames;
+              curStat.carries = athleteStat['RushingAttempts'] / numberOfGames;
               curStat.passingYards =
-                athleteStat["PassingYards"] / numberOfGames;
+                athleteStat['PassingYards'] / numberOfGames;
               curStat.rushingYards =
-                athleteStat["RushingYards"] / numberOfGames;
+                athleteStat['RushingYards'] / numberOfGames;
               curStat.receivingYards =
-                athleteStat["ReceivingYards"] / numberOfGames;
+                athleteStat['ReceivingYards'] / numberOfGames;
               curStat.interceptions =
-                athleteStat["PassingInterceptions"] / numberOfGames;
+                athleteStat['PassingInterceptions'] / numberOfGames;
               curStat.passingTouchdowns =
-                athleteStat["PassingTouchdowns"] / numberOfGames;
+                athleteStat['PassingTouchdowns'] / numberOfGames;
               curStat.rushingTouchdowns =
-                athleteStat["RushingTouchdowns"] / numberOfGames;
+                athleteStat['RushingTouchdowns'] / numberOfGames;
               curStat.receivingTouchdowns =
-                athleteStat["ReceivingTouchdowns"] / numberOfGames;
-              curStat.targets = athleteStat["ReceivingTargets"] / numberOfGames;
-              curStat.receptions = athleteStat["Receptions"] / numberOfGames;
-              curStat.played = athleteStat["Played"];
+                athleteStat['ReceivingTouchdowns'] / numberOfGames;
+              curStat.targets = athleteStat['ReceivingTargets'] / numberOfGames;
+              curStat.receptions = athleteStat['Receptions'] / numberOfGames;
+              curStat.played = athleteStat['Played'];
               updateStats.push(curStat);
             } else {
               const curAthlete = await Athlete.findOne({
@@ -2617,28 +2617,28 @@ export class TasksService {
                     athlete: curAthlete,
                     season: season.toString(),
                     type: AthleteStatType.SEASON,
-                    position: athleteStat["Position"],
-                    played: athleteStat["Played"],
+                    position: athleteStat['Position'],
+                    played: athleteStat['Played'],
                     fantasyScore:
-                      athleteStat["FantasyPointsDraftKings"] / numberOfGames,
+                      athleteStat['FantasyPointsDraftKings'] / numberOfGames,
                     completion:
-                      athleteStat["PassingCompletionPercentage"] /
+                      athleteStat['PassingCompletionPercentage'] /
                       numberOfGames,
-                    carries: athleteStat["RushingAttempts"] / numberOfGames,
-                    passingYards: athleteStat["PassingYards"] / numberOfGames,
-                    rushingYards: athleteStat["RushingYards"] / numberOfGames,
+                    carries: athleteStat['RushingAttempts'] / numberOfGames,
+                    passingYards: athleteStat['PassingYards'] / numberOfGames,
+                    rushingYards: athleteStat['RushingYards'] / numberOfGames,
                     receivingYards:
-                      athleteStat["ReceivingYards"] / numberOfGames,
+                      athleteStat['ReceivingYards'] / numberOfGames,
                     passingTouchdowns:
-                      athleteStat["PassingTouchdowns"] / numberOfGames,
+                      athleteStat['PassingTouchdowns'] / numberOfGames,
                     interceptions:
-                      athleteStat["PassingInterceptions"] / numberOfGames,
+                      athleteStat['PassingInterceptions'] / numberOfGames,
                     rushingTouchdowns:
-                      athleteStat["RushingTouchdowns"] / numberOfGames,
+                      athleteStat['RushingTouchdowns'] / numberOfGames,
                     receivingTouchdowns:
-                      athleteStat["ReceivingTouchdowns"] / numberOfGames,
-                    targets: athleteStat["ReceivingTargets"] / numberOfGames,
-                    receptions: athleteStat["Receptions"] / numberOfGames,
+                      athleteStat['ReceivingTouchdowns'] / numberOfGames,
+                    targets: athleteStat['ReceivingTargets'] / numberOfGames,
+                    receptions: athleteStat['Receptions'] / numberOfGames,
                   })
                 );
               }
@@ -2647,19 +2647,19 @@ export class TasksService {
 
           await AthleteStat.save([...newStats, ...updateStats], { chunk: 20 });
 
-          this.logger.debug("Update NFL Athlete Stats: FINISHED");
+          this.logger.debug('Update NFL Athlete Stats: FINISHED');
         } else {
-          this.logger.error("NFL Athlete Stats Data: SPORTS DATA ERROR");
+          this.logger.error('NFL Athlete Stats Data: SPORTS DATA ERROR');
         }
       }
     } else {
-      this.logger.error("NFL Timeframes Data: SPORTS DATA ERROR");
+      this.logger.error('NFL Timeframes Data: SPORTS DATA ERROR');
     }
   }
 
   //@Interval(300000) // Runs every 5 mins
   async updateNflAthleteStatsPerWeek() {
-    this.logger.debug("Update NFL Athlete Stats Per Week: STARTED");
+    this.logger.debug('Update NFL Athlete Stats Per Week: STARTED');
 
     const timeFrames = await axios.get(
       `${process.env.SPORTS_DATA_URL}nfl/scores/json/Timeframes/current?key=${process.env.SPORTS_DATA_NFL_KEY}`
@@ -2671,7 +2671,7 @@ export class TasksService {
       if (timeFrame) {
         // const season = new Date().getFullYear() - 1
         const season = timeFrame.ApiSeason;
-        const week = timeFrame.ApiWeek ? timeFrame.ApiWeek : "1";
+        const week = timeFrame.ApiWeek ? timeFrame.ApiWeek : '1';
 
         const { data, status } = await axios.get(
           `${process.env.SPORTS_DATA_URL}nfl/stats/json/PlayerGameStatsByWeek/${season}/${week}?key=${process.env.SPORTS_DATA_NFL_KEY}`
@@ -2682,7 +2682,7 @@ export class TasksService {
           const updateStats: AthleteStat[] = [];
 
           for (let athleteStat of data) {
-            const apiId: number = athleteStat["PlayerID"];
+            const apiId: number = athleteStat['PlayerID'];
             const curStat = await AthleteStat.findOne({
               where: {
                 athlete: { apiId },
@@ -2697,19 +2697,19 @@ export class TasksService {
 
             if (curStat) {
               // Update stats here
-              curStat.fantasyScore = athleteStat["FantasyPointsDraftKings"];
-              curStat.completion = athleteStat["PassingCompletionPercentage"];
-              curStat.carries = athleteStat["RushingAttempts"];
-              curStat.passingYards = athleteStat["PassingYards"];
-              curStat.rushingYards = athleteStat["RushingYards"];
-              curStat.receivingYards = athleteStat["ReceivingYards"];
-              curStat.interceptions = athleteStat["PassingInterceptions"];
-              curStat.passingTouchdowns = athleteStat["PassingTouchdowns"];
-              curStat.rushingTouchdowns = athleteStat["RushingTouchdowns"];
-              curStat.receivingTouchdowns = athleteStat["ReceivingTouchdowns"];
-              curStat.targets = athleteStat["ReceivingTargets"];
-              curStat.receptions = athleteStat["Receptions"];
-              curStat.played = athleteStat["Played"];
+              curStat.fantasyScore = athleteStat['FantasyPointsDraftKings'];
+              curStat.completion = athleteStat['PassingCompletionPercentage'];
+              curStat.carries = athleteStat['RushingAttempts'];
+              curStat.passingYards = athleteStat['PassingYards'];
+              curStat.rushingYards = athleteStat['RushingYards'];
+              curStat.receivingYards = athleteStat['ReceivingYards'];
+              curStat.interceptions = athleteStat['PassingInterceptions'];
+              curStat.passingTouchdowns = athleteStat['PassingTouchdowns'];
+              curStat.rushingTouchdowns = athleteStat['RushingTouchdowns'];
+              curStat.receivingTouchdowns = athleteStat['ReceivingTouchdowns'];
+              curStat.targets = athleteStat['ReceivingTargets'];
+              curStat.receptions = athleteStat['Receptions'];
+              curStat.played = athleteStat['Played'];
               updateStats.push(curStat);
             } else {
               const curAthlete = await Athlete.findOne({
@@ -2717,7 +2717,7 @@ export class TasksService {
               });
 
               const opponent = await Team.findOne({
-                where: { key: athleteStat["Opponent"] },
+                where: { key: athleteStat['Opponent'] },
               });
 
               if (curAthlete) {
@@ -2727,22 +2727,22 @@ export class TasksService {
                     season: season,
                     week: week,
                     opponent: opponent,
-                    gameDate: new Date(athleteStat["GameDate"]),
+                    gameDate: new Date(athleteStat['GameDate']),
                     type: AthleteStatType.WEEKLY,
-                    played: athleteStat["Played"],
-                    position: athleteStat["Position"],
-                    fantasyScore: athleteStat["FantasyPointsDraftKings"],
-                    completion: athleteStat["PassingCompletionPercentage"],
-                    carries: athleteStat["RushingAttempts"],
-                    passingYards: athleteStat["PassingYards"],
-                    rushingYards: athleteStat["RushingYards"],
-                    receivingYards: athleteStat["ReceivingYards"],
-                    passingTouchdowns: athleteStat["PassingTouchdowns"],
-                    interceptions: athleteStat["PassingInterceptions"],
-                    rushingTouchdowns: athleteStat["RushingTouchdowns"],
-                    receivingTouchdowns: athleteStat["ReceivingTouchdowns"],
-                    targets: athleteStat["ReceivingTargets"],
-                    receptions: athleteStat["Receptions"],
+                    played: athleteStat['Played'],
+                    position: athleteStat['Position'],
+                    fantasyScore: athleteStat['FantasyPointsDraftKings'],
+                    completion: athleteStat['PassingCompletionPercentage'],
+                    carries: athleteStat['RushingAttempts'],
+                    passingYards: athleteStat['PassingYards'],
+                    rushingYards: athleteStat['RushingYards'],
+                    receivingYards: athleteStat['ReceivingYards'],
+                    passingTouchdowns: athleteStat['PassingTouchdowns'],
+                    interceptions: athleteStat['PassingInterceptions'],
+                    rushingTouchdowns: athleteStat['RushingTouchdowns'],
+                    receivingTouchdowns: athleteStat['ReceivingTouchdowns'],
+                    targets: athleteStat['ReceivingTargets'],
+                    receptions: athleteStat['Receptions'],
                   })
                 );
               }
@@ -2751,18 +2751,18 @@ export class TasksService {
 
           await AthleteStat.save([...newStats, ...updateStats], { chunk: 20 });
 
-          this.logger.debug("Update NFL Athlete Stats Per Week: FINISHED");
+          this.logger.debug('Update NFL Athlete Stats Per Week: FINISHED');
         } else {
-          this.logger.error("NFL Athlete Stats Data: SPORTS DATA ERROR");
+          this.logger.error('NFL Athlete Stats Data: SPORTS DATA ERROR');
         }
       }
     } else {
-      this.logger.error("NFL Timeframes Data: SPORTS DATA ERROR");
+      this.logger.error('NFL Timeframes Data: SPORTS DATA ERROR');
     }
   }
   //@Interval(3600000) //runs every 1 hour
   async updateNflAthleteInjuryStatus() {
-    this.logger.debug("Update NFL Athlete Injury Status: STARTED");
+    this.logger.debug('Update NFL Athlete Injury Status: STARTED');
 
     const { data, status } = await axios.get(
       `${process.env.SPORTS_DATA_URL}nfl/scores/json/Players?key=${process.env.SPORTS_DATA_NFL_KEY}`
@@ -2771,26 +2771,26 @@ export class TasksService {
     if (status === 200) {
       const updateAthlete: Athlete[] = [];
       for (let athlete of data) {
-        const apiId: number = athlete["PlayerID"];
+        const apiId: number = athlete['PlayerID'];
         const curAthlete = await Athlete.findOne({
           where: { apiId: apiId },
         });
 
         if (curAthlete) {
-          curAthlete.isInjured = athlete["InjuryStatus"];
+          curAthlete.isInjured = athlete['InjuryStatus'];
           updateAthlete.push(curAthlete);
         }
 
         await Athlete.save(updateAthlete, { chunk: 20 });
       }
-      this.logger.debug("Update NFL Injury Status: FINISHED");
+      this.logger.debug('Update NFL Injury Status: FINISHED');
     } else {
-      this.logger.error("NFL Athlete Injury Data: SPORTS DATA ERROR");
+      this.logger.error('NFL Athlete Injury Data: SPORTS DATA ERROR');
     }
   }
   ////@Interval(3600000) //runs every 1 hour
   async updateNbaAthleteInjuryStatus() {
-    this.logger.debug("Update NBA Athlete Injury Status: STARTED");
+    this.logger.debug('Update NBA Athlete Injury Status: STARTED');
 
     const { data, status } = await axios.get(
       `${process.env.SPORTS_DATA_URL}nba/scores/json/Players?key=${process.env.SPORTS_DATA_NBA_KEY}`
@@ -2799,26 +2799,26 @@ export class TasksService {
     if (status === 200) {
       const updateAthlete: Athlete[] = [];
       for (let athlete of data) {
-        const apiId: number = athlete["PlayerID"];
+        const apiId: number = athlete['PlayerID'];
         const curAthlete = await Athlete.findOne({
           where: { apiId: apiId },
         });
 
         if (curAthlete) {
-          curAthlete.isInjured = athlete["InjuryStatus"];
+          curAthlete.isInjured = athlete['InjuryStatus'];
           updateAthlete.push(curAthlete);
         }
       }
       await Athlete.save(updateAthlete, { chunk: 20 });
-      this.logger.debug("Update NBA Injury Status: FINISHED");
+      this.logger.debug('Update NBA Injury Status: FINISHED');
     } else {
-      this.logger.error("NBA Athlete Injury Data: SPORTS DATA ERROR");
+      this.logger.error('NBA Athlete Injury Data: SPORTS DATA ERROR');
     }
   }
 
   ////@Interval(3600000) // runs every 1 hour
   async updateMlbAthleteInjuryStatus() {
-    this.logger.debug("Update MLB Athlete Injury Status: STARTED");
+    this.logger.debug('Update MLB Athlete Injury Status: STARTED');
 
     const { data, status } = await axios.get(
       `${process.env.SPORTS_DATA_URL}mlb/scores/json/Players?key=${process.env.SPORTS_DATA_MLB_KEY}`
@@ -2827,25 +2827,25 @@ export class TasksService {
     if (status === 200) {
       const updateAthlete: Athlete[] = [];
       for (let athlete of data) {
-        const apiId: number = athlete["PlayerID"];
+        const apiId: number = athlete['PlayerID'];
         const curAthlete = await Athlete.findOne({
           where: { apiId: apiId },
         });
         if (curAthlete) {
-          curAthlete.isInjured = athlete["InjuryStatus"];
+          curAthlete.isInjured = athlete['InjuryStatus'];
           updateAthlete.push(curAthlete);
         }
       }
       await Athlete.save(updateAthlete, { chunk: 20 });
-      this.logger.debug("Update NBA Injury Status: FINISHED");
+      this.logger.debug('Update NBA Injury Status: FINISHED');
     } else {
-      this.logger.error("NBA Athlete Injury Data: SPORTS DATA ERROR");
+      this.logger.error('NBA Athlete Injury Data: SPORTS DATA ERROR');
     }
   }
 
   //@Timeout(1)
   async updateNflAthleteStatsAllWeeks() {
-    this.logger.debug("Update NFL Athlete Stats All Weeks: STARTED");
+    this.logger.debug('Update NFL Athlete Stats All Weeks: STARTED');
 
     const timeFrames = await axios.get(
       `${process.env.SPORTS_DATA_URL}nfl/scores/json/Timeframes/current?key=${process.env.SPORTS_DATA_NFL_KEY}`
@@ -2858,8 +2858,8 @@ export class TasksService {
         // const season = new Date().getFullYear() - 1
         // const season = timeFrame.ApiSeason
         // const week = timeFrame.ApiWeek ? timeFrame.ApiWeek : "1"
-        const season = "2022PLAY";
-        const week = "18";
+        const season = '2022PLAY';
+        const week = '18';
 
         for (let curWeek = 1; curWeek <= Number(week); curWeek++) {
           const { data, status } = await axios.get(
@@ -2871,7 +2871,7 @@ export class TasksService {
             const updateStats: AthleteStat[] = [];
 
             for (let athleteStat of data) {
-              const apiId: number = athleteStat["PlayerID"];
+              const apiId: number = athleteStat['PlayerID'];
               const curStat = await AthleteStat.findOne({
                 where: {
                   athlete: { apiId },
@@ -2885,25 +2885,25 @@ export class TasksService {
               });
 
               const opponent = await Team.findOne({
-                where: { apiId: athleteStat["GlobalOpponentID"] },
+                where: { apiId: athleteStat['GlobalOpponentID'] },
               });
 
               if (curStat) {
                 // Update stats here
-                curStat.fantasyScore = athleteStat["FantasyPointsDraftKings"];
-                curStat.completion = athleteStat["PassingCompletionPercentage"];
-                curStat.carries = athleteStat["RushingAttempts"];
-                curStat.passingYards = athleteStat["PassingYards"];
-                curStat.rushingYards = athleteStat["RushingYards"];
-                curStat.receivingYards = athleteStat["ReceivingYards"];
-                curStat.interceptions = athleteStat["PassingInterceptions"];
-                curStat.passingTouchdowns = athleteStat["PassingTouchdowns"];
-                curStat.rushingTouchdowns = athleteStat["RushingTouchdowns"];
+                curStat.fantasyScore = athleteStat['FantasyPointsDraftKings'];
+                curStat.completion = athleteStat['PassingCompletionPercentage'];
+                curStat.carries = athleteStat['RushingAttempts'];
+                curStat.passingYards = athleteStat['PassingYards'];
+                curStat.rushingYards = athleteStat['RushingYards'];
+                curStat.receivingYards = athleteStat['ReceivingYards'];
+                curStat.interceptions = athleteStat['PassingInterceptions'];
+                curStat.passingTouchdowns = athleteStat['PassingTouchdowns'];
+                curStat.rushingTouchdowns = athleteStat['RushingTouchdowns'];
                 curStat.receivingTouchdowns =
-                  athleteStat["ReceivingTouchdowns"];
-                curStat.targets = athleteStat["ReceivingTargets"];
-                curStat.receptions = athleteStat["Receptions"];
-                curStat.played = athleteStat["Played"];
+                  athleteStat['ReceivingTouchdowns'];
+                curStat.targets = athleteStat['ReceivingTargets'];
+                curStat.receptions = athleteStat['Receptions'];
+                curStat.played = athleteStat['Played'];
                 curStat.opponent = opponent;
                 updateStats.push(curStat);
               } else {
@@ -2918,22 +2918,22 @@ export class TasksService {
                       season: season,
                       week: curWeek.toString(),
                       opponent: opponent,
-                      gameDate: new Date(athleteStat["GameDate"]),
+                      gameDate: new Date(athleteStat['GameDate']),
                       type: AthleteStatType.WEEKLY,
-                      played: athleteStat["Played"],
-                      position: athleteStat["Position"],
-                      fantasyScore: athleteStat["FantasyPointsDraftKings"],
-                      completion: athleteStat["PassingCompletionPercentage"],
-                      carries: athleteStat["RushingAttempts"],
-                      passingYards: athleteStat["PassingYards"],
-                      rushingYards: athleteStat["RushingYards"],
-                      receivingYards: athleteStat["ReceivingYards"],
-                      passingTouchdowns: athleteStat["PassingTouchdowns"],
-                      interceptions: athleteStat["PassingInterceptions"],
-                      rushingTouchdowns: athleteStat["RushingTouchdowns"],
-                      receivingTouchdowns: athleteStat["ReceivingTouchdowns"],
-                      targets: athleteStat["ReceivingTargets"],
-                      receptions: athleteStat["Receptions"],
+                      played: athleteStat['Played'],
+                      position: athleteStat['Position'],
+                      fantasyScore: athleteStat['FantasyPointsDraftKings'],
+                      completion: athleteStat['PassingCompletionPercentage'],
+                      carries: athleteStat['RushingAttempts'],
+                      passingYards: athleteStat['PassingYards'],
+                      rushingYards: athleteStat['RushingYards'],
+                      receivingYards: athleteStat['ReceivingYards'],
+                      passingTouchdowns: athleteStat['PassingTouchdowns'],
+                      interceptions: athleteStat['PassingInterceptions'],
+                      rushingTouchdowns: athleteStat['RushingTouchdowns'],
+                      receivingTouchdowns: athleteStat['ReceivingTouchdowns'],
+                      targets: athleteStat['ReceivingTargets'],
+                      receptions: athleteStat['Receptions'],
                     })
                   );
                 }
@@ -2948,15 +2948,15 @@ export class TasksService {
               `Update NFL Athlete Stats Week ${curWeek}: FINISHED`
             );
           } else {
-            this.logger.error("NFL Athlete Stats Data: SPORTS DATA ERROR");
+            this.logger.error('NFL Athlete Stats Data: SPORTS DATA ERROR');
           }
         }
       }
     } else {
-      this.logger.error("NFL Timeframes Data: SPORTS DATA ERROR");
+      this.logger.error('NFL Timeframes Data: SPORTS DATA ERROR');
     }
 
-    this.logger.debug("Update NFL Athlete Stats All Weeks: FINISHED");
+    this.logger.debug('Update NFL Athlete Stats All Weeks: FINISHED');
   }
 
   // @Cron("55 11 * * *", {
@@ -2964,7 +2964,7 @@ export class TasksService {
   //   timeZone: "Asia/Manila",
   // })
   async updateNflTeamScores() {
-    this.logger.debug("Update NFL Team Scores: STARTED");
+    this.logger.debug('Update NFL Team Scores: STARTED');
 
     const timeFrames = await axios.get(
       `https://api.sportsdata.io/v3/nfl/scores/json/Timeframes/current?key=${process.env.SPORTS_DATA_NFL_KEY}`
@@ -3023,7 +3023,7 @@ export class TasksService {
 
           await GameTeam.save(gameTeams, { chunk: 20 });
 
-          this.logger.debug("Update NFL Team Scores: FINISHED");
+          this.logger.debug('Update NFL Team Scores: FINISHED');
         }
       }
     }
@@ -3032,7 +3032,7 @@ export class TasksService {
   //@Timeout(1)
   ////@Interval(900000) // Runs every 15 mins
   async updateNbaAthleteStatsPerSeason() {
-    this.logger.debug("Update NBA Athlete Stats: STARTED");
+    this.logger.debug('Update NBA Athlete Stats: STARTED');
 
     const timeFrames = await axios.get(
       `${process.env.SPORTS_DATA_URL}nba/scores/json/CurrentSeason?key=${process.env.SPORTS_DATA_NBA_KEY}`
@@ -3053,9 +3053,9 @@ export class TasksService {
           const updateStats: AthleteStat[] = [];
 
           for (let athleteStat of data) {
-            const apiId: number = athleteStat["PlayerID"];
+            const apiId: number = athleteStat['PlayerID'];
             const numberOfGames: number =
-              athleteStat["Games"] > 0 ? athleteStat["Games"] : 1;
+              athleteStat['Games'] > 0 ? athleteStat['Games'] : 1;
             const curStat = await AthleteStat.findOne({
               where: {
                 athlete: { apiId },
@@ -3070,40 +3070,40 @@ export class TasksService {
             if (curStat) {
               // Update stats here
               curStat.fantasyScore =
-                athleteStat["FantasyPointsDraftKings"] / numberOfGames;
-              curStat.points = athleteStat["Points"] / numberOfGames;
-              curStat.rebounds = athleteStat["Rebounds"] / numberOfGames;
+                athleteStat['FantasyPointsDraftKings'] / numberOfGames;
+              curStat.points = athleteStat['Points'] / numberOfGames;
+              curStat.rebounds = athleteStat['Rebounds'] / numberOfGames;
               curStat.offensiveRebounds =
-                athleteStat["OffensiveRebounds"] / numberOfGames;
+                athleteStat['OffensiveRebounds'] / numberOfGames;
               curStat.defensiveRebounds =
-                athleteStat["DefensiveRebounds"] / numberOfGames;
-              curStat.assists = athleteStat["Assists"] / numberOfGames;
-              curStat.steals = athleteStat["Steals"] / numberOfGames;
+                athleteStat['DefensiveRebounds'] / numberOfGames;
+              curStat.assists = athleteStat['Assists'] / numberOfGames;
+              curStat.steals = athleteStat['Steals'] / numberOfGames;
               curStat.blockedShots =
-                athleteStat["BlockedShots"] / numberOfGames;
-              curStat.turnovers = athleteStat["Turnovers"] / numberOfGames;
+                athleteStat['BlockedShots'] / numberOfGames;
+              curStat.turnovers = athleteStat['Turnovers'] / numberOfGames;
               curStat.personalFouls =
-                athleteStat["PersonalFouls"] / numberOfGames;
+                athleteStat['PersonalFouls'] / numberOfGames;
               curStat.fieldGoalsMade =
-                athleteStat["FieldGoalsMade"] / numberOfGames;
+                athleteStat['FieldGoalsMade'] / numberOfGames;
               curStat.fieldGoalsAttempted =
-                athleteStat["FieldGoalsAttempted"] / numberOfGames;
+                athleteStat['FieldGoalsAttempted'] / numberOfGames;
               curStat.fieldGoalsPercentage =
-                athleteStat["FieldGoalsPercentage"] / numberOfGames;
+                athleteStat['FieldGoalsPercentage'] / numberOfGames;
               curStat.threePointersMade =
-                athleteStat["ThreePointersMade"] / numberOfGames;
+                athleteStat['ThreePointersMade'] / numberOfGames;
               curStat.threePointersAttempted =
-                athleteStat["ThreePointersAttempted"] / numberOfGames;
+                athleteStat['ThreePointersAttempted'] / numberOfGames;
               curStat.threePointersPercentage =
-                athleteStat["ThreePointersPercentage"] / numberOfGames;
+                athleteStat['ThreePointersPercentage'] / numberOfGames;
               curStat.freeThrowsMade =
-                athleteStat["FreeThrowsMade"] / numberOfGames;
+                athleteStat['FreeThrowsMade'] / numberOfGames;
               curStat.freeThrowsAttempted =
-                athleteStat["FreeThrowsAttempted"] / numberOfGames;
+                athleteStat['FreeThrowsAttempted'] / numberOfGames;
               curStat.freeThrowsPercentage =
-                athleteStat["FreeThrowsPercentage"] / numberOfGames;
-              curStat.minutes = athleteStat["Minutes"] / numberOfGames;
-              curStat.played = athleteStat["Games"];
+                athleteStat['FreeThrowsPercentage'] / numberOfGames;
+              curStat.minutes = athleteStat['Minutes'] / numberOfGames;
+              curStat.played = athleteStat['Games'];
               updateStats.push(curStat);
             } else {
               const curAthlete = await Athlete.findOne({
@@ -3116,40 +3116,40 @@ export class TasksService {
                     athlete: curAthlete,
                     season: season.toString(),
                     type: AthleteStatType.SEASON,
-                    position: athleteStat["Position"],
-                    played: athleteStat["Games"],
+                    position: athleteStat['Position'],
+                    played: athleteStat['Games'],
                     fantasyScore:
-                      athleteStat["FantasyPointsDraftKings"] / numberOfGames,
-                    points: athleteStat["Points"] / numberOfGames,
-                    rebounds: athleteStat["Rebounds"] / numberOfGames,
+                      athleteStat['FantasyPointsDraftKings'] / numberOfGames,
+                    points: athleteStat['Points'] / numberOfGames,
+                    rebounds: athleteStat['Rebounds'] / numberOfGames,
                     offensiveRebounds:
-                      athleteStat["OffensiveRebounds"] / numberOfGames,
+                      athleteStat['OffensiveRebounds'] / numberOfGames,
                     defensiveRebounds:
-                      athleteStat["DefensiveRebounds"] / numberOfGames,
-                    assists: athleteStat["Assists"] / numberOfGames,
-                    steals: athleteStat["Steals"] / numberOfGames,
-                    blockedShots: athleteStat["BlockedShots"] / numberOfGames,
-                    turnovers: athleteStat["Turnovers"] / numberOfGames,
-                    personalFouls: athleteStat["PersonalFouls"] / numberOfGames,
+                      athleteStat['DefensiveRebounds'] / numberOfGames,
+                    assists: athleteStat['Assists'] / numberOfGames,
+                    steals: athleteStat['Steals'] / numberOfGames,
+                    blockedShots: athleteStat['BlockedShots'] / numberOfGames,
+                    turnovers: athleteStat['Turnovers'] / numberOfGames,
+                    personalFouls: athleteStat['PersonalFouls'] / numberOfGames,
                     fieldGoalsMade:
-                      athleteStat["FieldGoalsMade"] / numberOfGames,
+                      athleteStat['FieldGoalsMade'] / numberOfGames,
                     fieldGoalsAttempted:
-                      athleteStat["FieldGoalsAttempted"] / numberOfGames,
+                      athleteStat['FieldGoalsAttempted'] / numberOfGames,
                     fieldGoalsPercentage:
-                      athleteStat["FieldGoalsPercentage"] / numberOfGames,
+                      athleteStat['FieldGoalsPercentage'] / numberOfGames,
                     threePointersMade:
-                      athleteStat["ThreePointersMade"] / numberOfGames,
+                      athleteStat['ThreePointersMade'] / numberOfGames,
                     threePointersAttempted:
-                      athleteStat["ThreePointersAttempted"] / numberOfGames,
+                      athleteStat['ThreePointersAttempted'] / numberOfGames,
                     threePointersPercentage:
-                      athleteStat["ThreePointersPercentage"] / numberOfGames,
+                      athleteStat['ThreePointersPercentage'] / numberOfGames,
                     freeThrowsMade:
-                      athleteStat["FreeThrowsMade"] / numberOfGames,
+                      athleteStat['FreeThrowsMade'] / numberOfGames,
                     freeThrowsAttempted:
-                      athleteStat["FreeThrowsAttempted"] / numberOfGames,
+                      athleteStat['FreeThrowsAttempted'] / numberOfGames,
                     freeThrowsPercentage:
-                      athleteStat["FreeThrowsPercentage"] / numberOfGames,
-                    minutes: athleteStat["Minutes"] / numberOfGames,
+                      athleteStat['FreeThrowsPercentage'] / numberOfGames,
+                    minutes: athleteStat['Minutes'] / numberOfGames,
                   })
                 );
               }
@@ -3158,19 +3158,19 @@ export class TasksService {
 
           await AthleteStat.save([...newStats, ...updateStats], { chunk: 20 });
 
-          this.logger.debug("Update NBA Athlete Stats: FINISHED");
+          this.logger.debug('Update NBA Athlete Stats: FINISHED');
         } else {
-          this.logger.error("NBA Athlete Stats Data: SPORTS DATA ERROR");
+          this.logger.error('NBA Athlete Stats Data: SPORTS DATA ERROR');
         }
       }
     } else {
-      this.logger.error("NBA Timeframes Data: SPORTS DATA ERROR");
+      this.logger.error('NBA Timeframes Data: SPORTS DATA ERROR');
     }
   }
 
   ////@Interval(900000) // runs every 15 minutes
   async updateMlbAthleteStatsPerSeason() {
-    this.logger.debug("Update MLB Athlete Stats (Season): STARTED");
+    this.logger.debug('Update MLB Athlete Stats (Season): STARTED');
 
     // const timeframe = await Timeframe.findOne({
     //   where: {
@@ -3195,9 +3195,9 @@ export class TasksService {
           const updateStats: AthleteStat[] = [];
 
           for (let athleteStat of data) {
-            const apiId: number = athleteStat["PlayerID"];
+            const apiId: number = athleteStat['PlayerID'];
             const numberOfGames: number =
-              athleteStat["Games"] > 0 ? athleteStat["Games"] : 1;
+              athleteStat['Games'] > 0 ? athleteStat['Games'] : 1;
             const curStat = await AthleteStat.findOne({
               where: {
                 athlete: { apiId },
@@ -3212,53 +3212,53 @@ export class TasksService {
             if (curStat) {
               //updating stats
               curStat.fantasyScore =
-                athleteStat["FantasyPointsDraftKings"] / numberOfGames;
-              curStat.atBats = athleteStat["AtBats"] / numberOfGames;
-              curStat.runs = athleteStat["Runs"] / numberOfGames;
-              curStat.hits = athleteStat["Hits"] / numberOfGames;
-              curStat.singles = athleteStat["Singles"] / numberOfGames;
-              curStat.doubles = athleteStat["Doubles"] / numberOfGames;
-              curStat.triples = athleteStat["Triples"] / numberOfGames;
-              curStat.homeRuns = athleteStat["HomeRuns"] / numberOfGames;
+                athleteStat['FantasyPointsDraftKings'] / numberOfGames;
+              curStat.atBats = athleteStat['AtBats'] / numberOfGames;
+              curStat.runs = athleteStat['Runs'] / numberOfGames;
+              curStat.hits = athleteStat['Hits'] / numberOfGames;
+              curStat.singles = athleteStat['Singles'] / numberOfGames;
+              curStat.doubles = athleteStat['Doubles'] / numberOfGames;
+              curStat.triples = athleteStat['Triples'] / numberOfGames;
+              curStat.homeRuns = athleteStat['HomeRuns'] / numberOfGames;
               curStat.runsBattedIn =
-                athleteStat["RunsBattedIn"] / numberOfGames;
-              curStat.battingAverage = athleteStat["BattingAverage"];
-              curStat.strikeouts = athleteStat["Strikeouts"] / numberOfGames;
-              curStat.walks = athleteStat["Walks"] / numberOfGames;
+                athleteStat['RunsBattedIn'] / numberOfGames;
+              curStat.battingAverage = athleteStat['BattingAverage'];
+              curStat.strikeouts = athleteStat['Strikeouts'] / numberOfGames;
+              curStat.walks = athleteStat['Walks'] / numberOfGames;
               curStat.caughtStealing =
-                athleteStat["CaughtStealing"] / numberOfGames;
-              curStat.onBasePercentage = athleteStat["OnBasePercentage"];
-              curStat.sluggingPercentage = athleteStat["SluggingPercentage"];
+                athleteStat['CaughtStealing'] / numberOfGames;
+              curStat.onBasePercentage = athleteStat['OnBasePercentage'];
+              curStat.sluggingPercentage = athleteStat['SluggingPercentage'];
               curStat.onBasePlusSlugging =
-                athleteStat["OnBasePlusSlugging"] / numberOfGames;
-              curStat.wins = athleteStat["Wins"] / numberOfGames;
-              curStat.losses = athleteStat["Losses"] / numberOfGames;
-              curStat.earnedRunAverage = athleteStat["EarnedRunAverage"];
-              curStat.hitByPitch = athleteStat["HitByPitch"] / numberOfGames;
-              curStat.stolenBases = athleteStat["StolenBases"] / numberOfGames;
+                athleteStat['OnBasePlusSlugging'] / numberOfGames;
+              curStat.wins = athleteStat['Wins'] / numberOfGames;
+              curStat.losses = athleteStat['Losses'] / numberOfGames;
+              curStat.earnedRunAverage = athleteStat['EarnedRunAverage'];
+              curStat.hitByPitch = athleteStat['HitByPitch'] / numberOfGames;
+              curStat.stolenBases = athleteStat['StolenBases'] / numberOfGames;
               curStat.walksHitsPerInningsPitched =
-                athleteStat["WalksHitsPerInningsPitched"];
+                athleteStat['WalksHitsPerInningsPitched'];
               curStat.pitchingBattingAverageAgainst =
-                athleteStat["PitchingBattingAverageAgainst"];
+                athleteStat['PitchingBattingAverageAgainst'];
               curStat.pitchingHits =
-                athleteStat["PitchingHits"] / numberOfGames;
+                athleteStat['PitchingHits'] / numberOfGames;
               curStat.pitchingRuns =
-                athleteStat["PitchingRuns"] / numberOfGames;
+                athleteStat['PitchingRuns'] / numberOfGames;
               curStat.pitchingEarnedRuns =
-                athleteStat["PitchingEarnedRuns"] / numberOfGames;
+                athleteStat['PitchingEarnedRuns'] / numberOfGames;
               curStat.pitchingWalks =
-                athleteStat["PitchingWalks"] / numberOfGames;
+                athleteStat['PitchingWalks'] / numberOfGames;
               curStat.pitchingHomeRuns =
-                athleteStat["PitchingHomeRuns"] / numberOfGames;
+                athleteStat['PitchingHomeRuns'] / numberOfGames;
               curStat.pitchingStrikeouts =
-                athleteStat["PitchingStrikeouts"] / numberOfGames;
+                athleteStat['PitchingStrikeouts'] / numberOfGames;
               curStat.pitchingCompleteGames =
-                athleteStat["PitchingCompleteGames"] / numberOfGames;
+                athleteStat['PitchingCompleteGames'] / numberOfGames;
               curStat.pitchingShutouts =
-                athleteStat["PitchingShutOuts"] / numberOfGames;
+                athleteStat['PitchingShutOuts'] / numberOfGames;
               curStat.pitchingNoHitters =
-                athleteStat["PitchingNoHitters"] / numberOfGames;
-              curStat.played = athleteStat["Games"];
+                athleteStat['PitchingNoHitters'] / numberOfGames;
+              curStat.played = athleteStat['Games'];
               updateStats.push(curStat);
             } else {
               const curAthlete = await Athlete.findOne({
@@ -3271,65 +3271,65 @@ export class TasksService {
                     athlete: curAthlete,
                     season: season.toString(),
                     type: AthleteStatType.SEASON,
-                    position: athleteStat["Position"],
-                    played: athleteStat["Games"],
-                    statId: athleteStat["StatID"],
+                    position: athleteStat['Position'],
+                    played: athleteStat['Games'],
+                    statId: athleteStat['StatID'],
                     fantasyScore:
-                      athleteStat["FantasyPointsDraftKings"] / numberOfGames,
-                    atBats: athleteStat["AtBats"] / numberOfGames,
-                    runs: athleteStat["Runs"] / numberOfGames,
-                    hits: athleteStat["Hits"] / numberOfGames,
-                    singles: athleteStat["Singles"] / numberOfGames,
-                    doubles: athleteStat["Doubles"] / numberOfGames,
-                    triples: athleteStat["Triples"] / numberOfGames,
-                    homeRuns: athleteStat["HomeRuns"] / numberOfGames,
-                    runsBattedIn: athleteStat["RunsBattedIn"] / numberOfGames,
-                    battingAverage: athleteStat["BattingAverage"],
-                    strikeouts: athleteStat["Strikeouts"] / numberOfGames,
-                    walks: athleteStat["Walks"] / numberOfGames,
+                      athleteStat['FantasyPointsDraftKings'] / numberOfGames,
+                    atBats: athleteStat['AtBats'] / numberOfGames,
+                    runs: athleteStat['Runs'] / numberOfGames,
+                    hits: athleteStat['Hits'] / numberOfGames,
+                    singles: athleteStat['Singles'] / numberOfGames,
+                    doubles: athleteStat['Doubles'] / numberOfGames,
+                    triples: athleteStat['Triples'] / numberOfGames,
+                    homeRuns: athleteStat['HomeRuns'] / numberOfGames,
+                    runsBattedIn: athleteStat['RunsBattedIn'] / numberOfGames,
+                    battingAverage: athleteStat['BattingAverage'],
+                    strikeouts: athleteStat['Strikeouts'] / numberOfGames,
+                    walks: athleteStat['Walks'] / numberOfGames,
                     caughtStealing:
-                      athleteStat["CaughtStealing"] / numberOfGames,
+                      athleteStat['CaughtStealing'] / numberOfGames,
                     onBasePercentage:
-                      athleteStat["OnBasePercentage"] / numberOfGames,
+                      athleteStat['OnBasePercentage'] / numberOfGames,
                     sluggingPercentage:
-                      athleteStat["SluggingPercentage"] / numberOfGames,
-                    wins: athleteStat["Wins"] / numberOfGames,
-                    losses: athleteStat["Losses"] / numberOfGames,
-                    earnedRunAverage: athleteStat["EarnedRunAverage"],
-                    hitByPitch: athleteStat["HitByPitch"] / numberOfGames,
-                    stolenBases: athleteStat["StolenBases"] / numberOfGames,
+                      athleteStat['SluggingPercentage'] / numberOfGames,
+                    wins: athleteStat['Wins'] / numberOfGames,
+                    losses: athleteStat['Losses'] / numberOfGames,
+                    earnedRunAverage: athleteStat['EarnedRunAverage'],
+                    hitByPitch: athleteStat['HitByPitch'] / numberOfGames,
+                    stolenBases: athleteStat['StolenBases'] / numberOfGames,
                     walksHitsPerInningsPitched:
-                      athleteStat["WalksHitsPerInningsPitched"],
+                      athleteStat['WalksHitsPerInningsPitched'],
                     pitchingBattingAverageAgainst:
-                      athleteStat["PitchingBattingAverageAgainst"],
-                    pitchingHits: athleteStat["PitchingHits"],
-                    pitchingRuns: athleteStat["PitchingRuns"],
-                    pitchingEarnedRuns: athleteStat["PitchingEarnedRuns"],
-                    pitchingWalks: athleteStat["PitchingWalks"],
-                    pitchingHomeRuns: athleteStat["PitchingHomeRuns"],
+                      athleteStat['PitchingBattingAverageAgainst'],
+                    pitchingHits: athleteStat['PitchingHits'],
+                    pitchingRuns: athleteStat['PitchingRuns'],
+                    pitchingEarnedRuns: athleteStat['PitchingEarnedRuns'],
+                    pitchingWalks: athleteStat['PitchingWalks'],
+                    pitchingHomeRuns: athleteStat['PitchingHomeRuns'],
                     pitchingStrikeouts:
-                      athleteStat["PitchingStrikeouts"] / numberOfGames,
+                      athleteStat['PitchingStrikeouts'] / numberOfGames,
                     pitchingCompleteGames:
-                      athleteStat["PitchingCompleteGames"] / numberOfGames,
+                      athleteStat['PitchingCompleteGames'] / numberOfGames,
                     pitchingShutouts:
-                      athleteStat["PitchingShutOuts"] / numberOfGames,
+                      athleteStat['PitchingShutOuts'] / numberOfGames,
                     pitchingNoHitters:
-                      athleteStat["PitchingNoHitters"] / numberOfGames,
+                      athleteStat['PitchingNoHitters'] / numberOfGames,
                   })
                 );
               }
             }
           }
           await AthleteStat.save([...newStats, ...updateStats], { chunk: 20 });
-          this.logger.debug("Update MLB Athlete Stats (Season): FINISHED");
+          this.logger.debug('Update MLB Athlete Stats (Season): FINISHED');
         } else {
           this.logger.debug(
-            "Update MLB Athlete Stats (Season): SPORTS DATA ERROR"
+            'Update MLB Athlete Stats (Season): SPORTS DATA ERROR'
           );
         }
       } else {
         this.logger.debug(
-          "Update MLB Athlete Stats (Season): NO CURRENT SEASON FOUND"
+          'Update MLB Athlete Stats (Season): NO CURRENT SEASON FOUND'
         );
       }
     }
@@ -3337,7 +3337,7 @@ export class TasksService {
 
   ////@Interval(300000) // runs every 5 minutes
   async updateMlbAthleteStatsPerDay() {
-    this.logger.debug("Update MLB Athlete Stats Per Day: STARTED");
+    this.logger.debug('Update MLB Athlete Stats Per Day: STARTED');
 
     //change this later to same with NBA
     // const timeFrame = await Timeframe.findOne({
@@ -3355,12 +3355,12 @@ export class TasksService {
       if (timeFrame) {
         const season = timeFrame.ApiSeason;
         const dateFormat = moment()
-          .tz("America/New_York")
-          .subtract(3, "hours")
-          .format("YYYY-MMM-DD")
+          .tz('America/New_York')
+          .subtract(3, 'hours')
+          .format('YYYY-MMM-DD')
           .toUpperCase();
 
-        this.logger.debug("MLB - " + dateFormat);
+        this.logger.debug('MLB - ' + dateFormat);
 
         const { data, status } = await axios.get(
           `${process.env.SPORTS_DATA_URL}mlb/stats/json/PlayerGameStatsByDate/${dateFormat}?key=${process.env.SPORTS_DATA_MLB_KEY}`
@@ -3371,10 +3371,10 @@ export class TasksService {
           const updateStats: AthleteStat[] = [];
 
           for (let athleteStat of data) {
-            const apiId: number = athleteStat["PlayerID"];
+            const apiId: number = athleteStat['PlayerID'];
             const curStat = await AthleteStat.findOne({
               where: {
-                statId: athleteStat["StatID"],
+                statId: athleteStat['StatID'],
               },
               relations: {
                 athlete: true,
@@ -3382,12 +3382,12 @@ export class TasksService {
             });
 
             const opponent = await Team.findOne({
-              where: { apiId: athleteStat["GlobalOpponentID"] },
+              where: { apiId: athleteStat['GlobalOpponentID'] },
             });
 
             const apiDate = moment.tz(
-              athleteStat["DateTime"],
-              "America/New_York"
+              athleteStat['DateTime'],
+              'America/New_York'
             );
             const utcDate = apiDate.utc().format();
 
@@ -3395,46 +3395,46 @@ export class TasksService {
               curStat.fantasyScore =
                 apiId === 10008667
                   ? computeShoheiOhtaniScores(athleteStat)
-                  : athleteStat["FantasyPointsDraftKings"];
-              curStat.atBats = athleteStat["AtBats"];
-              curStat.runs = athleteStat["Runs"];
-              curStat.hits = athleteStat["Hits"];
-              curStat.singles = athleteStat["Singles"];
-              curStat.doubles = athleteStat["Doubles"];
-              curStat.triples = athleteStat["Triples"];
-              curStat.homeRuns = athleteStat["HomeRuns"];
-              curStat.runsBattedIn = athleteStat["RunsBattedIn"];
-              curStat.battingAverage = athleteStat["BattingAverage"];
-              curStat.strikeouts = athleteStat["Strikeouts"];
-              curStat.walks = athleteStat["Walks"];
-              curStat.caughtStealing = athleteStat["CaughtStealing"];
-              curStat.onBasePercentage = athleteStat["OnBasePercentage"];
-              curStat.sluggingPercentage = athleteStat["SluggingPercentage"];
-              curStat.onBasePlusSlugging = athleteStat["OnBasePlusSlugging"];
-              curStat.wins = athleteStat["Wins"];
-              curStat.losses = athleteStat["Losses"];
-              curStat.earnedRunAverage = athleteStat["EarnedRunAverage"];
-              curStat.hitByPitch = athleteStat["HitByPitch"];
-              curStat.stolenBases = athleteStat["StolenBases"];
+                  : athleteStat['FantasyPointsDraftKings'];
+              curStat.atBats = athleteStat['AtBats'];
+              curStat.runs = athleteStat['Runs'];
+              curStat.hits = athleteStat['Hits'];
+              curStat.singles = athleteStat['Singles'];
+              curStat.doubles = athleteStat['Doubles'];
+              curStat.triples = athleteStat['Triples'];
+              curStat.homeRuns = athleteStat['HomeRuns'];
+              curStat.runsBattedIn = athleteStat['RunsBattedIn'];
+              curStat.battingAverage = athleteStat['BattingAverage'];
+              curStat.strikeouts = athleteStat['Strikeouts'];
+              curStat.walks = athleteStat['Walks'];
+              curStat.caughtStealing = athleteStat['CaughtStealing'];
+              curStat.onBasePercentage = athleteStat['OnBasePercentage'];
+              curStat.sluggingPercentage = athleteStat['SluggingPercentage'];
+              curStat.onBasePlusSlugging = athleteStat['OnBasePlusSlugging'];
+              curStat.wins = athleteStat['Wins'];
+              curStat.losses = athleteStat['Losses'];
+              curStat.earnedRunAverage = athleteStat['EarnedRunAverage'];
+              curStat.hitByPitch = athleteStat['HitByPitch'];
+              curStat.stolenBases = athleteStat['StolenBases'];
               curStat.walksHitsPerInningsPitched =
-                athleteStat["WalksHitsPerInningsPitched"];
+                athleteStat['WalksHitsPerInningsPitched'];
               curStat.pitchingBattingAverageAgainst =
-                athleteStat["PitchingBattingAverageAgainst"];
-              curStat.pitchingHits = athleteStat["PitchingHits"];
-              curStat.pitchingRuns = athleteStat["PitchingRuns"];
-              curStat.pitchingEarnedRuns = athleteStat["PitchingEarnedRuns"];
-              curStat.pitchingWalks = athleteStat["PitchingWalks"];
-              curStat.pitchingHomeRuns = athleteStat["PitchingHomeRuns"];
-              curStat.pitchingStrikeouts = athleteStat["PitchingStrikeouts"];
+                athleteStat['PitchingBattingAverageAgainst'];
+              curStat.pitchingHits = athleteStat['PitchingHits'];
+              curStat.pitchingRuns = athleteStat['PitchingRuns'];
+              curStat.pitchingEarnedRuns = athleteStat['PitchingEarnedRuns'];
+              curStat.pitchingWalks = athleteStat['PitchingWalks'];
+              curStat.pitchingHomeRuns = athleteStat['PitchingHomeRuns'];
+              curStat.pitchingStrikeouts = athleteStat['PitchingStrikeouts'];
               curStat.pitchingCompleteGames =
-                athleteStat["PitchingCompleteGames"];
-              curStat.pitchingShutouts = athleteStat["PitchingShutOuts"];
-              curStat.pitchingNoHitters = athleteStat["PitchingNoHitters"];
-              curStat.played = athleteStat["Games"];
+                athleteStat['PitchingCompleteGames'];
+              curStat.pitchingShutouts = athleteStat['PitchingShutOuts'];
+              curStat.pitchingNoHitters = athleteStat['PitchingNoHitters'];
+              curStat.played = athleteStat['Games'];
               curStat.gameDate =
-                athleteStat["DateTime"] !== null
+                athleteStat['DateTime'] !== null
                   ? new Date(utcDate)
-                  : athleteStat["DateTime"];
+                  : athleteStat['DateTime'];
               updateStats.push(curStat);
             } else {
               const curAthlete = await Athlete.findOne({
@@ -3448,49 +3448,49 @@ export class TasksService {
                     season: season,
                     opponent: opponent,
                     gameDate:
-                      athleteStat["DateTime"] !== null
+                      athleteStat['DateTime'] !== null
                         ? new Date(utcDate)
-                        : athleteStat["DateTime"],
+                        : athleteStat['DateTime'],
                     type: AthleteStatType.DAILY,
-                    statId: athleteStat["StatID"],
-                    position: athleteStat["Position"],
-                    played: athleteStat["Games"],
+                    statId: athleteStat['StatID'],
+                    position: athleteStat['Position'],
+                    played: athleteStat['Games'],
                     fantasyScore:
                       apiId === 10008667
                         ? computeShoheiOhtaniScores(athleteStat)
-                        : athleteStat["FantasyPointsDraftKings"],
-                    atBats: athleteStat["AtBats"],
-                    runs: athleteStat["Runs"],
-                    hits: athleteStat["Hits"],
-                    singles: athleteStat["Singles"],
-                    doubles: athleteStat["Doubles"],
-                    triples: athleteStat["Triples"],
-                    homeRuns: athleteStat["HomeRuns"],
-                    runsBattedIn: athleteStat["RunsBattedIn"],
-                    battingAverage: athleteStat["BattingAverage"],
-                    strikeouts: athleteStat["Strikeouts"],
-                    walks: athleteStat["Walks"],
-                    caughtStealing: athleteStat["CaughtStealing"],
-                    onBasePercentage: athleteStat["OnBasePercentage"],
-                    sluggingPercentage: athleteStat["SluggingPercentage"],
-                    wins: athleteStat["Wins"],
-                    losses: athleteStat["Losses"],
-                    earnedRunAverage: athleteStat["EarnedRunAverage"],
-                    hitByPitch: athleteStat["HitByPitch"],
-                    stolenBases: athleteStat["StolenBases"],
+                        : athleteStat['FantasyPointsDraftKings'],
+                    atBats: athleteStat['AtBats'],
+                    runs: athleteStat['Runs'],
+                    hits: athleteStat['Hits'],
+                    singles: athleteStat['Singles'],
+                    doubles: athleteStat['Doubles'],
+                    triples: athleteStat['Triples'],
+                    homeRuns: athleteStat['HomeRuns'],
+                    runsBattedIn: athleteStat['RunsBattedIn'],
+                    battingAverage: athleteStat['BattingAverage'],
+                    strikeouts: athleteStat['Strikeouts'],
+                    walks: athleteStat['Walks'],
+                    caughtStealing: athleteStat['CaughtStealing'],
+                    onBasePercentage: athleteStat['OnBasePercentage'],
+                    sluggingPercentage: athleteStat['SluggingPercentage'],
+                    wins: athleteStat['Wins'],
+                    losses: athleteStat['Losses'],
+                    earnedRunAverage: athleteStat['EarnedRunAverage'],
+                    hitByPitch: athleteStat['HitByPitch'],
+                    stolenBases: athleteStat['StolenBases'],
                     walksHitsPerInningsPitched:
-                      athleteStat["WalksHitsPerInningsPitched"],
+                      athleteStat['WalksHitsPerInningsPitched'],
                     pitchingBattingAverageAgainst:
-                      athleteStat["PitchingBattingAverageAgainst"],
-                    pitchingHits: athleteStat["PitchingHits"],
-                    pitchingRuns: athleteStat["PitchingRuns"],
-                    pitchingEarnedRuns: athleteStat["PitchingEarnedRuns"],
-                    pitchingWalks: athleteStat["PitchingWalks"],
-                    pitchingHomeRuns: athleteStat["PitchingHomeRuns"],
-                    pitchingStrikeouts: athleteStat["PitchingStrikeouts"],
-                    pitchingCompleteGames: athleteStat["PitchingCompleteGames"],
-                    pitchingShutouts: athleteStat["PitchingShutOuts"],
-                    pitchingNoHitters: athleteStat["PitchingNoHitters"],
+                      athleteStat['PitchingBattingAverageAgainst'],
+                    pitchingHits: athleteStat['PitchingHits'],
+                    pitchingRuns: athleteStat['PitchingRuns'],
+                    pitchingEarnedRuns: athleteStat['PitchingEarnedRuns'],
+                    pitchingWalks: athleteStat['PitchingWalks'],
+                    pitchingHomeRuns: athleteStat['PitchingHomeRuns'],
+                    pitchingStrikeouts: athleteStat['PitchingStrikeouts'],
+                    pitchingCompleteGames: athleteStat['PitchingCompleteGames'],
+                    pitchingShutouts: athleteStat['PitchingShutOuts'],
+                    pitchingNoHitters: athleteStat['PitchingNoHitters'],
                   })
                 );
               }
@@ -3498,20 +3498,20 @@ export class TasksService {
           }
 
           await AthleteStat.save([...newStats, ...updateStats], { chunk: 20 });
-          this.logger.debug("Update MLB Athlete Stats (Daily): FINISHED");
+          this.logger.debug('Update MLB Athlete Stats (Daily): FINISHED');
         } else {
           this.logger.debug(
-            "Update MLB Athlete Stats (Daily): SPORTS DATA ERROR"
+            'Update MLB Athlete Stats (Daily): SPORTS DATA ERROR'
           );
           if (Object.keys(data).length === 0) {
             this.logger.debug(
-              "Update MLB Athlete Stats (Daily): EMPTY DATA RESPONSE"
+              'Update MLB Athlete Stats (Daily): EMPTY DATA RESPONSE'
             );
           }
         }
       } else {
         this.logger.debug(
-          "Update MLB Athlete Stats (Daily): NO CURRENT SEASON"
+          'Update MLB Athlete Stats (Daily): NO CURRENT SEASON'
         );
       }
     }
@@ -3519,7 +3519,7 @@ export class TasksService {
   //@Timeout(1)
   //////@Interval(300000) // Runs every 5 mins
   async updateNbaAthleteStatsPerDay() {
-    this.logger.debug("Update NBA Athlete Stats Per Day: STARTED");
+    this.logger.debug('Update NBA Athlete Stats Per Day: STARTED');
 
     const timeFrames = await axios.get(
       `${process.env.SPORTS_DATA_URL}nba/scores/json/CurrentSeason?key=${process.env.SPORTS_DATA_NBA_KEY}`
@@ -3531,9 +3531,9 @@ export class TasksService {
       if (timeFrame) {
         const season = timeFrame.ApiSeason;
         const dateFormat = moment()
-          .tz("America/New_York")
-          .subtract(3, "hours")
-          .format("YYYY-MMM-DD")
+          .tz('America/New_York')
+          .subtract(3, 'hours')
+          .format('YYYY-MMM-DD')
           .toUpperCase();
 
         this.logger.debug(dateFormat);
@@ -3547,10 +3547,10 @@ export class TasksService {
           const updateStats: AthleteStat[] = [];
 
           for (let athleteStat of data) {
-            const apiId: number = athleteStat["PlayerID"];
+            const apiId: number = athleteStat['PlayerID'];
             const curStat = await AthleteStat.findOne({
               where: {
-                statId: athleteStat["StatID"],
+                statId: athleteStat['StatID'],
               },
               relations: {
                 athlete: true,
@@ -3558,46 +3558,46 @@ export class TasksService {
             });
 
             const opponent = await Team.findOne({
-              where: { apiId: athleteStat["GlobalOpponentID"] },
+              where: { apiId: athleteStat['GlobalOpponentID'] },
             });
             const apiDate = moment.tz(
-              athleteStat["DateTime"],
-              "America/New_York"
+              athleteStat['DateTime'],
+              'America/New_York'
             );
             const utcDate = apiDate.utc().format();
             if (curStat) {
               // Update stats here
-              curStat.fantasyScore = athleteStat["FantasyPointsDraftKings"];
+              curStat.fantasyScore = athleteStat['FantasyPointsDraftKings'];
               curStat.opponent = opponent;
               curStat.season = season;
-              curStat.points = athleteStat["Points"];
-              curStat.rebounds = athleteStat["Rebounds"];
-              curStat.offensiveRebounds = athleteStat["OffensiveRebounds"];
-              curStat.defensiveRebounds = athleteStat["DefensiveRebounds"];
-              curStat.assists = athleteStat["Assists"];
-              curStat.steals = athleteStat["Steals"];
-              curStat.blockedShots = athleteStat["BlockedShots"];
-              curStat.turnovers = athleteStat["Turnovers"];
-              curStat.personalFouls = athleteStat["PersonalFouls"];
-              curStat.fieldGoalsMade = athleteStat["FieldGoalsMade"];
-              curStat.fieldGoalsAttempted = athleteStat["FieldGoalsAttempted"];
+              curStat.points = athleteStat['Points'];
+              curStat.rebounds = athleteStat['Rebounds'];
+              curStat.offensiveRebounds = athleteStat['OffensiveRebounds'];
+              curStat.defensiveRebounds = athleteStat['DefensiveRebounds'];
+              curStat.assists = athleteStat['Assists'];
+              curStat.steals = athleteStat['Steals'];
+              curStat.blockedShots = athleteStat['BlockedShots'];
+              curStat.turnovers = athleteStat['Turnovers'];
+              curStat.personalFouls = athleteStat['PersonalFouls'];
+              curStat.fieldGoalsMade = athleteStat['FieldGoalsMade'];
+              curStat.fieldGoalsAttempted = athleteStat['FieldGoalsAttempted'];
               curStat.fieldGoalsPercentage =
-                athleteStat["FieldGoalsPercentage"];
-              curStat.threePointersMade = athleteStat["ThreePointersMade"];
+                athleteStat['FieldGoalsPercentage'];
+              curStat.threePointersMade = athleteStat['ThreePointersMade'];
               curStat.threePointersAttempted =
-                athleteStat["ThreePointersAttempted"];
+                athleteStat['ThreePointersAttempted'];
               curStat.threePointersPercentage =
-                athleteStat["ThreePointersPercentage"];
-              curStat.freeThrowsMade = athleteStat["FreeThrowsMade"];
-              curStat.freeThrowsAttempted = athleteStat["FreeThrowsAttempted"];
+                athleteStat['ThreePointersPercentage'];
+              curStat.freeThrowsMade = athleteStat['FreeThrowsMade'];
+              curStat.freeThrowsAttempted = athleteStat['FreeThrowsAttempted'];
               curStat.freeThrowsPercentage =
-                athleteStat["FreeThrowsPercentage"];
-              curStat.minutes = athleteStat["Minutes"];
-              curStat.played = athleteStat["Games"];
+                athleteStat['FreeThrowsPercentage'];
+              curStat.minutes = athleteStat['Minutes'];
+              curStat.played = athleteStat['Games'];
               curStat.gameDate =
-                athleteStat["DateTime"] !== null
+                athleteStat['DateTime'] !== null
                   ? new Date(utcDate)
-                  : athleteStat["DateTime"];
+                  : athleteStat['DateTime'];
               updateStats.push(curStat);
             } else {
               const curAthlete = await Athlete.findOne({
@@ -3611,35 +3611,35 @@ export class TasksService {
                     season: season,
                     opponent: opponent,
                     gameDate:
-                      athleteStat["DateTime"] !== null
+                      athleteStat['DateTime'] !== null
                         ? new Date(utcDate)
-                        : athleteStat["DateTime"],
-                    statId: athleteStat["StatID"],
+                        : athleteStat['DateTime'],
+                    statId: athleteStat['StatID'],
                     type: AthleteStatType.DAILY,
-                    position: athleteStat["Position"],
-                    played: athleteStat["Games"],
-                    fantasyScore: athleteStat["FantasyPointsDraftKings"],
-                    points: athleteStat["Points"],
-                    rebounds: athleteStat["Rebounds"],
-                    offensiveRebounds: athleteStat["OffensiveRebounds"],
-                    defensiveRebounds: athleteStat["DefensiveRebounds"],
-                    assists: athleteStat["Assists"],
-                    steals: athleteStat["Steals"],
-                    blockedShots: athleteStat["BlockedShots"],
-                    turnovers: athleteStat["Turnovers"],
-                    personalFouls: athleteStat["PersonalFouls"],
-                    fieldGoalsMade: athleteStat["FieldGoalsMade"],
-                    fieldGoalsAttempted: athleteStat["FieldGoalsAttempted"],
-                    fieldGoalsPercentage: athleteStat["FieldGoalsPercentage"],
-                    threePointersMade: athleteStat["ThreePointersMade"],
+                    position: athleteStat['Position'],
+                    played: athleteStat['Games'],
+                    fantasyScore: athleteStat['FantasyPointsDraftKings'],
+                    points: athleteStat['Points'],
+                    rebounds: athleteStat['Rebounds'],
+                    offensiveRebounds: athleteStat['OffensiveRebounds'],
+                    defensiveRebounds: athleteStat['DefensiveRebounds'],
+                    assists: athleteStat['Assists'],
+                    steals: athleteStat['Steals'],
+                    blockedShots: athleteStat['BlockedShots'],
+                    turnovers: athleteStat['Turnovers'],
+                    personalFouls: athleteStat['PersonalFouls'],
+                    fieldGoalsMade: athleteStat['FieldGoalsMade'],
+                    fieldGoalsAttempted: athleteStat['FieldGoalsAttempted'],
+                    fieldGoalsPercentage: athleteStat['FieldGoalsPercentage'],
+                    threePointersMade: athleteStat['ThreePointersMade'],
                     threePointersAttempted:
-                      athleteStat["ThreePointersAttempted"],
+                      athleteStat['ThreePointersAttempted'],
                     threePointersPercentage:
-                      athleteStat["ThreePointersPercentage"],
-                    freeThrowsMade: athleteStat["FreeThrowsMade"],
-                    freeThrowsAttempted: athleteStat["FreeThrowsAttempted"],
-                    freeThrowsPercentage: athleteStat["FreeThrowsPercentage"],
-                    minutes: athleteStat["Minutes"],
+                      athleteStat['ThreePointersPercentage'],
+                    freeThrowsMade: athleteStat['FreeThrowsMade'],
+                    freeThrowsAttempted: athleteStat['FreeThrowsAttempted'],
+                    freeThrowsPercentage: athleteStat['FreeThrowsPercentage'],
+                    minutes: athleteStat['Minutes'],
                   })
                 );
               }
@@ -3648,26 +3648,26 @@ export class TasksService {
 
           await AthleteStat.save([...newStats, ...updateStats], { chunk: 20 });
 
-          this.logger.debug("Update NBA Athlete Stats Per Day: FINISHED");
+          this.logger.debug('Update NBA Athlete Stats Per Day: FINISHED');
         } else {
           this.logger.debug(
-            "Update NBA Athlete Stats Per Day: SPORTS DATA ERROR"
+            'Update NBA Athlete Stats Per Day: SPORTS DATA ERROR'
           );
           if (Object.keys(data).length === 0) {
             this.logger.debug(
-              "Update NBA Athlete Stats Per Day: EMPTY DATA RESPONSE"
+              'Update NBA Athlete Stats Per Day: EMPTY DATA RESPONSE'
             );
           }
         }
       }
     } else {
-      this.logger.error("NBA Timeframes Data: SPORTS DATA ERROR");
+      this.logger.error('NBA Timeframes Data: SPORTS DATA ERROR');
     }
   }
 
   //@Timeout(1)
   async updateNbaAthleteStatsPerDayLoop() {
-    this.logger.debug("Update NBA Athlete GameDate Convert: STARTED");
+    this.logger.debug('Update NBA Athlete GameDate Convert: STARTED');
 
     const timeFrames = await axios.get(
       `${process.env.SPORTS_DATA_URL}nba/scores/json/CurrentSeason?key=${process.env.SPORTS_DATA_NBA_KEY}`
@@ -3681,8 +3681,8 @@ export class TasksService {
         let interval = setInterval(async () => {
           timesRun += 1;
           const season = timeFrame.ApiSeason;
-          const date = moment().subtract(timesRun, "day").toDate();
-          const dateFormat = moment(date).format("YYYY-MMM-DD").toUpperCase();
+          const date = moment().subtract(timesRun, 'day').toDate();
+          const dateFormat = moment(date).format('YYYY-MMM-DD').toUpperCase();
           this.logger.debug(dateFormat);
 
           const { data, status } = await axios.get(
@@ -3694,55 +3694,55 @@ export class TasksService {
             const updateStats: AthleteStat[] = [];
 
             for (let athleteStat of data) {
-              const apiId: number = athleteStat["PlayerID"];
+              const apiId: number = athleteStat['PlayerID'];
               const curStat = await AthleteStat.findOne({
-                where: { statId: athleteStat["StatID"] },
+                where: { statId: athleteStat['StatID'] },
                 relations: { athlete: true },
               });
 
               const opponent = await Team.findOne({
-                where: { apiId: athleteStat["GlobalOpponentID"] },
+                where: { apiId: athleteStat['GlobalOpponentID'] },
               });
               const apiDate = moment.tz(
-                athleteStat["DateTime"],
-                "America/New_York"
+                athleteStat['DateTime'],
+                'America/New_York'
               );
               const utcDate = apiDate.utc().format();
               if (curStat) {
                 // Update stats here
-                curStat.fantasyScore = athleteStat["FantasyPointsDraftKings"];
+                curStat.fantasyScore = athleteStat['FantasyPointsDraftKings'];
                 curStat.opponent = opponent;
                 curStat.season = season;
-                curStat.points = athleteStat["Points"];
-                curStat.rebounds = athleteStat["Rebounds"];
-                curStat.offensiveRebounds = athleteStat["OffensiveRebounds"];
-                curStat.defensiveRebounds = athleteStat["DefensiveRebounds"];
-                curStat.assists = athleteStat["Assists"];
-                curStat.steals = athleteStat["Steals"];
-                curStat.blockedShots = athleteStat["BlockedShots"];
-                curStat.turnovers = athleteStat["Turnovers"];
-                curStat.personalFouls = athleteStat["PersonalFouls"];
-                curStat.fieldGoalsMade = athleteStat["FieldGoalsMade"];
+                curStat.points = athleteStat['Points'];
+                curStat.rebounds = athleteStat['Rebounds'];
+                curStat.offensiveRebounds = athleteStat['OffensiveRebounds'];
+                curStat.defensiveRebounds = athleteStat['DefensiveRebounds'];
+                curStat.assists = athleteStat['Assists'];
+                curStat.steals = athleteStat['Steals'];
+                curStat.blockedShots = athleteStat['BlockedShots'];
+                curStat.turnovers = athleteStat['Turnovers'];
+                curStat.personalFouls = athleteStat['PersonalFouls'];
+                curStat.fieldGoalsMade = athleteStat['FieldGoalsMade'];
                 curStat.fieldGoalsAttempted =
-                  athleteStat["FieldGoalsAttempted"];
+                  athleteStat['FieldGoalsAttempted'];
                 curStat.fieldGoalsPercentage =
-                  athleteStat["FieldGoalsPercentage"];
-                curStat.threePointersMade = athleteStat["ThreePointersMade"];
+                  athleteStat['FieldGoalsPercentage'];
+                curStat.threePointersMade = athleteStat['ThreePointersMade'];
                 curStat.threePointersAttempted =
-                  athleteStat["ThreePointersAttempted"];
+                  athleteStat['ThreePointersAttempted'];
                 curStat.threePointersPercentage =
-                  athleteStat["ThreePointersPercentage"];
-                curStat.freeThrowsMade = athleteStat["FreeThrowsMade"];
+                  athleteStat['ThreePointersPercentage'];
+                curStat.freeThrowsMade = athleteStat['FreeThrowsMade'];
                 curStat.freeThrowsAttempted =
-                  athleteStat["FreeThrowsAttempted"];
+                  athleteStat['FreeThrowsAttempted'];
                 curStat.freeThrowsPercentage =
-                  athleteStat["FreeThrowsPercentage"];
-                curStat.minutes = athleteStat["Minutes"];
-                curStat.played = athleteStat["Games"];
+                  athleteStat['FreeThrowsPercentage'];
+                curStat.minutes = athleteStat['Minutes'];
+                curStat.played = athleteStat['Games'];
                 curStat.gameDate =
-                  athleteStat["DateTime"] !== null
+                  athleteStat['DateTime'] !== null
                     ? new Date(utcDate)
-                    : athleteStat["DateTime"];
+                    : athleteStat['DateTime'];
                 updateStats.push(curStat);
               } else {
                 const curAthlete = await Athlete.findOne({
@@ -3756,35 +3756,35 @@ export class TasksService {
                       season: season,
                       opponent: opponent,
                       gameDate:
-                        athleteStat["DateTime"] !== null
+                        athleteStat['DateTime'] !== null
                           ? new Date(utcDate)
-                          : athleteStat["DateTime"],
-                      statId: athleteStat["StatID"],
+                          : athleteStat['DateTime'],
+                      statId: athleteStat['StatID'],
                       type: AthleteStatType.DAILY,
-                      position: athleteStat["Position"],
-                      played: athleteStat["Games"],
-                      fantasyScore: athleteStat["FantasyPointsDraftKings"],
-                      points: athleteStat["Points"],
-                      rebounds: athleteStat["Rebounds"],
-                      offensiveRebounds: athleteStat["OffensiveRebounds"],
-                      defensiveRebounds: athleteStat["DefensiveRebounds"],
-                      assists: athleteStat["Assists"],
-                      steals: athleteStat["Steals"],
-                      blockedShots: athleteStat["BlockedShots"],
-                      turnovers: athleteStat["Turnovers"],
-                      personalFouls: athleteStat["PersonalFouls"],
-                      fieldGoalsMade: athleteStat["FieldGoalsMade"],
-                      fieldGoalsAttempted: athleteStat["FieldGoalsAttempted"],
-                      fieldGoalsPercentage: athleteStat["FieldGoalsPercentage"],
-                      threePointersMade: athleteStat["ThreePointersMade"],
+                      position: athleteStat['Position'],
+                      played: athleteStat['Games'],
+                      fantasyScore: athleteStat['FantasyPointsDraftKings'],
+                      points: athleteStat['Points'],
+                      rebounds: athleteStat['Rebounds'],
+                      offensiveRebounds: athleteStat['OffensiveRebounds'],
+                      defensiveRebounds: athleteStat['DefensiveRebounds'],
+                      assists: athleteStat['Assists'],
+                      steals: athleteStat['Steals'],
+                      blockedShots: athleteStat['BlockedShots'],
+                      turnovers: athleteStat['Turnovers'],
+                      personalFouls: athleteStat['PersonalFouls'],
+                      fieldGoalsMade: athleteStat['FieldGoalsMade'],
+                      fieldGoalsAttempted: athleteStat['FieldGoalsAttempted'],
+                      fieldGoalsPercentage: athleteStat['FieldGoalsPercentage'],
+                      threePointersMade: athleteStat['ThreePointersMade'],
                       threePointersAttempted:
-                        athleteStat["ThreePointersAttempted"],
+                        athleteStat['ThreePointersAttempted'],
                       threePointersPercentage:
-                        athleteStat["ThreePointersPercentage"],
-                      freeThrowsMade: athleteStat["FreeThrowsMade"],
-                      freeThrowsAttempted: athleteStat["FreeThrowsAttempted"],
-                      freeThrowsPercentage: athleteStat["FreeThrowsPercentage"],
-                      minutes: athleteStat["Minutes"],
+                        athleteStat['ThreePointersPercentage'],
+                      freeThrowsMade: athleteStat['FreeThrowsMade'],
+                      freeThrowsAttempted: athleteStat['FreeThrowsAttempted'],
+                      freeThrowsPercentage: athleteStat['FreeThrowsPercentage'],
+                      minutes: athleteStat['Minutes'],
                     })
                   );
                 }
@@ -3795,9 +3795,9 @@ export class TasksService {
               chunk: 20,
             });
 
-            this.logger.debug("Update NBA Athlete GameDate Convert: FINISHED");
+            this.logger.debug('Update NBA Athlete GameDate Convert: FINISHED');
           } else {
-            this.logger.debug("NBA Player Game by Date API: SPORTS DATA ERROR");
+            this.logger.debug('NBA Player Game by Date API: SPORTS DATA ERROR');
           }
 
           if (timesRun === 12) {
@@ -3806,13 +3806,13 @@ export class TasksService {
         }, 300000);
       }
     } else {
-      this.logger.error("NBA Timeframes Data: SPORTS DATA ERROR");
+      this.logger.error('NBA Timeframes Data: SPORTS DATA ERROR');
     }
   }
 
   //@Timeout(1)
   async getInitialNflTimeframe() {
-    this.logger.debug("Get Initial NFL Timeframe: STARTED");
+    this.logger.debug('Get Initial NFL Timeframe: STARTED');
 
     const { data, status } = await axios.get(
       `${process.env.SPORTS_DATA_URL}nfl/scores/json/Timeframes/recent?key=${process.env.SPORTS_DATA_NFL_KEY}`
@@ -3823,9 +3823,9 @@ export class TasksService {
       const updateTimeframe: Timeframe[] = [];
 
       for (let timeframe of data) {
-        const apiSeason: string = timeframe["ApiSeason"];
-        const apiWeek: string = timeframe["ApiWeek"];
-        const apiName: string = timeframe["Name"];
+        const apiSeason: string = timeframe['ApiSeason'];
+        const apiWeek: string = timeframe['ApiWeek'];
+        const apiName: string = timeframe['Name'];
         const currTimeframe = await Timeframe.findOne({
           where: {
             apiSeason: apiSeason,
@@ -3835,25 +3835,25 @@ export class TasksService {
         });
 
         if (currTimeframe) {
-          currTimeframe.apiName = timeframe["Name"];
-          currTimeframe.season = timeframe["Season"];
-          currTimeframe.seasonType = timeframe["SeasonType"];
-          currTimeframe.apiWeek = timeframe["ApiWeek"];
-          currTimeframe.apiSeason = timeframe["ApiSeason"];
-          currTimeframe.startDate = timeframe["StartDate"];
-          currTimeframe.endDate = timeframe["EndDate"];
+          currTimeframe.apiName = timeframe['Name'];
+          currTimeframe.season = timeframe['Season'];
+          currTimeframe.seasonType = timeframe['SeasonType'];
+          currTimeframe.apiWeek = timeframe['ApiWeek'];
+          currTimeframe.apiSeason = timeframe['ApiSeason'];
+          currTimeframe.startDate = timeframe['StartDate'];
+          currTimeframe.endDate = timeframe['EndDate'];
           updateTimeframe.push(currTimeframe);
         } else {
           newTimeframe.push(
             Timeframe.create({
-              apiName: timeframe["Name"],
-              season: timeframe["Season"],
-              seasonType: timeframe["SeasonType"],
-              apiWeek: timeframe["ApiWeek"],
-              apiSeason: timeframe["ApiSeason"],
+              apiName: timeframe['Name'],
+              season: timeframe['Season'],
+              seasonType: timeframe['SeasonType'],
+              apiWeek: timeframe['ApiWeek'],
+              apiSeason: timeframe['ApiSeason'],
               sport: SportType.NFL,
-              startDate: timeframe["StartDate"],
-              endDate: timeframe["EndDate"],
+              startDate: timeframe['StartDate'],
+              endDate: timeframe['EndDate'],
             })
           );
         }
@@ -3861,15 +3861,15 @@ export class TasksService {
       await Timeframe.save([...newTimeframe, ...updateTimeframe], {
         chunk: 20,
       });
-      this.logger.debug("Get Initial NFL Timeframe: FINISHED");
+      this.logger.debug('Get Initial NFL Timeframe: FINISHED');
     } else {
-      this.logger.error("Get Initial NFL Timeframe: SPORTS DATA ERROR");
+      this.logger.error('Get Initial NFL Timeframe: SPORTS DATA ERROR');
     }
   }
 
   //////@Interval(259200000) //Runs every 3 days
   async updateNflTimeframe() {
-    this.logger.debug("Update NFL Timeframe: STARTED");
+    this.logger.debug('Update NFL Timeframe: STARTED');
 
     const { data, status } = await axios.get(
       `${process.env.SPORTS_DATA_URL}nfl/scores/json/Timeframes/recent?key=${process.env.SPORTS_DATA_NFL_KEY}`
@@ -3880,9 +3880,9 @@ export class TasksService {
       const updateTimeframe: Timeframe[] = [];
 
       for (let timeframe of data) {
-        const apiSeason: string = timeframe["ApiSeason"];
-        const apiWeek: string = timeframe["ApiWeek"];
-        const apiName: string = timeframe["Name"];
+        const apiSeason: string = timeframe['ApiSeason'];
+        const apiWeek: string = timeframe['ApiWeek'];
+        const apiName: string = timeframe['Name'];
         const currTimeframe = await Timeframe.findOne({
           where: {
             apiSeason: apiSeason,
@@ -3892,25 +3892,25 @@ export class TasksService {
         });
 
         if (currTimeframe) {
-          currTimeframe.apiName = timeframe["Name"];
-          currTimeframe.season = timeframe["Season"];
-          currTimeframe.seasonType = timeframe["SeasonType"];
-          currTimeframe.apiWeek = timeframe["ApiWeek"];
-          currTimeframe.apiSeason = timeframe["ApiSeason"];
-          currTimeframe.startDate = timeframe["StartDate"];
-          currTimeframe.endDate = timeframe["EndDate"];
+          currTimeframe.apiName = timeframe['Name'];
+          currTimeframe.season = timeframe['Season'];
+          currTimeframe.seasonType = timeframe['SeasonType'];
+          currTimeframe.apiWeek = timeframe['ApiWeek'];
+          currTimeframe.apiSeason = timeframe['ApiSeason'];
+          currTimeframe.startDate = timeframe['StartDate'];
+          currTimeframe.endDate = timeframe['EndDate'];
           updateTimeframe.push(currTimeframe);
         } else {
           newTimeframe.push(
             Timeframe.create({
-              apiName: timeframe["Name"],
-              season: timeframe["Season"],
-              seasonType: timeframe["SeasonType"],
-              apiWeek: timeframe["ApiWeek"],
-              apiSeason: timeframe["ApiSeason"],
+              apiName: timeframe['Name'],
+              season: timeframe['Season'],
+              seasonType: timeframe['SeasonType'],
+              apiWeek: timeframe['ApiWeek'],
+              apiSeason: timeframe['ApiSeason'],
               sport: SportType.NFL,
-              startDate: timeframe["StartDate"],
-              endDate: timeframe["EndDate"],
+              startDate: timeframe['StartDate'],
+              endDate: timeframe['EndDate'],
             })
           );
         }
@@ -3918,16 +3918,16 @@ export class TasksService {
       await Timeframe.save([...newTimeframe, ...updateTimeframe], {
         chunk: 20,
       });
-      this.logger.debug("Update NFL Timeframe: FINISHED");
+      this.logger.debug('Update NFL Timeframe: FINISHED');
     } else {
-      this.logger.error("Update NFL Timeframe: SPORTS DATA ERROR");
+      this.logger.error('Update NFL Timeframe: SPORTS DATA ERROR');
     }
   }
 
   //@Timeout(1)
   ////@Interval(3600000) //Runs every 1 hour
   async updateNbaCurrentSeason() {
-    this.logger.debug("Update NBA Current Season: STARTED");
+    this.logger.debug('Update NBA Current Season: STARTED');
 
     const { data, status } = await axios.get(
       `${process.env.SPORTS_DATA_URL}nba/scores/json/CurrentSeason?key=${process.env.SPORTS_DATA_NBA_KEY}`
@@ -3945,37 +3945,37 @@ export class TasksService {
       });
 
       if (currSeason) {
-        currSeason.apiName = season["Description"];
-        currSeason.season = season["Season"];
-        currSeason.seasonType = getSeasonType(season["SeasonType"]);
-        currSeason.apiSeason = season["ApiSeason"];
-        currSeason.startDate = season["RegularSeasonStartDate"];
-        currSeason.endDate = season["PostSeasonStartDate"];
+        currSeason.apiName = season['Description'];
+        currSeason.season = season['Season'];
+        currSeason.seasonType = getSeasonType(season['SeasonType']);
+        currSeason.apiSeason = season['ApiSeason'];
+        currSeason.startDate = season['RegularSeasonStartDate'];
+        currSeason.endDate = season['PostSeasonStartDate'];
         updateSeason.push(currSeason);
       } else {
         newSeason.push(
           Timeframe.create({
-            apiName: season["Description"],
-            season: season["Season"],
-            seasonType: getSeasonType(season["SeasonType"]),
-            apiSeason: season["ApiSeason"],
-            startDate: season["RegularSeasonStartDate"],
-            endDate: season["PostSeasonStartDate"],
+            apiName: season['Description'],
+            season: season['Season'],
+            seasonType: getSeasonType(season['SeasonType']),
+            apiSeason: season['ApiSeason'],
+            startDate: season['RegularSeasonStartDate'],
+            endDate: season['PostSeasonStartDate'],
             sport: SportType.NBA,
           })
         );
       }
 
       await Timeframe.save([...newSeason, ...updateSeason], { chunk: 20 });
-      this.logger.debug("Update NBA Current Season: FINISHED");
+      this.logger.debug('Update NBA Current Season: FINISHED');
     } else {
-      this.logger.debug("Update NBA Current Season: SPORTS DATA ERROR");
+      this.logger.debug('Update NBA Current Season: SPORTS DATA ERROR');
     }
   }
 
   ////@Interval(3600000) // runs every 1 hour
   async updateMlbCurrentSeason() {
-    this.logger.debug("Update MLB Current Season: STARTED");
+    this.logger.debug('Update MLB Current Season: STARTED');
 
     const { data, status } = await axios.get(
       `${process.env.SPORTS_DATA_URL}mlb/scores/json/CurrentSeason?key=${process.env.SPORTS_DATA_MLB_KEY}`
@@ -3993,35 +3993,35 @@ export class TasksService {
       });
 
       if (currSeason) {
-        currSeason.season = season["Season"];
-        currSeason.seasonType = getSeasonType(season["SeasonType"]);
-        currSeason.apiSeason = season["ApiSeason"];
-        currSeason.startDate = season["RegularSeasonStartDate"];
-        currSeason.endDate = season["PostSeasonStartDate"];
+        currSeason.season = season['Season'];
+        currSeason.seasonType = getSeasonType(season['SeasonType']);
+        currSeason.apiSeason = season['ApiSeason'];
+        currSeason.startDate = season['RegularSeasonStartDate'];
+        currSeason.endDate = season['PostSeasonStartDate'];
         updateSeason.push(currSeason);
       } else {
         newSeason.push(
           Timeframe.create({
-            season: season["Season"],
-            seasonType: getSeasonType(season["SeasonType"]),
-            apiSeason: season["ApiSeason"],
-            startDate: season["RegularSeasonStartDate"],
-            endDate: season["PostSeasonStartDate"],
+            season: season['Season'],
+            seasonType: getSeasonType(season['SeasonType']),
+            apiSeason: season['ApiSeason'],
+            startDate: season['RegularSeasonStartDate'],
+            endDate: season['PostSeasonStartDate'],
             sport: SportType.MLB,
           })
         );
       }
       await Timeframe.save([...newSeason, ...updateSeason], { chunk: 20 });
-      this.logger.debug("Update MLB Current Season: FINISHED");
+      this.logger.debug('Update MLB Current Season: FINISHED');
     } else {
-      this.logger.debug("Update MLB Current Season: SPORTS DATA ERROR");
+      this.logger.debug('Update MLB Current Season: SPORTS DATA ERROR');
     }
   }
 
   //@Timeout(1)
   ////@Interval(4200000) // Runs every 1 hour 10 minutes
   async updateNbaSchedules() {
-    this.logger.debug("UPDATE NBA Schedules: STARTED");
+    this.logger.debug('UPDATE NBA Schedules: STARTED');
 
     const currSeason = await Timeframe.findOne({
       where: { sport: SportType.NBA },
@@ -4036,10 +4036,10 @@ export class TasksService {
       });
 
       if (currSchedules.length > 0) {
-        this.logger.debug("Update NBA Schedules: START DELETE PREVIOUS SEASON");
+        this.logger.debug('Update NBA Schedules: START DELETE PREVIOUS SEASON');
         await Schedule.remove(currSchedules);
         this.logger.debug(
-          "Update NBA Schedules: DELETED PREVIOUS SEASON SCHEDULE"
+          'Update NBA Schedules: DELETED PREVIOUS SEASON SCHEDULE'
         );
       }
 
@@ -4052,46 +4052,46 @@ export class TasksService {
         const updateSchedule: Schedule[] = [];
 
         for (let schedule of data) {
-          const gameId: number = schedule["GameID"];
+          const gameId: number = schedule['GameID'];
 
           const currSchedule = await Schedule.findOne({
             where: { gameId: gameId, sport: SportType.NBA },
           });
 
           const timeFromAPI = moment.tz(
-            schedule["DateTime"],
-            "America/New_York"
+            schedule['DateTime'],
+            'America/New_York'
           );
           const utcDate = timeFromAPI.utc().format();
 
           if (currSchedule) {
-            currSchedule.season = schedule["Season"];
-            currSchedule.seasonType = schedule["SeasonType"];
-            currSchedule.status = schedule["Status"];
-            currSchedule.awayTeam = schedule["AwayTeam"];
-            currSchedule.homeTeam = schedule["HomeTeam"];
-            currSchedule.isClosed = schedule["IsClosed"];
+            currSchedule.season = schedule['Season'];
+            currSchedule.seasonType = schedule['SeasonType'];
+            currSchedule.status = schedule['Status'];
+            currSchedule.awayTeam = schedule['AwayTeam'];
+            currSchedule.homeTeam = schedule['HomeTeam'];
+            currSchedule.isClosed = schedule['IsClosed'];
             currSchedule.dateTime =
-              schedule["DateTime"] !== null
+              schedule['DateTime'] !== null
                 ? new Date(utcDate)
-                : schedule["DateTime"];
-            currSchedule.dateTimeUTC = schedule["DateTimeUTC"];
+                : schedule['DateTime'];
+            currSchedule.dateTimeUTC = schedule['DateTimeUTC'];
             updateSchedule.push(currSchedule);
           } else {
             newSchedule.push(
               Schedule.create({
-                gameId: schedule["GameID"],
-                season: schedule["Season"],
-                seasonType: schedule["SeasonType"],
-                status: schedule["Status"],
-                awayTeam: schedule["AwayTeam"],
-                homeTeam: schedule["HomeTeam"],
-                isClosed: schedule["IsClosed"],
+                gameId: schedule['GameID'],
+                season: schedule['Season'],
+                seasonType: schedule['SeasonType'],
+                status: schedule['Status'],
+                awayTeam: schedule['AwayTeam'],
+                homeTeam: schedule['HomeTeam'],
+                isClosed: schedule['IsClosed'],
                 dateTime:
-                  schedule["DateTime"] !== null
+                  schedule['DateTime'] !== null
                     ? new Date(utcDate)
-                    : schedule["DateTime"],
-                dateTimeUTC: schedule["DateTimeUTC"],
+                    : schedule['DateTime'],
+                dateTimeUTC: schedule['DateTimeUTC'],
                 sport: SportType.NBA,
               })
             );
@@ -4099,15 +4099,15 @@ export class TasksService {
         }
         await Schedule.save([...newSchedule, ...updateSchedule], { chunk: 20 });
       }
-      this.logger.debug("Update NBA Schedules: FINISHED");
+      this.logger.debug('Update NBA Schedules: FINISHED');
     } else {
-      this.logger.error("Update NBA Schedules: ERROR CURRENT SEASON NOT FOUND");
+      this.logger.error('Update NBA Schedules: ERROR CURRENT SEASON NOT FOUND');
     }
   }
 
   ////@Interval(4200000) // runs every 1 hour 20 minutes
   async updateMlbSchedules() {
-    this.logger.debug("UPDATE MLB Schedules: STARTED");
+    this.logger.debug('UPDATE MLB Schedules: STARTED');
 
     const currSeason = await Timeframe.findOne({
       where: { sport: SportType.MLB },
@@ -4123,11 +4123,11 @@ export class TasksService {
 
       if (currSchedules.length > 0) {
         this.logger.debug(
-          "Update MLB Schedules: START DELETE PREVIOUS SEASON SCHEDULE"
+          'Update MLB Schedules: START DELETE PREVIOUS SEASON SCHEDULE'
         );
         await Schedule.remove(currSchedules);
         this.logger.debug(
-          "Update MLB Schedules: DELETED PREVIOUS SEASON SCHEDULE"
+          'Update MLB Schedules: DELETED PREVIOUS SEASON SCHEDULE'
         );
       }
 
@@ -4140,46 +4140,46 @@ export class TasksService {
         const updateSchedule: Schedule[] = [];
 
         for (let schedule of data) {
-          const gameId: number = schedule["GameID"];
+          const gameId: number = schedule['GameID'];
 
           const currSchedule = await Schedule.findOne({
             where: { gameId: gameId, sport: SportType.MLB },
           });
 
           const timeFromAPI = moment.tz(
-            schedule["DateTime"],
-            "America/New_York"
+            schedule['DateTime'],
+            'America/New_York'
           );
           const utcDate = timeFromAPI.utc().format();
 
           if (currSchedule) {
-            currSchedule.season = schedule["Season"];
-            currSchedule.seasonType = schedule["SeasonType"];
-            currSchedule.status = schedule["Status"];
-            currSchedule.awayTeam = schedule["AwayTeam"];
-            currSchedule.homeTeam = schedule["HomeTeam"];
-            currSchedule.isClosed = schedule["IsClosed"];
+            currSchedule.season = schedule['Season'];
+            currSchedule.seasonType = schedule['SeasonType'];
+            currSchedule.status = schedule['Status'];
+            currSchedule.awayTeam = schedule['AwayTeam'];
+            currSchedule.homeTeam = schedule['HomeTeam'];
+            currSchedule.isClosed = schedule['IsClosed'];
             currSchedule.dateTime =
-              schedule["DateTime"] !== null
+              schedule['DateTime'] !== null
                 ? new Date(utcDate)
-                : schedule["DateTime"];
-            currSchedule.dateTimeUTC = schedule["DateTimeUTC"];
+                : schedule['DateTime'];
+            currSchedule.dateTimeUTC = schedule['DateTimeUTC'];
             updateSchedule.push(currSchedule);
           } else {
             newSchedule.push(
               Schedule.create({
-                gameId: schedule["GameID"],
-                season: schedule["Season"],
-                seasonType: schedule["SeasonType"],
-                status: schedule["Status"],
-                awayTeam: schedule["AwayTeam"],
-                homeTeam: schedule["HomeTeam"],
-                isClosed: schedule["IsClosed"],
+                gameId: schedule['GameID'],
+                season: schedule['Season'],
+                seasonType: schedule['SeasonType'],
+                status: schedule['Status'],
+                awayTeam: schedule['AwayTeam'],
+                homeTeam: schedule['HomeTeam'],
+                isClosed: schedule['IsClosed'],
                 dateTime:
-                  schedule["DateTime"] !== null
+                  schedule['DateTime'] !== null
                     ? new Date(utcDate)
-                    : schedule["DateTime"],
-                dateTimeUTC: schedule["DateTimeUTC"],
+                    : schedule['DateTime'],
+                dateTimeUTC: schedule['DateTimeUTC'],
                 sport: SportType.MLB,
               })
             );
@@ -4187,16 +4187,16 @@ export class TasksService {
         }
         await Schedule.save([...newSchedule, ...updateSchedule], { chunk: 20 });
       }
-      this.logger.debug("Update MLB Schedules: FINISHED");
+      this.logger.debug('Update MLB Schedules: FINISHED');
     } else {
-      this.logger.error("Update MLB Schedules: ERROR CURRENT SEASON NOT FOUND");
+      this.logger.error('Update MLB Schedules: ERROR CURRENT SEASON NOT FOUND');
     }
   }
 
   //@Timeout(1)
   async syncCricketData() {
-    this.logger.debug("START CRICKET DATA SYNC");
-    const TOURNEY_KEY = "iplt20_2023"; //hardcoded iplt2023 key
+    this.logger.debug('START CRICKET DATA SYNC');
+    const TOURNEY_KEY = 'iplt20_2023'; //hardcoded iplt2023 key
 
     const auth = await axios.post(
       `${process.env.ROANUZ_DATA_URL}core/${process.env.ROANUZ_PROJECT_KEY}/auth/`,
@@ -4215,7 +4215,7 @@ export class TasksService {
           `${process.env.ROANUZ_DATA_URL}cricket/${process.env.ROANUZ_PROJECT_KEY}/tournament/${TOURNEY_KEY}/`,
           {
             headers: {
-              "rs-token": auth.data.data.token,
+              'rs-token': auth.data.data.token,
             },
           }
         );
@@ -4256,7 +4256,7 @@ export class TasksService {
           }
         }
       } else {
-        this.logger.debug("CRICKET DATA SYNC");
+        this.logger.debug('CRICKET DATA SYNC');
       }
 
       const athleteCount = await CricketAthlete.count({
@@ -4272,13 +4272,13 @@ export class TasksService {
             tournament: true,
           },
         });
-        this.logger.debug("START ATHLETE SYNC");
+        this.logger.debug('START ATHLETE SYNC');
         for (let team of teams) {
           const team_response = await axios.get(
             `${process.env.ROANUZ_DATA_URL}cricket/${process.env.ROANUZ_PROJECT_KEY}/tournament/${team.tournament.key}/team/${team.key}/`,
             {
               headers: {
-                "rs-token": auth.data.data.token,
+                'rs-token': auth.data.data.token,
               },
             }
           );
@@ -4304,16 +4304,16 @@ export class TasksService {
             }
           }
         }
-        this.logger.debug("FINISH CRICKET DATA SYNC");
+        this.logger.debug('FINISH CRICKET DATA SYNC');
       }
     } else {
-      this.logger.error("CRICKET AUTHENTICATION FAIL !!!");
+      this.logger.error('CRICKET AUTHENTICATION FAIL !!!');
     }
   }
 
   //@Interval(3600000)
   async updateCricketMatches() {
-    this.logger.debug("Update Cricket Matches: START");
+    this.logger.debug('Update Cricket Matches: START');
     //const tourney_key_2022 = "iplt20_2023" // for testing
     const auth = await axios.post(
       `${process.env.ROANUZ_DATA_URL}core/${process.env.ROANUZ_PROJECT_KEY}/auth/`,
@@ -4330,7 +4330,7 @@ export class TasksService {
         `${process.env.ROANUZ_DATA_URL}cricket/${process.env.ROANUZ_PROJECT_KEY}/tournament/${tourney.key}/fixtures/`,
         {
           headers: {
-            "rs-token": auth.data.data.token,
+            'rs-token': auth.data.data.token,
           },
         }
       );
@@ -4372,9 +4372,9 @@ export class TasksService {
           }
         }
         await CricketMatch.save([...newMatch, ...updateMatch], { chunk: 20 });
-        this.logger.debug("Update Cricket Match: FINISHED");
+        this.logger.debug('Update Cricket Match: FINISHED');
       } else {
-        this.logger.error("Update Cricket Match: ROANUZ");
+        this.logger.error('Update Cricket Match: ROANUZ');
       }
     }
   }
@@ -4425,7 +4425,7 @@ export class TasksService {
 
   //@Interval(3900000)
   async updateCricketAthleteStats() {
-    this.logger.debug("Update Cricket Athlete Stat: STARTED");
+    this.logger.debug('Update Cricket Athlete Stat: STARTED');
 
     const auth = await axios.post(
       `${process.env.ROANUZ_DATA_URL}core/${process.env.ROANUZ_PROJECT_KEY}/auth/`,
@@ -4436,14 +4436,14 @@ export class TasksService {
 
     if (auth.status === 200) {
       const dateFormat = moment()
-        .subtract(6, "hours")
-        .format("YYYY-MM-DD")
+        .subtract(6, 'hours')
+        .format('YYYY-MM-DD')
         .toUpperCase();
       //const dateFormat = moment(date).format("YYYY-MM-DD").toUpperCase()
       this.logger.debug(dateFormat);
       let matches = await CricketMatch.find();
       matches = matches.filter(
-        (x) => x.start_at.toISOString().split("T")[0] === dateFormat
+        (x) => x.start_at.toISOString().split('T')[0] === dateFormat
       );
 
       if (matches) {
@@ -4455,7 +4455,7 @@ export class TasksService {
             `${process.env.ROANUZ_DATA_URL}cricket/${process.env.ROANUZ_PROJECT_KEY}/fantasy-match-points/${match.key}/`,
             {
               headers: {
-                "rs-token": auth.data.data.token,
+                'rs-token': auth.data.data.token,
               },
             }
           );
@@ -4547,7 +4547,7 @@ export class TasksService {
                 }
               } else {
                 this.logger.error(
-                  "Update Cricket Athlete Stat: ERROR ATHLETE DOES NOT EXIST"
+                  'Update Cricket Athlete Stat: ERROR ATHLETE DOES NOT EXIST'
                 );
               }
             }
@@ -4556,10 +4556,10 @@ export class TasksService {
         await CricketAthleteStat.save([...newStats, ...updateStats], {
           chunk: 20,
         });
-        this.logger.debug("Update Cricket Athlete Stat: FINISHED");
+        this.logger.debug('Update Cricket Athlete Stat: FINISHED');
       } else {
         this.logger.debug(
-          "Update Cricket Athlete Stat: No games found on " + dateFormat
+          'Update Cricket Athlete Stat: No games found on ' + dateFormat
         );
       }
       //TODO: check how match dates are formatted in backend
@@ -4569,7 +4569,7 @@ export class TasksService {
   //@Timeout(1)
   //@Interval(4200000)
   async updateCricketAthleteAvgFantasyScore() {
-    this.logger.debug("Update Cricket Athlete Avg. Fantasy Score: STARTED");
+    this.logger.debug('Update Cricket Athlete Avg. Fantasy Score: STARTED');
     const newStats: CricketAthleteStat[] = [];
     const updateStats: CricketAthleteStat[] = [];
 
@@ -4584,13 +4584,13 @@ export class TasksService {
               (x) =>
                 x.match !== null &&
                 x.match !== undefined &&
-                x.match.status === "completed" &&
-                x.type === "daily"
+                x.match.status === 'completed' &&
+                x.type === 'daily'
             )
           : [];
 
         if (Array.isArray(completedGames)) {
-          const id: string = athlete["playerKey"];
+          const id: string = athlete['playerKey'];
           let currStat = await CricketAthleteStat.findOne({
             where: { athlete: { playerKey: id }, type: AthleteStatType.SEASON },
             relations: { athlete: true },
@@ -4630,15 +4630,15 @@ export class TasksService {
           }
         } else {
           this.logger.debug(
-            "Update Cricket Avg. Fantasy Score: No completed games found"
+            'Update Cricket Avg. Fantasy Score: No completed games found'
           );
         }
       }
     } else {
-      this.logger.debug("Update Cricket Avg. Fantasy Score: No athletes found");
+      this.logger.debug('Update Cricket Avg. Fantasy Score: No athletes found');
     }
     await CricketAthleteStat.save([...newStats, ...updateStats], { chunk: 20 });
-    this.logger.debug("Update Cricket Avg. Fantasy Score: FINISHED");
+    this.logger.debug('Update Cricket Avg. Fantasy Score: FINISHED');
   }
 
   // //@Timeout(1)
@@ -4706,7 +4706,7 @@ export class TasksService {
   //@Timeout(1)
   //unused due to required API call not being included in IPL package
   async updateCricketAthleteSeasonStats() {
-    this.logger.debug("Update Cricket Athlete Stat (Season): STARTED");
+    this.logger.debug('Update Cricket Athlete Stat (Season): STARTED');
 
     const athletes = await CricketAthlete.find();
     //if using pay as you go, add where playerKey: In(CRICKET_ATHLETE_IDS)
@@ -4729,7 +4729,7 @@ export class TasksService {
           `${process.env.ROANUZ_DATA_URL}cricket/${process.env.ROANUZ_PROJECT_KEY}/tournament/${tourney.key}/player/${athlete.playerKey}/stats/`,
           {
             headers: {
-              "rs-token": auth.data.data.token,
+              'rs-token': auth.data.data.token,
             },
           }
         );
@@ -4801,15 +4801,15 @@ export class TasksService {
       await CricketAthleteStat.save([...newStats, ...updateStats], {
         chunk: 20,
       });
-      this.logger.debug("Update Cricket Athlete Stat (Season): FINISHED");
+      this.logger.debug('Update Cricket Athlete Stat (Season): FINISHED');
     }
   }
 
   @Timeout(1)
   async makeDirectoryTest() {
-    console.log("Current directory:", __dirname);
-    const fs = require("fs");
-    fs.readdirSync("..\\entities\\Athlete");
+    console.log('Current directory:', __dirname);
+    const fs = require('fs');
+    fs.readdirSync('..\\entities\\Athlete');
   }
   //@Timeout(1)
   async polygonDecodeTest() {
@@ -4818,29 +4818,29 @@ export class TasksService {
     console.log(testInterface.formatJson());
     //const data = testInterface.decodeFunctionData('StoreValue', '0x00000000000000000000000000000000000000000000000000000000000002d70000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000000a68656c6c6f576f726c6400000000000000000000000000000000000000000000' )
     const data = testInterface.decodeEventLog(
-      "StoreArray",
-      "0x000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000090000000000000000000000000000000000000000000000000000000000000120000000000000000000000000000000000000000000000000000000000000016000000000000000000000000000000000000000000000000000000000000001a000000000000000000000000000000000000000000000000000000000000001e00000000000000000000000000000000000000000000000000000000000000220000000000000000000000000000000000000000000000000000000000000026000000000000000000000000000000000000000000000000000000000000002a000000000000000000000000000000000000000000000000000000000000002e00000000000000000000000000000000000000000000000000000000000000320000000000000000000000000000000000000000000000000000000000000000a68656c6c6f576f726c6400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c3131313233333333343435350000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000d31303130313031303130313031000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010313032333031323330313233303133300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000103031323330313233303133303133303100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f3031323330313230333130333132300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000b3130313031303130313031000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c68616168613068616861686100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000051313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131000000000000000000000000000000"
+      'StoreArray',
+      '0x000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000090000000000000000000000000000000000000000000000000000000000000120000000000000000000000000000000000000000000000000000000000000016000000000000000000000000000000000000000000000000000000000000001a000000000000000000000000000000000000000000000000000000000000001e00000000000000000000000000000000000000000000000000000000000000220000000000000000000000000000000000000000000000000000000000000026000000000000000000000000000000000000000000000000000000000000002a000000000000000000000000000000000000000000000000000000000000002e00000000000000000000000000000000000000000000000000000000000000320000000000000000000000000000000000000000000000000000000000000000a68656c6c6f576f726c6400000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c3131313233333333343435350000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000d31303130313031303130313031000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000010313032333031323330313233303133300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000103031323330313233303133303133303100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000f3031323330313230333130333132300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000b3130313031303130313031000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c68616168613068616861686100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000051313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131313131000000000000000000000000000000'
     );
     console.log(data);
   }
 
   @Timeout(1)
   async runPolygonMainnetAthleteWebSocketListener() {
-    console.log("Start polygon athlete listen");
-    const network = "maticmum";
-    const address = process.env.METAMASK_WALLET_ADDRESS ?? "default";
+    console.log('Start polygon athlete listen');
+    const network = 'maticmum';
+    const address = process.env.METAMASK_WALLET_ADDRESS ?? 'default';
     const abi = athleteABI;
     const provider = new ethers.AlchemyProvider(
       network,
       process.env.POLYGON_MUMBAI_API_KEY
     );
     const athleteContract = new Contract(
-      process.env.POLYGON_ATHLETE_ADDRESS ?? "contract",
+      process.env.POLYGON_ATHLETE_ADDRESS ?? 'contract',
       abi,
       provider
     );
 
-    athleteContract.on("TokensMinted", (address, tokens, event) => {
+    athleteContract.on('TokensMinted', (address, tokens, event) => {
       console.log(`Receiver address: ${address}`);
       console.log(tokens);
       console.log(event.log);
@@ -4848,20 +4848,20 @@ export class TasksService {
   }
   @Timeout(1)
   async runPolygonMainnetGameWebSocketListener() {
-    console.log("Start polygon listen");
-    const network = "maticmum";
-    const address = process.env.METAMASK_WALLET_ADDRESS ?? "default";
+    console.log('Start polygon listen');
+    const network = 'maticmum';
+    const address = process.env.METAMASK_WALLET_ADDRESS ?? 'default';
     const abi = gameABI;
     const provider = new ethers.AlchemyProvider(
       network,
       process.env.POLYGON_MUMBAI_API_KEY
     );
     const gameContract = new Contract(
-      process.env.POLYGON_GAME_ADDRESS ?? "contract",
+      process.env.POLYGON_GAME_ADDRESS ?? 'contract',
       abi,
       provider
     );
-    gameContract.on("AddGame", (gameId, gameTimeStart, gameTimeEnd, event) => {
+    gameContract.on('AddGame', (gameId, gameTimeStart, gameTimeEnd, event) => {
       console.log(`gameId: ${gameId}`);
       console.log(`game start: ${gameTimeStart}`);
       console.log(`game end: ${gameTimeEnd}`);
@@ -4870,7 +4870,7 @@ export class TasksService {
     });
 
     gameContract.on(
-      "SucceedLineupSubmission",
+      'SucceedLineupSubmission',
       (result, gameId, teamName, address, event) => {
         console.log(`result: ${result}`);
         console.log(`gameId: ${gameId}`);
@@ -4895,24 +4895,24 @@ export class TasksService {
   //@Timeout(1)
   async runNearMainnetBaseballWebSocketListener() {
     function listenToMainnet() {
-      const ws = new WebSocket("wss://events.near.stream/ws");
-      ws.on("open", function open() {
+      const ws = new WebSocket('wss://events.near.stream/ws');
+      ws.on('open', function open() {
         ws.send(
           JSON.stringify({
-            secret: "secret",
+            secret: 'secret',
             filter: [
               {
-                account_id: "game.baseball.playible.near",
+                account_id: 'game.baseball.playible.near',
                 event: {
-                  event: "add_game",
-                  standard: "game",
+                  event: 'add_game',
+                  standard: 'game',
                 },
               },
               {
-                account_id: "game.baseball.playible.near",
+                account_id: 'game.baseball.playible.near',
                 event: {
-                  event: "lineup_submission_result",
-                  standard: "game",
+                  event: 'lineup_submission_result',
+                  standard: 'game',
                 },
               },
             ], //capped at 15?
@@ -4920,16 +4920,16 @@ export class TasksService {
         );
       });
 
-      ws.on("close", function close() {
-        Logger.debug("Connection closed");
-        console.log("retrying connection...");
+      ws.on('close', function close() {
+        Logger.debug('Connection closed');
+        console.log('retrying connection...');
         setTimeout(() => listenToMainnet(), 1000);
       });
-      ws.on("message", async function incoming(data) {
-        const util = require("util");
+      ws.on('message', async function incoming(data) {
+        const util = require('util');
 
-        const logger = new Logger("WEBSOCKET");
-        logger.debug("MESSAGE RECEIVED");
+        const logger = new Logger('WEBSOCKET');
+        logger.debug('MESSAGE RECEIVED');
         const msg = JSON.parse(data.toString());
         //console.log(msg.events[0].predecessor_id);
         //console.log(util.inspect(msg, false, null, true))
@@ -4938,8 +4938,8 @@ export class TasksService {
         // //console.log(msg.events[0].event.data[0].game_id);
         if (msg.events.length > 0) {
           for (let event of msg.events) {
-            if (event.event.event === "lineup_submission_result") {
-              console.log("lineup submission");
+            if (event.event.event === 'lineup_submission_result') {
+              console.log('lineup submission');
               const sport = getSportType(event.account_id);
 
               const game = await Game.findOne({
@@ -4980,12 +4980,12 @@ export class TasksService {
                   });
                   //console.log(lineup)
                   for (let token_id of lineup) {
-                    let apiId = "";
+                    let apiId = '';
 
-                    if (token_id.includes("PR") || token_id.includes("SB")) {
-                      token_id = token_id.split("_")[1];
+                    if (token_id.includes('PR') || token_id.includes('SB')) {
+                      token_id = token_id.split('_')[1];
                     }
-                    apiId = token_id.split("CR")[0];
+                    apiId = token_id.split('CR')[0];
 
                     const athlete = await Athlete.findOne({
                       where: { apiId: parseInt(apiId) },
@@ -5001,13 +5001,13 @@ export class TasksService {
                       }
                     } else {
                       Logger.error(
-                        "ERROR athlete apiId not found, disregarding..."
+                        'ERROR athlete apiId not found, disregarding...'
                       );
                     }
                     //get the athlete, add to gameteamathlete
                   }
 
-                  Logger.debug("Successfully added team");
+                  Logger.debug('Successfully added team');
                   let nearBlock = await NearBlock.create({
                     height: event.block_height,
                     hash: event.block_hash,
@@ -5036,8 +5036,8 @@ export class TasksService {
                   `Game ${event.event.data[0].game_id} does not exist for ${sport}`
                 );
               }
-            } else if (event.event.event === "add_game") {
-              console.log("add game");
+            } else if (event.event.event === 'add_game') {
+              console.log('add game');
               let sport: SportType = SportType.MLB;
 
               const game = await Game.findOne({
@@ -5048,13 +5048,13 @@ export class TasksService {
               });
               if (game) {
                 Logger.error(
-                  "Game " + event.event.data[0].game_id + " already exists"
+                  'Game ' + event.event.data[0].game_id + ' already exists'
                 );
               } else {
                 await Game.create({
                   gameId: event.event.data[0].game_id,
-                  name: "Game " + event.event.data[0].game_id,
-                  description: "on-going",
+                  name: 'Game ' + event.event.data[0].game_id,
+                  description: 'on-going',
                   startTime: moment(event.event.data[0].game_time_start),
                   endTime: moment(event.event.data[0].game_time_end),
                   sport: sport,
@@ -5094,17 +5094,17 @@ export class TasksService {
   //@Timeout(1)
   async jsonBaseballWebsocketTest() {
     //
-    const fs = require("fs");
+    const fs = require('fs');
     const msg = JSON.parse(
       fs.readFileSync(
-        "./src/utils/test-jsons/lineup_submission_add_game_result.txt"
+        './src/utils/test-jsons/lineup_submission_add_game_result.txt'
       )
     );
     console.log(msg);
     if (msg.events.length > 0) {
       for (let event of msg.events) {
-        if (event.event.event === "lineup_submission_result") {
-          console.log("lineup submission");
+        if (event.event.event === 'lineup_submission_result') {
+          console.log('lineup submission');
 
           const gameTeam = await GameTeam.findOne({
             where: {
@@ -5119,7 +5119,7 @@ export class TasksService {
 
           if (gameTeam) {
             //team submission already exists
-            Logger.debug("This team already exists");
+            Logger.debug('This team already exists');
           } else {
             const game = await Game.findOne({
               where: {
@@ -5164,11 +5164,11 @@ export class TasksService {
                 },
               });
               for (let token_id of lineup) {
-                let apiId = "";
-                if (token_id.includes("PR") || token_id.includes("SB")) {
-                  token_id = token_id.split("_")[1];
+                let apiId = '';
+                if (token_id.includes('PR') || token_id.includes('SB')) {
+                  token_id = token_id.split('_')[1];
                 }
-                apiId = token_id.split("CR")[0];
+                apiId = token_id.split('CR')[0];
                 console.log(apiId);
 
                 const athlete = await Athlete.findOne({
@@ -5181,23 +5181,23 @@ export class TasksService {
                       athlete: athlete,
                     }).save();
 
-                    Logger.debug("Added athlete " + apiId + " to lineup");
+                    Logger.debug('Added athlete ' + apiId + ' to lineup');
                   } catch (e) {
                     Logger.error(e);
                   }
                 } else {
                   Logger.error(
-                    "ERROR athlete apiId not found, disregarding..."
+                    'ERROR athlete apiId not found, disregarding...'
                   );
                 }
                 //get the athlete, add to gameteamathlete
               }
             } else {
-              Logger.error("Game does not exist.");
+              Logger.error('Game does not exist.');
             }
           }
-        } else if (event.event.event === "add_game") {
-          console.log("add game");
+        } else if (event.event.event === 'add_game') {
+          console.log('add game');
 
           const game = await Game.findOne({
             where: {
@@ -5207,22 +5207,22 @@ export class TasksService {
           });
           if (game) {
             Logger.error(
-              "Game " + event.event.data[0].game_id + " already exists"
+              'Game ' + event.event.data[0].game_id + ' already exists'
             );
           } else {
             await Game.create({
               gameId: event.event.data[0].game_id,
-              name: "Game " + event.event.data[0].game_id,
-              description: "on-going",
+              name: 'Game ' + event.event.data[0].game_id,
+              description: 'on-going',
               startTime: moment(event.event.data[0].game_time_start),
               endTime: moment(event.event.data[0].game_time_end),
               sport: SportType.MLB,
             }).save();
 
             Logger.debug(
-              "Game " +
+              'Game ' +
                 event.event.data[0].game_id +
-                " created for " +
+                ' created for ' +
                 SportType.MLB
             );
           }
@@ -5234,7 +5234,7 @@ export class TasksService {
   //@Timeout(1)
   async updateGameTeamFantasyScores() {
     const games = await Game.find({
-      where: { description: "on-going" },
+      where: { description: 'on-going' },
     });
 
     if (games) {
@@ -5268,7 +5268,7 @@ export class TasksService {
         await GameTeam.save([...teamUpdate], { chunk: 20 });
       }
     } else {
-      this.logger.debug("No active games found");
+      this.logger.debug('No active games found');
     }
   }
 
@@ -5316,17 +5316,17 @@ export class TasksService {
         const totalAthleteFantasyScore = await AppDataSource.getRepository(
           AthleteStat
         )
-          .createQueryBuilder("as")
-          .select("SUM(as.fantasyScore)", "sum")
-          .where("as.athleteId =:athleteId", { athleteId: athlete.id })
-          .andWhere("as.gameDate >= :startTime", {
+          .createQueryBuilder('as')
+          .select('SUM(as.fantasyScore)', 'sum')
+          .where('as.athleteId =:athleteId', { athleteId: athlete.id })
+          .andWhere('as.gameDate >= :startTime', {
             startTime: team.game.startTime,
           })
-          .andWhere("as.gameDate <= :endTime", { endTime: team.game.endTime })
+          .andWhere('as.gameDate <= :endTime', { endTime: team.game.endTime })
           .getRawOne();
 
-        console.log("ts: " + teamFantasyScore);
-        console.log("total: " + totalAthleteFantasyScore.sum);
+        console.log('ts: ' + teamFantasyScore);
+        console.log('total: ' + totalAthleteFantasyScore.sum);
         teamFantasyScore = +teamFantasyScore + +totalAthleteFantasyScore.sum;
       }
       team.fantasyScore = teamFantasyScore;
