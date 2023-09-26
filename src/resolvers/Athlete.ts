@@ -22,6 +22,7 @@ import path from 'path';
 import { In, MoreThanOrEqual, LessThanOrEqual } from 'typeorm';
 import {
   NFL_ATHLETE_IDS,
+  NFL_ATHLETE_PROMO_IDS,
   NBA_ATHLETE_IDS,
   NBA_ATHLETE_PROMO_IDS,
   MLB_ATHLETE_IDS,

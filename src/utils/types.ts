@@ -7,6 +7,7 @@ export enum SportType {
   NFL = 'nfl',
   NFL_PROMO = 'nfl-promo',
   CRICKET = 'cricket',
+  TEST = 'test',
 }
 
 export enum AthleteStatType {
