@@ -60,7 +60,6 @@ import {
   MLB_ATHLETE_IDS,
   MLB_ATHLETE_PROMO_IDS,
   IPL2023_ATHLETE_IDS,
-  NFL_ATHLETE_IMAGES,
 } from "./../utils/athlete-ids";
 import { AppDataSource } from "../utils/db";
 import { ReceiptEnum, ExecutionStatus } from "near-lake-framework/dist/types";
@@ -4892,22 +4891,7 @@ export class TasksService {
   }
 
   // @Timeout(1)
-  async populateNftImageNFLForTesting() {
-    const athletes = await Athlete.find({
-      where: {
-        apiId: In(NFL_ATHLETE_IDS),
-      },
-      relations: {
-        team: true,
-      },
-    });
 
-    for (let i: number = 0; i < athletes.length; i++) {
-      athletes[i].nftImage = NFL_ATHLETE_IMAGES[i];
-
-      await Athlete.save(athletes[i]);
-    }
-  }
   //@Timeout(1)
   async runNearMainnetBaseballWebSocketListener() {
     function listenToMainnet() {
