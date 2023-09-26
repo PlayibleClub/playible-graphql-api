@@ -4377,7 +4377,7 @@ export class TasksService {
     const abi = athleteABI;
     const provider = new ethers.AlchemyProvider(
       network,
-      process.env.POLYGON_MUMBAI_API_KEY
+      process.env.ALCHEMY_POLYGON_MUMBAI_API_KEY
     );
     const athleteContract = new Contract(
       process.env.POLYGON_ATHLETE_ADDRESS ?? 'contract',
@@ -4399,7 +4399,7 @@ export class TasksService {
     const abi = gameABI;
     const provider = new ethers.AlchemyProvider(
       network,
-      process.env.POLYGON_MUMBAI_API_KEY
+      process.env.ALCHEMY_POLYGON_MUMBAI_API_KEY
     );
     const gameContract = new Contract(
       process.env.POLYGON_GAME_ADDRESS ?? 'contract',

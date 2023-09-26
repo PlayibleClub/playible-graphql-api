@@ -430,7 +430,7 @@ export class AthleteResolver {
       const provider = new ethers.AlchemyProvider(
         network,
         //process.env.ALCHEMY_ZKEVM_TESTNET_API_KEY
-        process.env.POLYGON_MUMBAI_API_KEY
+        process.env.ALCHEMY_POLYGON_MUMBAI_API_KEY
       );
       const signer = new ethers.Wallet(
         process.env.METAMASK_PRIVATE_KEY ?? '',
