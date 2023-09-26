@@ -40,6 +40,19 @@ export type SportMap = {
   nfl: SportType;
 };
 
+export type IPFSMetadata = {
+  name: string;
+  description: string;
+  image: string;
+  properties: {
+    athleteId: string;
+    symbol: string;
+    name: string;
+    team: string;
+    position: string;
+  };
+};
+
 export type AddGameType = {
   game_id: number;
   game_time_start: number;

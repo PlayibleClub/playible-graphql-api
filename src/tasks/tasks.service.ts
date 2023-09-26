@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, Interval, Timeout } from '@nestjs/schedule';
 import S3 from 'aws-sdk/clients/s3';
+import { Alchemy, Network, AlchemySubscription } from 'alchemy-sdk';
 import axios from 'axios';
 import fs from 'fs';
 import { startStream, types } from 'near-lake-framework';
@@ -16,6 +17,7 @@ import {
 import convert from 'xml-js';
 import moment from 'moment-timezone';
 import WebSocket from 'ws';
+import { Contract, ethers } from 'ethers';
 import { Athlete } from '../entities/Athlete';
 import { AthleteStat } from '../entities/AthleteStat';
 import { Game } from '../entities/Game';
@@ -71,6 +73,8 @@ import { getSportType } from '../helpers/Sport';
 import { addGameHandler, submitLineupHandler } from '../helpers/EventHandler';
 import { computeShoheiOhtaniScores } from '../helpers/Athlete';
 import e from 'express';
+import gameABI from '../utils/polygon-contract-abis/game_abi.json';
+import athleteABI from '../utils/polygon-contract-abis/athlete_logic_abi.json';
 
 @Injectable()
 export class TasksService {
