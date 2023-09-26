@@ -30,7 +30,6 @@ import {
 } from "./../utils/athlete-ids";
 import moment from "moment";
 import { ethers } from "ethers";
-import { createDirectoryEncoderStream, CAREncoderStream } from "ipfs-car";
 import nflOpenPackABI from "./../utils/polygon-contract-abis/nfl_open_pack_abi.json";
 import { IPFSMetadata } from "./../utils/types";
 @ObjectType()
@@ -433,7 +432,6 @@ export class AthleteResolver {
               name: `${athlete.firstName} ${athlete.lastName}`,
               team: athlete.team.key,
               position: athlete.position,
-              animationLink: athlete.nftAnimation ?? "",
             },
           };
           return {
@@ -460,6 +458,7 @@ export class AthleteResolver {
         } catch (e) {
           console.log(e);
         }
+        await new Promise((resolve) => setTimeout(resolve, 15000));
       }
       // await contract.executeAddAthletes(athletes, {
       //   from: process.env.METAMASK_WALLET_ADDRESS,
