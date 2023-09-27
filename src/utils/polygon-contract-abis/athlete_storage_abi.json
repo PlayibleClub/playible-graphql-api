@@ -54,17 +54,98 @@
 			{
 				"indexed": false,
 				"internalType": "address",
-				"name": "receiverAddr",
+				"name": "from",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "id",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "TokenBurn",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "from",
 				"type": "address"
 			},
 			{
 				"indexed": false,
 				"internalType": "uint256[]",
-				"name": "tokens",
+				"name": "ids",
+				"type": "uint256[]"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256[]",
+				"name": "amounts",
 				"type": "uint256[]"
 			}
 		],
-		"name": "TokensMinted",
+		"name": "TokenBurnBatch",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "from",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "to",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "id",
+				"type": "uint256"
+			}
+		],
+		"name": "TokenTransfer",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "from",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "to",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256[]",
+				"name": "ids",
+				"type": "uint256[]"
+			}
+		],
+		"name": "TokenTransferBatch",
 		"type": "event"
 	},
 	{
@@ -164,6 +245,19 @@
 		"inputs": [
 			{
 				"internalType": "address",
+				"name": "_minter",
+				"type": "address"
+			}
+		],
+		"name": "addMinter",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
 				"name": "account",
 				"type": "address"
 			},
@@ -211,25 +305,119 @@
 	{
 		"inputs": [
 			{
-				"internalType": "string",
-				"name": "a",
-				"type": "string"
+				"internalType": "address",
+				"name": "receiverAddr",
+				"type": "address"
 			},
 			{
-				"internalType": "string",
-				"name": "b",
-				"type": "string"
+				"internalType": "uint256[]",
+				"name": "ids",
+				"type": "uint256[]"
+			},
+			{
+				"internalType": "uint256[]",
+				"name": "amount",
+				"type": "uint256[]"
 			}
 		],
-		"name": "compareStrings",
+		"name": "batchMintAthletes",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "from",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "id",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "burnToken",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "from",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256[]",
+				"name": "ids",
+				"type": "uint256[]"
+			},
+			{
+				"internalType": "uint256[]",
+				"name": "amounts",
+				"type": "uint256[]"
+			}
+		],
+		"name": "burnTokenBatch",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "getAllAddresses",
 		"outputs": [
 			{
-				"internalType": "bool",
+				"internalType": "address[]",
 				"name": "",
-				"type": "bool"
+				"type": "address[]"
 			}
 		],
-		"stateMutability": "pure",
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "tokenOwner",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "tokenId",
+				"type": "uint256"
+			}
+		],
+		"name": "getOwnerTokenIndex",
+		"outputs": [
+			{
+				"components": [
+					{
+						"internalType": "uint256",
+						"name": "index",
+						"type": "uint256"
+					},
+					{
+						"internalType": "bool",
+						"name": "valid",
+						"type": "bool"
+					}
+				],
+				"internalType": "struct Athlete.IndexMapping",
+				"name": "",
+				"type": "tuple"
+			}
+		],
+		"stateMutability": "view",
 		"type": "function"
 	},
 	{
@@ -240,7 +428,7 @@
 				"type": "uint256"
 			}
 		],
-		"name": "getExtraMetadataAndUri",
+		"name": "getTokenExtraMetadata",
 		"outputs": [
 			{
 				"components": [
@@ -250,17 +438,42 @@
 						"type": "uint256"
 					},
 					{
+						"internalType": "string",
+						"name": "athleteId",
+						"type": "string"
+					},
+					{
+						"internalType": "string",
+						"name": "symbol",
+						"type": "string"
+					},
+					{
+						"internalType": "string",
+						"name": "name",
+						"type": "string"
+					},
+					{
+						"internalType": "string",
+						"name": "team",
+						"type": "string"
+					},
+					{
+						"internalType": "string",
+						"name": "position",
+						"type": "string"
+					},
+					{
 						"internalType": "uint256",
 						"name": "restrictedUntil",
 						"type": "uint256"
 					},
 					{
-						"internalType": "string",
-						"name": "tokenURI",
-						"type": "string"
+						"internalType": "bool",
+						"name": "valid",
+						"type": "bool"
 					}
 				],
-				"internalType": "struct AthleteLogic.TokenReturn",
+				"internalType": "struct Athlete.TokenExtraMetadata",
 				"name": "",
 				"type": "tuple"
 			}
@@ -274,24 +487,9 @@
 				"internalType": "address",
 				"name": "ownerAddr",
 				"type": "address"
-			},
-			{
-				"internalType": "string[]",
-				"name": "positions",
-				"type": "string[]"
-			},
-			{
-				"internalType": "string",
-				"name": "team",
-				"type": "string"
-			},
-			{
-				"internalType": "string",
-				"name": "name",
-				"type": "string"
 			}
 		],
-		"name": "getFilteredTokenSupplyForOwner",
+		"name": "getTokenSupplyForOwner",
 		"outputs": [
 			{
 				"internalType": "uint256",
@@ -308,51 +506,14 @@
 				"internalType": "address",
 				"name": "ownerAddr",
 				"type": "address"
-			},
-			{
-				"internalType": "string[]",
-				"name": "positions",
-				"type": "string[]"
-			},
-			{
-				"internalType": "string",
-				"name": "team",
-				"type": "string"
-			},
-			{
-				"internalType": "string",
-				"name": "name",
-				"type": "string"
-			},
-			{
-				"internalType": "uint256[]",
-				"name": "indexAndLimit",
-				"type": "uint256[]"
 			}
 		],
-		"name": "getFilteredTokensForOwnerPagination",
+		"name": "getTokensForOwner",
 		"outputs": [
 			{
-				"components": [
-					{
-						"internalType": "uint256",
-						"name": "tokenId",
-						"type": "uint256"
-					},
-					{
-						"internalType": "uint256",
-						"name": "restrictedUntil",
-						"type": "uint256"
-					},
-					{
-						"internalType": "string",
-						"name": "tokenURI",
-						"type": "string"
-					}
-				],
-				"internalType": "struct AthleteLogic.TokenReturn[]",
+				"internalType": "uint256[]",
 				"name": "",
-				"type": "tuple[]"
+				"type": "uint256[]"
 			}
 		],
 		"stateMutability": "view",
@@ -383,6 +544,157 @@
 		"type": "function"
 	},
 	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "tokenId",
+				"type": "uint256"
+			}
+		],
+		"name": "nftTokenById",
+		"outputs": [
+			{
+				"components": [
+					{
+						"internalType": "uint256",
+						"name": "tokenId",
+						"type": "uint256"
+					},
+					{
+						"components": [
+							{
+								"internalType": "uint256",
+								"name": "tokenId",
+								"type": "uint256"
+							},
+							{
+								"internalType": "string",
+								"name": "athleteId",
+								"type": "string"
+							},
+							{
+								"internalType": "string",
+								"name": "symbol",
+								"type": "string"
+							},
+							{
+								"internalType": "string",
+								"name": "name",
+								"type": "string"
+							},
+							{
+								"internalType": "string",
+								"name": "team",
+								"type": "string"
+							},
+							{
+								"internalType": "string",
+								"name": "position",
+								"type": "string"
+							},
+							{
+								"internalType": "uint256",
+								"name": "restrictedUntil",
+								"type": "uint256"
+							},
+							{
+								"internalType": "bool",
+								"name": "valid",
+								"type": "bool"
+							}
+						],
+						"internalType": "struct Athlete.TokenExtraMetadata",
+						"name": "metadata",
+						"type": "tuple"
+					}
+				],
+				"internalType": "struct Athlete.TokenReturn",
+				"name": "",
+				"type": "tuple"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256[]",
+				"name": "",
+				"type": "uint256[]"
+			},
+			{
+				"internalType": "uint256[]",
+				"name": "",
+				"type": "uint256[]"
+			},
+			{
+				"internalType": "bytes",
+				"name": "",
+				"type": "bytes"
+			}
+		],
+		"name": "onERC1155BatchReceived",
+		"outputs": [
+			{
+				"internalType": "bytes4",
+				"name": "",
+				"type": "bytes4"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			},
+			{
+				"internalType": "bytes",
+				"name": "",
+				"type": "bytes"
+			}
+		],
+		"name": "onERC1155Received",
+		"outputs": [
+			{
+				"internalType": "bytes4",
+				"name": "",
+				"type": "bytes4"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
 		"inputs": [],
 		"name": "owner",
 		"outputs": [
@@ -393,6 +705,24 @@
 			}
 		],
 		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "tokenOwner",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "tokenId",
+				"type": "uint256"
+			}
+		],
+		"name": "pushToOwnerTokenArray",
+		"outputs": [],
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
@@ -472,18 +802,26 @@
 		"inputs": [
 			{
 				"internalType": "address",
-				"name": "receiverAddr",
+				"name": "operator",
 				"type": "address"
 			},
 			{
-				"internalType": "uint256[]",
-				"name": "tokenIds",
-				"type": "uint256[]"
-			},
+				"internalType": "bool",
+				"name": "approved",
+				"type": "bool"
+			}
+		],
+		"name": "setApprovalForAll",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
 			{
-				"internalType": "uint256[]",
-				"name": "amount",
-				"type": "uint256[]"
+				"internalType": "uint256",
+				"name": "tokenId",
+				"type": "uint256"
 			},
 			{
 				"components": [
@@ -528,30 +866,12 @@
 						"type": "bool"
 					}
 				],
-				"internalType": "struct IAthlete.TokenExtraMetadata[]",
+				"internalType": "struct Athlete.TokenExtraMetadata",
 				"name": "extra",
-				"type": "tuple[]"
+				"type": "tuple"
 			}
 		],
-		"name": "sendTokensForMinting",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "operator",
-				"type": "address"
-			},
-			{
-				"internalType": "bool",
-				"name": "approved",
-				"type": "bool"
-			}
-		],
-		"name": "setApprovalForAll",
+		"name": "setTokenExtraMetadata",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -569,7 +889,7 @@
 				"type": "string"
 			}
 		],
-		"name": "setAthleteTokenURI",
+		"name": "setTokenURI",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -610,11 +930,11 @@
 		"inputs": [
 			{
 				"internalType": "address",
-				"name": "_athleteStorageAddr",
+				"name": "_athleteLogicAddr",
 				"type": "address"
 			}
 		],
-		"name": "updateAthleteStorageAddr",
+		"name": "updateAthleteLogicAddr",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -648,48 +968,8 @@
 	{
 		"inputs": [
 			{
-				"internalType": "address",
-				"name": "ownerAddr",
-				"type": "address"
-			},
-			{
-				"internalType": "uint256[]",
-				"name": "tokenIds",
-				"type": "uint256[]"
-			},
-			{
 				"internalType": "uint256",
-				"name": "expireTime",
-				"type": "uint256"
-			},
-			{
-				"components": [
-					{
-						"internalType": "string[]",
-						"name": "positions",
-						"type": "string[]"
-					},
-					{
-						"internalType": "uint8",
-						"name": "amount",
-						"type": "uint8"
-					}
-				],
-				"internalType": "struct AthleteLogic.PositionsInfo[]",
-				"name": "positions",
-				"type": "tuple[]"
-			}
-		],
-		"name": "updateTokensRestriction",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
+				"name": "tokenId",
 				"type": "uint256"
 			}
 		],
