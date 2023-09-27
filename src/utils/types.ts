@@ -10,6 +10,12 @@ export enum SportType {
   TEST = 'test',
 }
 
+export enum TokenType {
+  REG = 'regular',
+  PROMO = 'promo',
+  SOULBOUND = 'soulbound',
+}
+
 export enum AthleteStatType {
   WEEKLY = 'weekly',
   SEASON = 'season',
