@@ -4493,6 +4493,7 @@ export class TasksService {
         if (deleteToken) {
           //found correct owner, with correct tokenId, and with correct sport
           await PolygonToken.remove(deleteToken);
+          this.logger.debug(`Token ${token} burned on account ${address}`);
         } else {
           this.logger.error(
             `ERROR! Token ${Number(token)} not found in address ${address}`
@@ -4520,6 +4521,7 @@ export class TasksService {
           if (deleteToken) {
             //found corrent owner, with correct tokenId, and with correct sport
             await PolygonToken.remove(deleteToken);
+            this.logger.debug(`Token ${token} burned on account ${address}`);
           } else {
             this.logger.error(
               `ERROR! Token ${Number(
@@ -4559,6 +4561,9 @@ export class TasksService {
               type: TokenType.REG,
               polygonAddress: receivingAddress,
             }).save();
+            this.logger.debug(
+              `Token ${token} transfered from ${fromAddr} to ${toAddr}`
+            );
           } else {
             const newAddress = await PolygonAddress.create({
               address: toAddr,
@@ -4570,6 +4575,9 @@ export class TasksService {
               type: TokenType.REG,
               polygonAddress: newAddress,
             }).save();
+            this.logger.debug(
+              `Token ${token} transfered from ${fromAddr} to new address ${toAddr}`
+            );
           }
         } else {
           this.logger.error('ERROR Token does not exist on from address');
@@ -4606,6 +4614,9 @@ export class TasksService {
                 type: TokenType.REG,
                 polygonAddress: receivingAddress,
               }).save();
+              this.logger.debug(
+                `Token ${token} transfered from ${fromAddr} to ${toAddr}`
+              );
             } else {
               const newAddress = await PolygonAddress.create({
                 address: toAddr,
@@ -4617,6 +4628,9 @@ export class TasksService {
                 type: TokenType.REG,
                 polygonAddress: newAddress,
               }).save();
+              this.logger.debug(
+                `Token ${token} transfered from ${fromAddr} to new address ${toAddr}`
+              );
             }
           } else {
             this.logger.error('ERROR Token does not exist on from address');
