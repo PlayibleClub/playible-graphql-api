@@ -4383,7 +4383,7 @@ export class TasksService {
       process.env.ALCHEMY_POLYGON_MUMBAI_API_KEY
     );
     const athleteLogicContract = new Contract(
-      process.env.POLYGON_ATHLETE_ADDRESS ?? 'contract',
+      process.env.POLYGON_ATHLETE_LOGIC_ADDRESS ?? 'contract',
       athleteLogic,
       provider
     );
