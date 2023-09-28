@@ -290,7 +290,7 @@ export class AthleteResolver {
     });
   }
 
-  //@Authorized("ADMIN")
+  @Authorized('ADMIN')
   @Mutation(() => Number)
   async addAthletesToFilebaseS3IPFSBucket(
     @Arg('sportType') sportType: SportType,
@@ -409,7 +409,7 @@ export class AthleteResolver {
     return athletes.length;
   }
 
-  //@Authorized("ADMIN")
+  @Authorized('ADMIN')
   @Mutation(() => Number)
   async addStarterAthletesToOpenPackContractPolygon(
     @Arg('sportType') sportType: SportType,
