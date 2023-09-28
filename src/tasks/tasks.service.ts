@@ -77,7 +77,6 @@ import { addGameHandler, submitLineupHandler } from '../helpers/EventHandler';
 import { computeShoheiOhtaniScores } from '../helpers/Athlete';
 import e from 'express';
 import gameABI from '../utils/polygon-contract-abis/game_abi.json';
-import athleteLogicABI from '../utils/polygon-contract-abis/athlete_logic_abi.json';
 import athleteStorageABI from '../utils/polygon-contract-abis/athlete_storage_abi.json';
 @Injectable()
 export class TasksService {
@@ -4376,16 +4375,10 @@ export class TasksService {
   async runPolygonNFLMainnetAthleteWebSocketListener() {
     console.log('Start polygon athlete listen');
     const network = 'maticmum'; // dont forget to change to polygon mainnet
-    const athleteLogic = athleteLogicABI;
     const athleteStorage = athleteStorageABI;
     const provider = new ethers.AlchemyProvider(
       network,
       process.env.ALCHEMY_POLYGON_MUMBAI_API_KEY
-    );
-    const athleteLogicContract = new Contract(
-      process.env.POLYGON_ATHLETE_LOGIC_ADDRESS ?? 'contract',
-      athleteLogic,
-      provider
     );
 
     const athleteStorageContract = new Contract(
@@ -4395,7 +4388,7 @@ export class TasksService {
     );
 
     //receive tokensMinted, add address to entity if unique, push tokenIds if not existing
-    athleteLogicContract.on(
+    athleteStorageContract.on(
       'TokensMinted',
       async (ownerAddress, tokens, event) => {
         console.log(`Receiver address: ${ownerAddress}`);
