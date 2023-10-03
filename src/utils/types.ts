@@ -7,6 +7,13 @@ export enum SportType {
   NFL = 'nfl',
   NFL_PROMO = 'nfl-promo',
   CRICKET = 'cricket',
+  TEST = 'test',
+}
+
+export enum TokenType {
+  REG = 'regular',
+  PROMO = 'promo',
+  SOULBOUND = 'soulbound',
 }
 
 export enum AthleteStatType {
@@ -38,6 +45,19 @@ export type SportMap = {
   baseball: SportType;
   basketball: SportType;
   nfl: SportType;
+};
+
+export type IPFSMetadata = {
+  name: string;
+  description: string;
+  image: string;
+  properties: {
+    athleteId: string;
+    symbol: string;
+    name: string;
+    team: string;
+    position: string;
+  };
 };
 
 export type AddGameType = {

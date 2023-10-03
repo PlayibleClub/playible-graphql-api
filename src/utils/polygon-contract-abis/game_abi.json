@@ -1,0 +1,477 @@
+[
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "gameId",
+				"type": "string"
+			}
+		],
+		"name": "GameHasEnded",
+		"type": "error"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "reason",
+				"type": "string"
+			},
+			{
+				"internalType": "uint256",
+				"name": "lineupLen",
+				"type": "uint256"
+			}
+		],
+		"name": "LineupLenMismatch",
+		"type": "error"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "reason",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "gameId",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "teamName",
+				"type": "string"
+			}
+		],
+		"name": "TeamAlreadyExists",
+		"type": "error"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "reason",
+				"type": "string"
+			},
+			{
+				"internalType": "uint256",
+				"name": "min",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "max",
+				"type": "uint256"
+			}
+		],
+		"name": "TeamNameLengthError",
+		"type": "error"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "gameId",
+				"type": "string"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "gameTimeStart",
+				"type": "uint256"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256",
+				"name": "gameTimeEnd",
+				"type": "uint256"
+			}
+		],
+		"name": "AddGame",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "result",
+				"type": "string"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "gameId",
+				"type": "string"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "teamName",
+				"type": "string"
+			},
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "signer",
+				"type": "address"
+			}
+		],
+		"name": "FailedLineupSubmission",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "gameId",
+				"type": "string"
+			}
+		],
+		"name": "RemoveGame",
+		"type": "event"
+	},
+	{
+		"anonymous": false,
+		"inputs": [
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "result",
+				"type": "string"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "gameId",
+				"type": "string"
+			},
+			{
+				"indexed": false,
+				"internalType": "string",
+				"name": "teamName",
+				"type": "string"
+			},
+			{
+				"indexed": false,
+				"internalType": "address",
+				"name": "signer",
+				"type": "address"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256[]",
+				"name": "tokenIds",
+				"type": "uint256[]"
+			},
+			{
+				"indexed": false,
+				"internalType": "uint256[]",
+				"name": "tokenPromoIds",
+				"type": "uint256[]"
+			}
+		],
+		"name": "SucceedLineupSubmission",
+		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "gameId",
+				"type": "string"
+			},
+			{
+				"internalType": "uint64",
+				"name": "gameStartTime",
+				"type": "uint64"
+			},
+			{
+				"internalType": "uint64",
+				"name": "gameEndTime",
+				"type": "uint64"
+			},
+			{
+				"components": [
+					{
+						"internalType": "string[]",
+						"name": "positions",
+						"type": "string[]"
+					},
+					{
+						"internalType": "uint8",
+						"name": "amount",
+						"type": "uint8"
+					}
+				],
+				"internalType": "struct IAthleteLogic.PositionsInfo[]",
+				"name": "positions",
+				"type": "tuple[]"
+			},
+			{
+				"internalType": "string",
+				"name": "gameDescription",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "prizeDescription",
+				"type": "string"
+			}
+		],
+		"name": "addGame",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "gameId",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "teamName",
+				"type": "string"
+			},
+			{
+				"internalType": "uint256[]",
+				"name": "tokenIds",
+				"type": "uint256[]"
+			},
+			{
+				"internalType": "uint256[]",
+				"name": "tokenPromoIds",
+				"type": "uint256[]"
+			},
+			{
+				"internalType": "uint256",
+				"name": "currentTime",
+				"type": "uint256"
+			}
+		],
+		"name": "submitLineup",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_athleteAddr",
+				"type": "address"
+			}
+		],
+		"name": "updateAthleteAddr",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_athletePromoAddr",
+				"type": "address"
+			}
+		],
+		"name": "updateAthletePromoAddr",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"components": [
+					{
+						"internalType": "string",
+						"name": "version",
+						"type": "string"
+					},
+					{
+						"internalType": "address",
+						"name": "ownerId",
+						"type": "address"
+					}
+				],
+				"internalType": "struct game.ContractInfo",
+				"name": "_contractInfo",
+				"type": "tuple"
+			}
+		],
+		"stateMutability": "nonpayable",
+		"type": "constructor"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "a",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "b",
+				"type": "string"
+			}
+		],
+		"name": "compareStrings",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "pure",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "gameId",
+				"type": "string"
+			}
+		],
+		"name": "viewGame",
+		"outputs": [
+			{
+				"components": [
+					{
+						"internalType": "address[]",
+						"name": "whitelist",
+						"type": "address[]"
+					},
+					{
+						"internalType": "uint16",
+						"name": "usageCost",
+						"type": "uint16"
+					},
+					{
+						"components": [
+							{
+								"internalType": "string[]",
+								"name": "positions",
+								"type": "string[]"
+							},
+							{
+								"internalType": "uint8",
+								"name": "amount",
+								"type": "uint8"
+							}
+						],
+						"internalType": "struct IAthleteLogic.PositionsInfo[]",
+						"name": "positions",
+						"type": "tuple[]"
+					},
+					{
+						"internalType": "uint8",
+						"name": "lineupLen",
+						"type": "uint8"
+					},
+					{
+						"internalType": "uint64",
+						"name": "joinedPlayerCounter",
+						"type": "uint64"
+					},
+					{
+						"internalType": "uint64",
+						"name": "joinedTeamCounter",
+						"type": "uint64"
+					},
+					{
+						"internalType": "string",
+						"name": "gameDescription",
+						"type": "string"
+					},
+					{
+						"internalType": "string",
+						"name": "prizeDescription",
+						"type": "string"
+					},
+					{
+						"internalType": "uint256",
+						"name": "startTime",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "endTime",
+						"type": "uint256"
+					},
+					{
+						"internalType": "bool",
+						"name": "valid",
+						"type": "bool"
+					}
+				],
+				"internalType": "struct game.GameInfo",
+				"name": "",
+				"type": "tuple"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "gameId",
+				"type": "string"
+			}
+		],
+		"name": "viewPlayerJoinedCounter",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "count",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "gameId",
+				"type": "string"
+			}
+		],
+		"name": "viewPositions",
+		"outputs": [
+			{
+				"components": [
+					{
+						"internalType": "string[]",
+						"name": "positions",
+						"type": "string[]"
+					},
+					{
+						"internalType": "uint8",
+						"name": "amount",
+						"type": "uint8"
+					}
+				],
+				"internalType": "struct IAthleteLogic.PositionsInfo[]",
+				"name": "",
+				"type": "tuple[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	}
+]

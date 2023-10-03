@@ -1,29 +1,31 @@
-import { DataSource } from "typeorm"
-import "dotenv-safe/config"
+import { DataSource } from 'typeorm';
+import 'dotenv-safe/config';
 
-import { User } from "../entities/User"
-import { Account } from "../entities/Account"
-import { Asset } from "../entities/Asset"
-import { Athlete } from "../entities/Athlete"
-import { Collection } from "../entities/Collection"
-import { Team } from "../entities/Team"
-import { Game } from "../entities/Game"
-import { GameTeam } from "../entities/GameTeam"
-import { GameTeamAthlete } from "../entities/GameTeamAthlete"
-import { AthleteStat } from "../entities/AthleteStat"
-import { AdminWallet } from "../entities/AdminWallet"
-import { Timeframe } from "../entities/Timeframe"
-import { Schedule } from "../entities/Schedule"
-import { CricketAuth } from "../entities/CricketAuth"
-import { CricketTournament } from "../entities/CricketTournament" 
-import { CricketTeam } from "../entities/CricketTeam"
-import { CricketAthlete } from '../entities/CricketAthlete'
-import { CricketAthleteStat } from '../entities/CricketAthleteStat' 
-import { CricketMatch } from '../entities/CricketMatch'
-import { NearBlock } from '../entities/NearBlock'
-import { NearResponse } from '../entities/NearResponse'
+import { User } from '../entities/User';
+import { Account } from '../entities/Account';
+import { Asset } from '../entities/Asset';
+import { Athlete } from '../entities/Athlete';
+import { Collection } from '../entities/Collection';
+import { Team } from '../entities/Team';
+import { Game } from '../entities/Game';
+import { GameTeam } from '../entities/GameTeam';
+import { GameTeamAthlete } from '../entities/GameTeamAthlete';
+import { AthleteStat } from '../entities/AthleteStat';
+import { AdminWallet } from '../entities/AdminWallet';
+import { Timeframe } from '../entities/Timeframe';
+import { Schedule } from '../entities/Schedule';
+import { CricketAuth } from '../entities/CricketAuth';
+import { CricketTournament } from '../entities/CricketTournament';
+import { CricketTeam } from '../entities/CricketTeam';
+import { CricketAthlete } from '../entities/CricketAthlete';
+import { CricketAthleteStat } from '../entities/CricketAthleteStat';
+import { CricketMatch } from '../entities/CricketMatch';
+import { NearBlock } from '../entities/NearBlock';
+import { NearResponse } from '../entities/NearResponse';
+import { PolygonAddress } from '../entities/PolygonAddress';
+import { PolygonToken } from '../entities/PolygonToken';
 export const AppDataSource = new DataSource({
-  type: "postgres",
+  type: 'postgres',
   host: process.env.POSTGRES_HOST,
   database: process.env.POSTGRES_DB,
   username: process.env.POSTGRES_USER,
@@ -49,8 +51,10 @@ export const AppDataSource = new DataSource({
     CricketAthleteStat,
     CricketMatch,
     NearBlock,
-    NearResponse
+    NearResponse,
+    PolygonAddress,
+    PolygonToken,
   ],
   synchronize: true,
   // logging: true,
-})
+});

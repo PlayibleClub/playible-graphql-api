@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, Interval, Timeout } from '@nestjs/schedule';
 import S3 from 'aws-sdk/clients/s3';
+import { Alchemy, Network, AlchemySubscription } from 'alchemy-sdk';
 import axios from 'axios';
 import fs from 'fs';
 import { startStream, types } from 'near-lake-framework';
@@ -16,6 +17,7 @@ import {
 import convert from 'xml-js';
 import moment from 'moment-timezone';
 import WebSocket from 'ws';
+import { Contract, ethers } from 'ethers';
 import { Athlete } from '../entities/Athlete';
 import { AthleteStat } from '../entities/AthleteStat';
 import { Game } from '../entities/Game';
@@ -31,6 +33,8 @@ import { CricketAthlete } from '../entities/CricketAthlete';
 import { CricketAthleteStat } from '../entities/CricketAthleteStat';
 import { CricketMatch } from '../entities/CricketMatch';
 import { getSeasonType } from '../helpers/Timeframe';
+import { PolygonAddress } from '../entities/PolygonAddress';
+import { PolygonToken } from '../entities/PolygonToken';
 import {
   ATHLETE_MLB_BASE_ANIMATION,
   ATHLETE_MLB_BASE_IMG,
@@ -45,6 +49,7 @@ import {
   AddGameType,
   ResponseStatus,
   SportMap,
+  TokenType,
 } from '../utils/types';
 import {
   CricketTeamInterface,
@@ -71,7 +76,8 @@ import { getSportType } from '../helpers/Sport';
 import { addGameHandler, submitLineupHandler } from '../helpers/EventHandler';
 import { computeShoheiOhtaniScores } from '../helpers/Athlete';
 import e from 'express';
-
+import gameABI from '../utils/polygon-contract-abis/game_abi.json';
+import athleteStorageABI from '../utils/polygon-contract-abis/athlete_storage_abi.json';
 @Injectable()
 export class TasksService {
   private readonly logger = new Logger(TasksService.name);
@@ -439,6 +445,315 @@ export class TasksService {
     );
   }
 
+  @Timeout(60000)
+  async regenerateGunnarAssetsRegular() {
+    this.logger.debug('Update gunnar Regular Image');
+    const athlete = await Athlete.findOne({
+      where: {
+        apiId: 10010354,
+      },
+      relations: {
+        team: true,
+      },
+    });
+
+    if (athlete) {
+      var svgTemplate = fs.readFileSync(
+        `./src/utils/mlb-svg-teams-templates/${athlete.team.key}.svg`,
+        'utf-8'
+      );
+      var options = { compact: true, ignoreComment: true, spaces: 4 };
+      var result: any = convert.xml2js(svgTemplate, options);
+
+      try {
+        if (athlete.firstName.length > 11) {
+          result.svg.g[6].text[1]['_attributes']['style'] =
+            'font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700';
+        }
+        if (athlete.lastName.length > 11) {
+          result.svg.g[6].text[2]['_attributes']['style'] =
+            'font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700';
+        }
+
+        result.svg.g[6]['text'][1]['tspan']['_text'] =
+          athlete.firstName.toUpperCase();
+        result.svg.g[6]['text'][2]['tspan']['_text'] =
+          athlete.lastName.toUpperCase();
+        result.svg.g[6]['text'][0]['tspan']['_text'] = 'SS';
+      } catch (e) {
+        console.log(
+          `FAILED AT ATHLETE ID: ${athlete.apiId} and TEAM KEY: ${athlete.team.key}`
+        );
+      }
+
+      result = convert.js2xml(result, options);
+      // fs.writeFileSync(
+      //   `./nba-images/${athlete.apiId}-${athlete.firstName.toLowerCase()}-${athlete.lastName.toLowerCase()}.svg`,
+      //   result
+      // )
+
+      var buffer = Buffer.from(result, 'utf8');
+
+      const s3 = new S3({
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+      });
+      const filename = `${
+        athlete.apiId
+      }-${athlete.firstName.toLowerCase()}-${athlete.lastName.toLowerCase()}.svg`;
+      const s3_location = 'media/athlete/mlb/images/';
+      const fileContent = buffer;
+      const params: any = {
+        Bucket: process.env.AWS_BUCKET_NAME,
+        Key: `${s3_location}${filename}`,
+        Body: fileContent,
+        ContentType: 'image/svg+xml',
+        CacheControl: 'no-cache',
+      };
+
+      s3.upload(params, async (err: any, data: any) => {
+        if (err) {
+          this.logger.error(err);
+        } else {
+          athlete.nftImage = data['Location'];
+
+          await Athlete.save(athlete);
+        }
+      });
+    }
+  }
+
+  @Timeout(120000)
+  async regenerateGunnarAssetsPromo() {
+    const athlete = await Athlete.findOne({
+      where: {
+        apiId: 10010354,
+      },
+      relations: {
+        team: true,
+      },
+    });
+
+    if (athlete) {
+      var svgTemplate = fs.readFileSync(
+        `./src/utils/mlb-svg-teams-promo-templates/${athlete.team.key}.svg`,
+        'utf-8'
+      );
+      var options = { compact: true, ignoreComment: true, spaces: 4 };
+      var result: any = convert.xml2js(svgTemplate, options);
+
+      try {
+        if (athlete.firstName.length > 11) {
+          result.svg.g[6].text[1]['_attributes']['style'] =
+            'font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700';
+        }
+        if (athlete.lastName.length > 11) {
+          result.svg.g[6].text[2]['_attributes']['style'] =
+            'font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700';
+        }
+
+        result.svg.g[6]['text'][1]['tspan']['_text'] =
+          athlete.firstName.toUpperCase();
+        result.svg.g[6]['text'][2]['tspan']['_text'] =
+          athlete.lastName.toUpperCase();
+        result.svg.g[6]['text'][0]['tspan']['_text'] = 'SS';
+      } catch (e) {
+        console.log(
+          `FAILED AT ATHLETE ID: ${athlete.apiId} and TEAM KEY: ${athlete.team.key}`
+        );
+      }
+
+      result = convert.js2xml(result, options);
+      // fs.writeFileSync(
+      //   `./nba-images-promo/${athlete.apiId}-${athlete.firstName.toLowerCase()}-${athlete.lastName.toLowerCase()}.svg`,
+      //   result
+      // )
+
+      var buffer = Buffer.from(result, 'utf8');
+      const s3 = new S3({
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+      });
+      const filename = `${
+        athlete.apiId
+      }-${athlete.firstName.toLowerCase()}-${athlete.lastName.toLowerCase()}.svg`;
+      const s3_location = 'media/athlete/mlb/promo_images/';
+      const fileContent = buffer;
+      const params: any = {
+        Bucket: process.env.AWS_BUCKET_NAME,
+        Key: `${s3_location}${filename}`,
+        Body: fileContent,
+        ContentType: 'image/svg+xml',
+        CacheControl: 'no-cache',
+      };
+
+      s3.upload(params, async (err: any, data: any) => {
+        if (err) {
+          this.logger.error(err);
+        } else {
+          athlete.nftImagePromo = data['Location'];
+          await Athlete.save(athlete);
+        }
+      });
+    }
+  }
+
+  @Timeout(180000)
+  async regenerateGunnarAssetsLocked() {
+    this.logger.debug('regen gunnar assets');
+    const athlete = await Athlete.findOne({
+      where: {
+        apiId: 10010354,
+      },
+      relations: {
+        team: true,
+      },
+    });
+    if (athlete) {
+      var svgTemplate = fs.readFileSync(
+        `./src/utils/mlb-svg-teams-lock-templates/${athlete.team.key}.svg`,
+        'utf-8'
+      );
+      var options = { compact: true, ignoreComment: true, spaces: 4 };
+      var result: any = convert.xml2js(svgTemplate, options);
+
+      try {
+        if (athlete.firstName.length > 11) {
+          result.svg.g[6].text[1]['_attributes']['style'] =
+            'font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700';
+        }
+        if (athlete.lastName.length > 11) {
+          result.svg.g[6].text[2]['_attributes']['style'] =
+            'font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700';
+        }
+
+        result.svg.g[6]['text'][1]['tspan']['_text'] =
+          athlete.firstName.toUpperCase();
+        result.svg.g[6]['text'][2]['tspan']['_text'] =
+          athlete.lastName.toUpperCase();
+        result.svg.g[6]['text'][0]['tspan']['_text'] = 'SS';
+      } catch (e) {
+        console.log(
+          `FAILED AT ATHLETE ID: ${athlete.apiId} and TEAM KEY: ${athlete.team.key}`
+        );
+      }
+
+      result = convert.js2xml(result, options);
+      // fs.writeFileSync(
+      //   `./nba-images-locked/${athlete.apiId}-${athlete.firstName.toLowerCase()}-${athlete.lastName.toLowerCase()}.svg`,
+      //   result
+      // )
+
+      var buffer = Buffer.from(result, 'utf8');
+      const s3 = new S3({
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+      });
+      const filename = `${
+        athlete.apiId
+      }-${athlete.firstName.toLowerCase()}-${athlete.lastName.toLowerCase()}.svg`;
+      const s3_location = 'media/athlete/mlb/locked_images/';
+      const fileContent = buffer;
+      const params: any = {
+        Bucket: process.env.AWS_BUCKET_NAME,
+        Key: `${s3_location}${filename}`,
+        Body: fileContent,
+        ContentType: 'image/svg+xml',
+        CacheControl: 'no-cache',
+      };
+
+      s3.upload(params, async (err: any, data: any) => {
+        if (err) {
+          this.logger.error(err);
+        } else {
+          athlete.nftImageLocked = data['Location'];
+          await Athlete.save(athlete);
+        }
+      });
+    }
+  }
+
+  @Timeout(240000)
+  async regenerateGunnarAssetsAnimation() {
+    this.logger.debug('regen gunnar animation');
+    const athlete = await Athlete.findOne({
+      where: {
+        apiId: 10010354,
+      },
+      relations: {
+        team: true,
+      },
+    });
+
+    if (athlete) {
+      var svgAnimationTemplate = fs.readFileSync(
+        `./src/utils/mlb-svg-teams-animation-templates/${athlete.team.key}.svg`,
+        'utf-8'
+      );
+      var options = { compact: true, ignoreComment: true, spaces: 4 };
+      var result: any = convert.xml2js(svgAnimationTemplate, options);
+
+      try {
+        if (athlete.firstName.length > 11) {
+          result.svg.g[4].text[2].tspan['_attributes']['font-size'] = '50';
+          result.svg.g[4].text[3].tspan['_attributes']['font-size'] = '50';
+        }
+        if (athlete.lastName.length > 11) {
+          result.svg.g[4].text[4].tspan['_attributes']['font-size'] = '50';
+          result.svg.g[4].text[5].tspan['_attributes']['font-size'] = '50';
+        }
+
+        result.svg.g[4].text[0].tspan['_cdata'] = 'SS';
+        result.svg.g[4].text[1].tspan['_cdata'] = 'SS';
+        result.svg.g[4].text[2].tspan['_cdata'] =
+          athlete.firstName.toUpperCase();
+        result.svg.g[4].text[3].tspan['_cdata'] =
+          athlete.firstName.toUpperCase();
+        result.svg.g[4].text[4].tspan['_cdata'] =
+          athlete.lastName.toUpperCase();
+        result.svg.g[4].text[5].tspan['_cdata'] =
+          athlete.lastName.toUpperCase();
+        result = convert.js2xml(result, options);
+      } catch (e) {
+        console.log(
+          `FAILED AT ATHLETE ID: ${athlete.apiId} and TEAM KEY: ${athlete.team.key}`
+        );
+        console.log(e);
+      }
+
+      // fs.writeFileSync(
+      //   `./nfl-animations/${athlete.apiId}-${athlete.firstName.toLowerCase()}-${athlete.lastName
+      //   .toLowerCase()}.svg`,
+      //   result
+      // )
+      var buffer = Buffer.from(result, 'utf8');
+      const s3 = new S3({
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+      });
+      const filename = `${
+        athlete.apiId
+      }-${athlete.firstName.toLowerCase()}-${athlete.lastName.toLowerCase()}.svg`;
+      const s3_location = 'media/athlete/mlb/animations/';
+      const fileContent = buffer;
+      const params: any = {
+        Bucket: process.env.AWS_BUCKET_NAME,
+        Key: `${s3_location}${filename}`,
+        Body: fileContent,
+        ContentType: 'image/svg+xml',
+        CacheControl: 'no-cache',
+      };
+
+      s3.upload(params, async (err: any, data: any) => {
+        if (err) {
+          this.logger.error(err);
+        } else {
+          athlete.nftAnimation = data['Location'];
+          await Athlete.save(athlete);
+        }
+      });
+    }
+  }
   //@Timeout(300000)
   async generateAthleteNflAssets() {
     this.logger.debug('Generate Athlete NFL Assets: STARTED');
@@ -4374,6 +4689,310 @@ export class TasksService {
     }
   }
 
+  @Timeout(1)
+  async runPolygonNFLMainnetAthleteWebSocketListener() {
+    console.log('Start polygon athlete listen');
+    const network = 'maticmum'; // dont forget to change to polygon mainnet
+    const athleteStorage = athleteStorageABI;
+    const provider = new ethers.AlchemyProvider(
+      network,
+      process.env.ALCHEMY_POLYGON_MUMBAI_API_KEY
+    );
+
+    const athleteStorageContract = new Contract(
+      process.env.POLYGON_ATHLETE_STORAGE_ADDRESS ?? 'contract',
+      athleteStorage,
+      provider
+    );
+
+    //receive tokensMinted, add address to entity if unique, push tokenIds if not existing
+    athleteStorageContract.on(
+      'TokensMinted',
+      async (ownerAddress, tokens, event) => {
+        console.log(`Receiver address: ${ownerAddress}`);
+        console.log(tokens);
+        console.log(event.log);
+
+        const polygonAddress = await PolygonAddress.findOne({
+          where: {
+            address: ownerAddress,
+          },
+        });
+        if (polygonAddress) {
+          for (let token of tokens) {
+            const addToken = await PolygonToken.findOne({
+              where: {
+                tokenId: Number(token),
+                sport: SportType.NFL,
+                polygonAddress: {
+                  address: ownerAddress,
+                },
+              },
+            });
+            if (addToken) {
+              this.logger.error(
+                `FAILURE THIS SHOULD NOT HAPPEN Token ${Number(
+                  token
+                )} already exists for ${ownerAddress}`
+              );
+            } else {
+              await PolygonToken.create({
+                tokenId: Number(token),
+                sport: SportType.NFL,
+                polygonAddress: polygonAddress,
+                type: TokenType.REG,
+              }).save();
+              this.logger.debug(
+                `Added new token ${Number(token)} to address ${ownerAddress}`
+              );
+            }
+          }
+        } else {
+          const newAddress = await PolygonAddress.create({
+            address: ownerAddress,
+          }).save();
+
+          for (let token of tokens) {
+            const addToken = await PolygonToken.findOne({
+              where: {
+                tokenId: Number(token),
+                sport: SportType.NFL,
+                polygonAddress: {
+                  address: ownerAddress,
+                },
+              },
+            });
+            if (addToken) {
+              this.logger.error(
+                `FAILURE Token ${Number(
+                  token
+                )} already exists on address ${ownerAddress}`
+              );
+            } else {
+              await PolygonToken.create({
+                tokenId: Number(token),
+                sport: SportType.NFL,
+                polygonAddress: newAddress,
+                type: TokenType.REG,
+              }).save();
+              this.logger.debug(
+                `Added new token ${Number(
+                  token
+                )} to NEW address ${ownerAddress}`
+              );
+            }
+          }
+        }
+      }
+    );
+
+    athleteStorageContract.on(
+      'TokenBurn',
+      async (address, token, amount, event) => {
+        const tempAmount = amount;
+        const tempEvent = event;
+        const deleteToken = await PolygonToken.findOne({
+          where: {
+            sport: SportType.NFL,
+            tokenId: Number(token),
+            polygonAddress: {
+              address: address,
+            },
+          },
+        });
+
+        if (deleteToken) {
+          //found correct owner, with correct tokenId, and with correct sport
+          await PolygonToken.remove(deleteToken);
+          this.logger.debug(`Token ${token} burned on account ${address}`);
+        } else {
+          this.logger.error(
+            `ERROR! Token ${Number(token)} not found in address ${address}`
+          );
+        }
+      }
+    );
+
+    athleteStorageContract.on(
+      'TokenBurnBatch',
+      async (address, tokens, amounts, event) => {
+        const tempAmounts = amounts;
+        const tempEvent = event;
+        for (let token of tokens) {
+          const deleteToken = await PolygonToken.findOne({
+            where: {
+              sport: SportType.NFL,
+              tokenId: Number(token),
+              polygonAddress: {
+                address: address,
+              },
+            },
+          });
+
+          if (deleteToken) {
+            //found corrent owner, with correct tokenId, and with correct sport
+            await PolygonToken.remove(deleteToken);
+            this.logger.debug(`Token ${token} burned on account ${address}`);
+          } else {
+            this.logger.error(
+              `ERROR! Token ${Number(
+                token
+              )} not found in address ${address} in Burn BATCH`
+            );
+          }
+        }
+      }
+    );
+    athleteStorageContract.on(
+      'TokenTransfer',
+      async (fromAddr, toAddr, token) => {
+        const transferToken = await PolygonToken.findOne({
+          where: {
+            sport: SportType.NFL,
+            tokenId: Number(token),
+            polygonAddress: {
+              address: fromAddr,
+            },
+          },
+        });
+        if (transferToken) {
+          //token exists within fromAddress
+
+          const receivingAddress = await PolygonAddress.findOne({
+            where: {
+              address: toAddr,
+            },
+          });
+
+          if (receivingAddress) {
+            //toAddress exists
+            await PolygonToken.create({
+              sport: SportType.NFL,
+              tokenId: Number(token),
+              type: TokenType.REG,
+              polygonAddress: receivingAddress,
+            }).save();
+            this.logger.debug(
+              `Token ${token} transfered from ${fromAddr} to ${toAddr}`
+            );
+          } else {
+            const newAddress = await PolygonAddress.create({
+              address: toAddr,
+            }).save();
+
+            await PolygonToken.create({
+              sport: SportType.NFL,
+              tokenId: Number(token),
+              type: TokenType.REG,
+              polygonAddress: newAddress,
+            }).save();
+            this.logger.debug(
+              `Token ${token} transfered from ${fromAddr} to new address ${toAddr}`
+            );
+          }
+        } else {
+          this.logger.error('ERROR Token does not exist on from address');
+        }
+      }
+    );
+    athleteStorageContract.on(
+      'TokenTransferBatch',
+      async (fromAddr, toAddr, ids) => {
+        for (let token of ids) {
+          const transferToken = await PolygonToken.findOne({
+            where: {
+              sport: SportType.NFL,
+              tokenId: Number(token),
+              polygonAddress: {
+                address: fromAddr,
+              },
+            },
+          });
+          if (transferToken) {
+            //token exists within fromAddress
+
+            const receivingAddress = await PolygonAddress.findOne({
+              where: {
+                address: toAddr,
+              },
+            });
+
+            if (receivingAddress) {
+              //toAddress exists
+              await PolygonToken.create({
+                sport: SportType.NFL,
+                tokenId: Number(token),
+                type: TokenType.REG,
+                polygonAddress: receivingAddress,
+              }).save();
+              this.logger.debug(
+                `Token ${token} transfered from ${fromAddr} to ${toAddr}`
+              );
+            } else {
+              const newAddress = await PolygonAddress.create({
+                address: toAddr,
+              }).save();
+
+              await PolygonToken.create({
+                sport: SportType.NFL,
+                tokenId: Number(token),
+                type: TokenType.REG,
+                polygonAddress: newAddress,
+              }).save();
+              this.logger.debug(
+                `Token ${token} transfered from ${fromAddr} to new address ${toAddr}`
+              );
+            }
+          } else {
+            this.logger.error('ERROR Token does not exist on from address');
+          }
+        }
+      }
+    );
+  }
+  @Timeout(1)
+  async runPolygonMainnetGameWebSocketListener() {
+    console.log('Start polygon listen');
+    const network = 'maticmum';
+    const address = process.env.METAMASK_WALLET_ADDRESS ?? 'default';
+    const abi = gameABI;
+    const provider = new ethers.AlchemyProvider(
+      network,
+      process.env.ALCHEMY_POLYGON_MUMBAI_API_KEY
+    );
+    const gameContract = new Contract(
+      process.env.POLYGON_GAME_ADDRESS ?? 'contract',
+      abi,
+      provider
+    );
+    gameContract.on('AddGame', (gameId, gameTimeStart, gameTimeEnd, event) => {
+      console.log(`gameId: ${gameId}`);
+      console.log(`game start: ${gameTimeStart}`);
+      console.log(`game end: ${gameTimeEnd}`);
+
+      console.log(event.log);
+    });
+
+    gameContract.on(
+      'SucceedLineupSubmission',
+      (result, gameId, teamName, address, event) => {
+        console.log(`result: ${result}`);
+        console.log(`gameId: ${gameId}`);
+        console.log(`teamName: ${teamName}`);
+        console.log(`address: ${address}`);
+        console.log(event.log);
+      }
+    );
+    // const filter = {
+    //   topics: [
+    //     "0xf67cbd2d2262c1c99a110c17514f7e1c866ec08c3becf5ab2f4986c1ea01a56b",
+    //   ],
+    // };
+    // provider.on(filter, (log, event) => {
+    //   console.log(log);
+    //   console.log(event);
+    // });
+  }
   //@Timeout(1)
   async runNearMainnetBaseballWebSocketListener() {
     function listenToMainnet() {

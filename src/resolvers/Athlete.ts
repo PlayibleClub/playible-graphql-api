@@ -1,5 +1,6 @@
 import { AthleteStatType, SportType } from './../utils/types';
 import { Contract } from 'near-api-js';
+
 import {
   Arg,
   Authorized,
@@ -11,12 +12,13 @@ import {
 } from 'type-graphql';
 import { AthleteSortOptions, GetAthletesArgs } from '../args/AthleteArgs';
 import { setup } from '../near-api';
-import axios from 'axios';
-
+import axios, { AxiosResponse } from 'axios';
+import { S3 } from 'aws-sdk';
 import { Athlete } from '../entities/Athlete';
 import { AthleteStat } from '../entities/AthleteStat';
 import { Team } from '../entities/Team';
-
+import fs from 'fs';
+import path from 'path';
 import { In, MoreThanOrEqual, LessThanOrEqual } from 'typeorm';
 import {
   NFL_ATHLETE_IDS,
@@ -25,9 +27,12 @@ import {
   NBA_ATHLETE_PROMO_IDS,
   MLB_ATHLETE_IDS,
   MLB_ATHLETE_PROMO_IDS,
+  TEST_ATHLETE_IDS,
 } from './../utils/athlete-ids';
 import moment from 'moment';
-
+import { ethers } from 'ethers';
+import nflOpenPackABI from './../utils/polygon-contract-abis/nfl_open_pack_abi.json';
+import { IPFSMetadata } from './../utils/types';
 @ObjectType()
 class Distribution {
   @Field()
@@ -96,6 +101,43 @@ export class AthleteResolver {
   ): Promise<Athlete> {
     const athlete = await Athlete.findOneOrFail({
       where: { id },
+      relations: {
+        stats: { opponent: true },
+        team: true,
+      },
+    });
+
+    if (season) {
+      athlete.stats = athlete.stats.filter((stat) => stat.season === season);
+    }
+
+    if (from) {
+      //athlete.stats = athlete.stats.filter((stat) => stat.gameDate && stat.gameDate.toISOString() >= from.toISOString())
+      athlete.stats = athlete.stats.filter(
+        (stat) =>
+          stat.gameDate && moment(stat.gameDate).unix() >= moment(from).unix()
+      );
+    }
+
+    if (to) {
+      athlete.stats = athlete.stats.filter(
+        (stat) =>
+          stat.gameDate && moment(stat.gameDate).unix() <= moment(to).unix()
+      );
+    }
+
+    return athlete;
+  }
+
+  @Query(() => Athlete)
+  async getAthleteByApiId(
+    @Arg('id') apiId: number,
+    @Arg('from', { nullable: true }) from?: Date,
+    @Arg('to', { nullable: true }) to?: Date,
+    @Arg('season', { nullable: true }) season?: string
+  ): Promise<Athlete> {
+    const athlete = await Athlete.findOneOrFail({
+      where: { apiId: apiId },
       relations: {
         stats: { opponent: true },
         team: true,
@@ -248,6 +290,226 @@ export class AthleteResolver {
     });
   }
 
+  @Authorized('ADMIN')
+  @Mutation(() => Number)
+  async addAthletesToFilebaseS3IPFSBucket(
+    @Arg('sportType') sportType: SportType,
+    @Arg('isPromo') isPromo: boolean = false
+  ): Promise<Number> {
+    let athleteIds: number[] = [];
+    const nftImages = ['nftImage'];
+    console.log(isPromo);
+    //setup AWS S3 bucket
+    const s3Filebase = new S3({
+      apiVersion: '2006-03-01',
+      endpoint: 'https://s3.filebase.com',
+      region: 'us-east-1',
+      accessKeyId: process.env.FILEBUCKET_ACCESS_KEY_ID,
+      secretAccessKey: process.env.FILEBUCKET_SECRET_ACCESS_KEY,
+      s3ForcePathStyle: true,
+    });
+
+    switch (sportType) {
+      case SportType.TEST:
+        athleteIds = TEST_ATHLETE_IDS;
+        break;
+      case SportType.NFL:
+        athleteIds = NFL_ATHLETE_IDS;
+        break;
+    }
+
+    const athletes = await Athlete.find({
+      where: {
+        apiId: In(athleteIds),
+      },
+    });
+    console.log(athletes.length);
+    // try {
+    //   const filepath = path.join(__dirname, "/temp-images");
+    //   console.log(filepath);
+    //   await fs.promises.mkdir(filepath, {
+    //     recursive: true,
+    //   });
+    //   await fs.promises.rm(filepath, { recursive: true });
+    // } catch (e) {
+    //   console.log(e);
+    // }
+
+    //let fileArray: Buffer[] = new Buffer[];
+    for (let athlete of athletes) {
+      for (let imageType of nftImages) {
+        // console.log(`Reading athlete ${athlete.id}`);
+
+        // // const request = s3Filebase.putObject(fileBaseParams)
+        // // request.on('httpHeaders', async (statusCode, headers) => {
+        // //   console.log(`Status Code ${statusCode}`)
+        // //   console.log(`CID: ${headers['x-amz-meta-cid']}`)
+        // //   athlete.nftAnimation = headers['x-amz-meta-cid']
+        // //   await Athlete.save(athlete)
+        // // })
+        // // request.send()
+        let fileType = '';
+        let response: AxiosResponse;
+        // let link = "";
+        switch (imageType) {
+          case 'nftImageLocked':
+            response = await axios.get(athlete.nftImageLocked ?? 'default', {
+              responseType: 'arraybuffer',
+            });
+            //link = athlete.nftImageLocked ?? 'default'
+            fileType = 'SB';
+            break;
+          case 'nftImagePromo':
+            response = await axios.get(athlete.nftImagePromo ?? 'default', {
+              responseType: 'arraybuffer',
+            });
+            //link = athlete.nftImagePromo ?? 'default'
+            fileType = 'P';
+            break;
+          case 'nftImage':
+          default:
+            response = await axios.get(athlete.nftImage ?? 'default', {
+              responseType: 'arraybuffer',
+            });
+            //link = athlete.nftImage ?? 'default'
+            fileType = 'R';
+            //console.log(response);
+            break;
+        }
+        //fileArray.push(Buffer.from(response.data, "utf8"));
+        const data = Buffer.from(response.data, 'utf8');
+        const fileBaseParams = {
+          Bucket: 'playibletestnetnfl',
+          ContentType: 'image/svg+xml',
+          Key: `${fileType}_${athlete.apiId}`,
+          ACL: 'public-read',
+          Body: data,
+          Metadata: {
+            firstName: athlete.firstName,
+            lastName: athlete.lastName,
+            apiId: athlete.apiId.toString(),
+          },
+        };
+        const request = s3Filebase.putObject(fileBaseParams);
+        request.on('httpHeaders', async (statusCode, headers) => {
+          console.log(`Status Code ${statusCode}`);
+          console.log(`Filename: ${fileType}_${athlete.apiId}`);
+          console.log(`CID: ${headers['x-amz-meta-cid']}`);
+          athlete.cid = headers['x-amz-meta-cid'];
+          athlete.tokenURI = `https://ipfs.filebase.io/ipfs/${headers['x-amz-meta-cid']}`;
+          await Athlete.save(athlete);
+        });
+        request.on('error', (error) => {
+          console.log(error);
+        });
+        request.send();
+      }
+    }
+
+    return athletes.length;
+  }
+
+  @Authorized('ADMIN')
+  @Mutation(() => Number)
+  async addStarterAthletesToOpenPackContractPolygon(
+    @Arg('sportType') sportType: SportType,
+    @Arg('isPromo') isPromo: boolean = false,
+    @Arg('contractAddress') contractAddress: string
+  ): Promise<Number> {
+    let athleteIds: number[] = [];
+    let contractABI: string = '';
+    switch (sportType) {
+      case SportType.NFL:
+        athleteIds = NFL_ATHLETE_IDS;
+        contractABI = JSON.stringify(nflOpenPackABI);
+        break;
+    }
+    //const network = "maticmum"; // polygon testnet
+    const network = 'maticmum'; // Polygon zkEVM Testnet ChainId
+    try {
+      const provider = new ethers.AlchemyProvider(
+        network,
+        //process.env.ALCHEMY_ZKEVM_TESTNET_API_KEY
+        process.env.ALCHEMY_POLYGON_MUMBAI_API_KEY
+      );
+      const signer = new ethers.Wallet(
+        process.env.METAMASK_PRIVATE_KEY ?? '',
+        provider
+      );
+      const contract = new ethers.Contract(
+        contractAddress,
+        contractABI,
+        signer
+      );
+
+      const athletes = (
+        await Athlete.find({
+          where: { apiId: In(athleteIds) },
+          order: { id: 'ASC' },
+          relations: { team: true },
+        })
+      ).map((athlete) => {
+        if (isPromo) {
+          return {
+            athleteId: athlete.id.toString(),
+            soulboundTokenUri: athlete.nftImageLocked,
+            singleUseTokenUri: athlete.nftImagePromo,
+            symbol: athlete.apiId.toString(),
+            name: `${athlete.firstName} ${athlete.lastName}`,
+            team: athlete.team.key,
+            position: athlete.position,
+          };
+        } else {
+          const ipfs: IPFSMetadata = {
+            name: `${athlete.firstName} ${athlete.lastName} Token`,
+            description: 'Playible Athlete Token',
+            image: athlete.tokenURI,
+            properties: {
+              athleteId: athlete.id.toString(),
+              symbol: athlete.apiId.toString(),
+              name: `${athlete.firstName} ${athlete.lastName}`,
+              team: athlete.team.key,
+              position: athlete.position,
+            },
+          };
+          return {
+            athleteId: athlete.id.toString(),
+            //tokenUri: athlete.tokenURI,
+            tokenUri: JSON.stringify(ipfs),
+            symbol: athlete.apiId.toString(),
+            name: `${athlete.firstName} ${athlete.lastName}`,
+            team: athlete.team.key,
+            position: athlete.position,
+          };
+        }
+      });
+
+      const chunkifiedAthletes = chunkify(athletes, 35, false);
+      console.log(chunkifiedAthletes.length);
+      for (const chunk of chunkifiedAthletes) {
+        console.log('Executing add athletes...');
+        try {
+          await contract.executeAddAthletes(chunk, {
+            from: process.env.METAMASK_WALLET_ADDRESS,
+            gasPrice: 1500000000,
+          });
+        } catch (e) {
+          console.log(e);
+        }
+        await new Promise((resolve) => setTimeout(resolve, 15000));
+      }
+      // await contract.executeAddAthletes(athletes, {
+      //   from: process.env.METAMASK_WALLET_ADDRESS,
+      //   gasPrice: 1500000000,
+      //   //10000000000 10 gwei
+      // });
+      //console.log(JSON.stringify(athletes));
+      return athletes.length;
+    } catch (error) {
+      console.log(error);
+    }
+    return 0;
+  }
   @Authorized('ADMIN')
   @Mutation(() => Number)
   async addStarterAthletesToOpenPackContract(
