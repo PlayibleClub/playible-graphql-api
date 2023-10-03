@@ -4690,6 +4690,8 @@ export class TasksService {
       process.env.ALCHEMY_POLYGON_MUMBAI_API_KEY
     );
 
+    provider.pollingInterval = 20000;
+
     const athleteStorageContract = new Contract(
       process.env.POLYGON_ATHLETE_STORAGE_ADDRESS ?? 'contract',
       athleteStorage,
@@ -4951,6 +4953,8 @@ export class TasksService {
       network,
       process.env.ALCHEMY_POLYGON_MUMBAI_API_KEY
     );
+
+    provider.pollingInterval = 20000;
     const gameContract = new Contract(
       process.env.POLYGON_GAME_ADDRESS ?? 'contract',
       abi,
