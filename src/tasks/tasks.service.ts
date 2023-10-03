@@ -4689,7 +4689,7 @@ export class TasksService {
     }
   }
 
-  @Timeout(1)
+  //@Timeout(1)
   async runPolygonNFLMainnetAthleteWebSocketListener() {
     console.log('Start polygon athlete listen');
     const network = 'maticmum'; // dont forget to change to polygon mainnet
@@ -4950,7 +4950,7 @@ export class TasksService {
       }
     );
   }
-  @Timeout(1)
+  //@Timeout(1)
   async runPolygonMainnetGameWebSocketListener() {
     console.log('Start polygon listen');
     const network = 'maticmum';
