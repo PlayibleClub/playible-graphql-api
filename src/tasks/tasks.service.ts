@@ -437,6 +437,317 @@ export class TasksService {
     );
   }
 
+  @Timeout(60000)
+  async regenerateGunnarAssetsRegular() {
+    this.logger.debug('Update gunnar Regular Image');
+    const athlete = await Athlete.findOne({
+      where: {
+        apiId: 10010354,
+      },
+      relations: {
+        team: true,
+      },
+    });
+
+    if (athlete) {
+      var svgTemplate = fs.readFileSync(
+        `./src/utils/nfl-svg-teams-templates/${athlete.team.key}.svg`,
+        'utf-8'
+      );
+      var options = { compact: true, ignoreComment: true, spaces: 4 };
+      var result: any = convert.xml2js(svgTemplate, options);
+
+      try {
+        if (athlete.firstName.length > 11) {
+          result.svg.g[5].text[2]['_attributes']['style'] =
+            'font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700';
+        }
+        if (athlete.lastName.length > 11) {
+          result.svg.g[5].text[3]['_attributes']['style'] =
+            'font-size:50px;fill:#fff;font-family:Arimo-Bold, Arimo;font-weight:700';
+        }
+
+        result.svg.g[5].text[2]['_text'] = athlete.firstName.toUpperCase();
+        result.svg.g[5].text[3]['_text'] = athlete.lastName.toUpperCase();
+        result.svg.g[5].text[1]['_text'] = 'SS';
+        result.svg.g[5].text[0]['_text'] = '';
+      } catch (e) {
+        console.log(
+          `FAILED AT ATHLETE ID: ${athlete.apiId} and TEAM KEY: ${athlete.team.key}`
+        );
+      }
+
+      result = convert.js2xml(result, options);
+      // fs.writeFileSync(
+      //   `./nfl-images/${athlete["PlayerID"]}-${athlete["FirstName"].toLowerCase()}-${athlete[
+      //     "LastName"
+      //   ].toLowerCase()}.svg`,
+      //   result
+      // )
+
+      var buffer = Buffer.from(result, 'utf8');
+      const s3 = new S3({
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+      });
+      const filename = `${
+        athlete.apiId
+      }-${athlete.firstName.toLowerCase()}-${athlete.lastName.toLowerCase()}.svg`;
+      const s3_location = 'media/athlete/nfl/images/';
+      const fileContent = buffer;
+      const params: any = {
+        Bucket: process.env.AWS_BUCKET_NAME,
+        Key: `${s3_location}${filename}`,
+        Body: fileContent,
+        ContentType: 'image/svg+xml',
+        CacheControl: 'no-cache',
+      };
+
+      s3.upload(params, async (err: any, data: any) => {
+        if (err) {
+          this.logger.error(err);
+        } else {
+          athlete.nftImage = data['Location'];
+          await Athlete.save(athlete);
+        }
+      });
+    }
+  }
+
+  @Timeout(120000)
+  async regenerateGunnarAssetsPromo() {
+    const athlete = await Athlete.findOne({
+      where: {
+        apiId: 10010354,
+      },
+      relations: {
+        team: true,
+      },
+    });
+
+    if (athlete) {
+      var svgTemplate = fs.readFileSync(
+        `./src/utils/nfl-svg-teams-promo-templates/${athlete.team.key}.svg`,
+        'utf-8'
+      );
+      var options = { compact: true, ignoreComment: true, spaces: 4 };
+      var result: any = convert.xml2js(svgTemplate, options);
+
+      try {
+        if (athlete.firstName.length > 11) {
+          result.svg.g[5].text[1]['_attributes']['style'] =
+            'fill:#fff; font-family:Arimo-Bold, Arimo; font-size:50px;';
+        }
+        if (athlete.lastName.length > 11) {
+          result.svg.g[5].text[2]['_attributes']['style'] =
+            'fill:#fff; font-family:Arimo-Bold, Arimo; font-size:50px;';
+        }
+
+        result.svg.g[5]['text'][1]['tspan']['_text'] =
+          athlete.firstName.toUpperCase();
+        result.svg.g[5]['text'][2]['tspan']['_text'] =
+          athlete.lastName.toUpperCase();
+        result.svg.g[5]['text'][0]['tspan']['_text'] = 'SS';
+      } catch (e) {
+        console.log(
+          `FAILED AT ATHLETE ID: ${athlete.apiId} and TEAM KEY: ${athlete.team.key}`
+        );
+      }
+
+      result = convert.js2xml(result, options);
+      // fs.writeFileSync(
+      //   `./nfl-images-promo/${athlete.apiId}-${athlete.firstName.toLowerCase()}-${athlete.lastName.toLowerCase()}.svg`,
+      //   result
+      // )
+
+      var buffer = Buffer.from(result, 'utf8');
+      const s3 = new S3({
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+      });
+      const filename = `${
+        athlete.apiId
+      }-${athlete.firstName.toLowerCase()}-${athlete.lastName.toLowerCase()}.svg`;
+      const s3_location = 'media/athlete/nfl/promo_images/';
+      const fileContent = buffer;
+      const params: any = {
+        Bucket: process.env.AWS_BUCKET_NAME,
+        Key: `${s3_location}${filename}`,
+        Body: fileContent,
+        ContentType: 'image/svg+xml',
+        CacheControl: 'no-cache',
+      };
+
+      s3.upload(params, async (err: any, data: any) => {
+        if (err) {
+          this.logger.error(err);
+        } else {
+          athlete.nftImagePromo = data['Location'];
+          await Athlete.save(athlete);
+        }
+      });
+    }
+  }
+
+  @Timeout(180000)
+  async regenerateGunnarAssetsLocked() {
+    this.logger.debug('regen gunnar assets');
+    const athlete = await Athlete.findOne({
+      where: {
+        apiId: 10010354,
+      },
+      relations: {
+        team: true,
+      },
+    });
+    if (athlete) {
+      var svgTemplate = fs.readFileSync(
+        `./src/utils/nfl-svg-teams-lock-templates/${athlete.team.key}.svg`,
+        'utf-8'
+      );
+      var options = { compact: true, ignoreComment: true, spaces: 4 };
+      var result: any = convert.xml2js(svgTemplate, options);
+
+      try {
+        if (athlete.firstName.length > 11) {
+          result.svg.g[5].text[1]['_attributes']['style'] =
+            'fill:#fff; font-family:Arimo-Bold, Arimo; font-size:50px;';
+        }
+        if (athlete.lastName.length > 11) {
+          result.svg.g[5].text[2]['_attributes']['style'] =
+            'fill:#fff; font-family:Arimo-Bold, Arimo; font-size:50px;';
+        }
+
+        result.svg.g[5]['text'][1]['tspan']['_text'] =
+          athlete.firstName.toUpperCase();
+        result.svg.g[5]['text'][2]['tspan']['_text'] =
+          athlete.lastName.toUpperCase();
+        result.svg.g[5]['text'][0]['tspan']['_text'] = 'SS';
+      } catch (e) {
+        console.log(
+          `FAILED AT ATHLETE ID: ${athlete.apiId} and TEAM KEY: ${athlete.team.key}`
+        );
+      }
+
+      result = convert.js2xml(result, options);
+      // fs.writeFileSync(
+      //   `./nfl-images-locked/${athlete.apiId}-${athlete.firstName.toLowerCase()}-${athlete.lastName.toLowerCase()}.svg`,
+      //   result
+      // )
+
+      var buffer = Buffer.from(result, 'utf8');
+      const s3 = new S3({
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+      });
+      const filename = `${
+        athlete.apiId
+      }-${athlete.firstName.toLowerCase()}-${athlete.lastName.toLowerCase()}.svg`;
+      const s3_location = 'media/athlete/nfl/locked_images/';
+      const fileContent = buffer;
+      const params: any = {
+        Bucket: process.env.AWS_BUCKET_NAME,
+        Key: `${s3_location}${filename}`,
+        Body: fileContent,
+        ContentType: 'image/svg+xml',
+        CacheControl: 'no-cache',
+      };
+
+      s3.upload(params, async (err: any, data: any) => {
+        if (err) {
+          this.logger.error(err);
+        } else {
+          athlete.nftImageLocked = data['Location'];
+          await Athlete.save(athlete);
+        }
+      });
+    }
+  }
+
+  @Timeout(240000)
+  async regenerateGunnarAssetsAnimation() {
+    this.logger.debug('regen gunnar animation');
+    const athlete = await Athlete.findOne({
+      where: {
+        apiId: 10010354,
+      },
+      relations: {
+        team: true,
+      },
+    });
+
+    if (athlete) {
+      var svgAnimationTemplate = fs.readFileSync(
+        `./src/utils/nfl-svg-teams-animation-templates/${athlete.team.key}.svg`,
+        'utf-8'
+      );
+      var options = { compact: true, ignoreComment: true, spaces: 4 };
+      var result: any = convert.xml2js(svgAnimationTemplate, options);
+
+      try {
+        if (athlete.firstName.length > 11) {
+          result.svg.g[5].text[2].tspan['_attributes']['font-size'] = '50';
+          result.svg.g[5].text[3].tspan['_attributes']['font-size'] = '50';
+        }
+        if (athlete.lastName.length > 11) {
+          result.svg.g[5].text[4].tspan['_attributes']['font-size'] = '50';
+          result.svg.g[5].text[5].tspan['_attributes']['font-size'] = '50';
+        }
+
+        result.svg.g[5].text[0].tspan['_cdata'] = '';
+        result.svg.g[5].text[1].tspan['_cdata'] = '';
+        result.svg.g[5].text[2].tspan['_cdata'] =
+          athlete.firstName.toUpperCase();
+        result.svg.g[5].text[3].tspan['_cdata'] =
+          athlete.firstName.toUpperCase();
+        result.svg.g[5].text[4].tspan['_cdata'] =
+          athlete.lastName.toUpperCase();
+        result.svg.g[5].text[5].tspan['_cdata'] =
+          athlete.lastName.toUpperCase();
+        result.svg.g[5].g[0].text[0].tspan['_cdata'] = 'SS';
+        result.svg.g[5].g[0].text[1].tspan['_cdata'] = 'SS';
+        result = convert.js2xml(result, options);
+      } catch (e) {
+        console.log(
+          `FAILED AT ATHLETE ID: ${athlete.apiId} and TEAM KEY: ${athlete.team.key}`
+        );
+        console.log(e);
+      }
+
+      // fs.writeFileSync(
+      //   `./nfl-animations/${athlete["PlayerID"]}-${athlete["FirstName"].toLowerCase()}-${athlete[
+      //     "LastName"
+      //   ].toLowerCase()}.svg`,
+      //   result
+      // )
+      var buffer = Buffer.from(result, 'utf8');
+      const s3 = new S3({
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+      });
+      const filename = `${
+        athlete.apiId
+      }-${athlete.firstName.toLowerCase()}-${athlete.lastName.toLowerCase()}.svg`;
+      const s3_location = 'media/athlete/nfl/animations/';
+      const fileContent = buffer;
+      const params: any = {
+        Bucket: process.env.AWS_BUCKET_NAME,
+        Key: `${s3_location}${filename}`,
+        Body: fileContent,
+        ContentType: 'image/svg+xml',
+        CacheControl: 'no-cache',
+      };
+
+      s3.upload(params, async (err: any, data: any) => {
+        if (err) {
+          this.logger.error(err);
+        } else {
+          athlete.nftAnimation = data['Location'];
+          await Athlete.save(athlete);
+        }
+      });
+    }
+  }
   //@Timeout(300000)
   async generateAthleteNflAssets() {
     this.logger.debug('Generate Athlete NFL Assets: STARTED');
