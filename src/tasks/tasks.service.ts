@@ -437,7 +437,7 @@ export class TasksService {
     );
   }
 
-  @Timeout(60000)
+  //@Timeout(60000)
   async regenerateGunnarAssetsRegular() {
     this.logger.debug('Update gunnar Regular Image');
     const athlete = await Athlete.findOne({
@@ -515,7 +515,7 @@ export class TasksService {
     }
   }
 
-  @Timeout(120000)
+  //@Timeout(120000)
   async regenerateGunnarAssetsPromo() {
     const athlete = await Athlete.findOne({
       where: {
@@ -590,7 +590,7 @@ export class TasksService {
     }
   }
 
-  @Timeout(180000)
+  //@Timeout(180000)
   async regenerateGunnarAssetsLocked() {
     this.logger.debug('regen gunnar assets');
     const athlete = await Athlete.findOne({
@@ -665,7 +665,7 @@ export class TasksService {
     }
   }
 
-  @Timeout(240000)
+  //@Timeout(240000)
   async regenerateGunnarAssetsAnimation() {
     this.logger.debug('regen gunnar animation');
     const athlete = await Athlete.findOne({
