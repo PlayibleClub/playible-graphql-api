@@ -50,6 +50,7 @@ import {
   ResponseStatus,
   SportMap,
   TokenType,
+  ContractType,
 } from '../utils/types';
 import {
   CricketTeamInterface,
@@ -4942,7 +4943,7 @@ export class TasksService {
     );
   }
   @Timeout(1)
-  async runPolygonMainnetGameWebSocketListener() {
+  async runPolygonMainnetNFLGameWebSocketListener() {
     console.log('Start polygon listen');
     const network = 'maticmum';
     const address = process.env.METAMASK_WALLET_ADDRESS ?? 'default';
@@ -4956,22 +4957,105 @@ export class TasksService {
       abi,
       provider
     );
-    gameContract.on('AddGame', (gameId, gameTimeStart, gameTimeEnd, event) => {
-      console.log(`gameId: ${gameId}`);
-      console.log(`game start: ${gameTimeStart}`);
-      console.log(`game end: ${gameTimeEnd}`);
+    gameContract.on(
+      'AddGame',
+      async (gameId, gameTimeStart, gameTimeEnd, event) => {
+        const game = await Game.findOne({
+          where: {
+            gameId: gameId,
+            contract: ContractType.POLYGON,
+            sport: SportType.NFL,
+          },
+        });
+        if (!game) {
+          //game doesn't exist
+          await Game.create({
+            gameId: gameId,
+            name: `Game ${gameId}`,
+            description: 'on-going',
+            startTime: moment(gameTimeStart),
+            endTime: moment(gameTimeEnd),
+            sport: SportType.NFL,
+            contract: ContractType.POLYGON,
+          }).save();
 
-      console.log(event.log);
-    });
+          Logger.debug(
+            `Game ${gameId} created for ${SportType.NFL} at ${ContractType.POLYGON}`
+          );
+        } else {
+          Logger.error(
+            `Game ${gameId} for ${SportType.NFL} at ${ContractType.POLYGON} already exists`
+          );
+        }
+
+        console.log(event.log);
+      }
+    );
 
     gameContract.on(
       'SucceedLineupSubmission',
-      (result, gameId, teamName, address, event) => {
-        console.log(`result: ${result}`);
-        console.log(`gameId: ${gameId}`);
-        console.log(`teamName: ${teamName}`);
-        console.log(`address: ${address}`);
-        console.log(event.log);
+      async (result, gameId, teamName, address, lineup, event) => {
+        this.logger.debug(result);
+        const eventLogs = event;
+        const game = await Game.findOne({
+          where: {
+            gameId: gameId,
+            sport: SportType.NFL,
+            contract: ContractType.POLYGON,
+          },
+        });
+        if (game) {
+          // game exists
+          const gameTeam = await GameTeam.findOne({
+            where: {
+              game: {
+                id: game.id,
+              },
+              name: teamName,
+              wallet_address: address,
+            },
+            relations: {
+              game: true,
+            },
+          });
+
+          if (!gameTeam) {
+            const currGameTeam = await GameTeam.create({
+              game: game,
+              name: teamName,
+              wallet_address: address,
+            });
+            const teamLineup = lineup;
+            for (let apiId of lineup) {
+              const athlete = await Athlete.findOne({
+                where: {
+                  apiId: Number(apiId),
+                },
+              });
+              if (athlete) {
+                try {
+                  await GameTeamAthlete.create({
+                    gameTeam: currGameTeam,
+                    athlete: athlete,
+                  }).save();
+                } catch (e) {
+                  this.logger.debug(e);
+                }
+              } else {
+                this.logger.debug('ERROR athlete apiId not found');
+              }
+            }
+            this.logger.debug('Successfully added team');
+          } else {
+            this.logger.debug(
+              `Team already exists on Game ${gameId} for ${SportType.NFL} at ${ContractType.POLYGON}`
+            );
+          }
+        } else {
+          this.logger.error(
+            `Game ${gameId} does not exist for ${SportType.NFL} at ${ContractType.POLYGON}`
+          );
+        }
       }
     );
     // const filter = {
