@@ -108,6 +108,24 @@
 		"type": "event"
 	},
 	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "account",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "tokenId",
+				"type": "uint256"
+			}
+		],
+		"name": "burnPackNFT",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
 		"inputs": [],
 		"name": "clearData",
 		"outputs": [],
@@ -259,19 +277,6 @@
 		],
 		"name": "LogOwnerIdUpdated",
 		"type": "event"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "requestId",
-				"type": "uint256"
-			}
-		],
-		"name": "mintBatchTest",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
 	},
 	{
 		"anonymous": false,
@@ -638,6 +643,19 @@
 			}
 		],
 		"name": "updatePackCount",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_newPackNFTAddr",
+				"type": "address"
+			}
+		],
+		"name": "updatePackNFTAddr",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
