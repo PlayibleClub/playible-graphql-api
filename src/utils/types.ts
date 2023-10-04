@@ -16,6 +16,11 @@ export enum TokenType {
   SOULBOUND = 'soulbound',
 }
 
+export enum ContractType {
+  NEAR = 'near',
+  POLYGON = 'polygon',
+}
+
 export enum AthleteStatType {
   WEEKLY = 'weekly',
   SEASON = 'season',
