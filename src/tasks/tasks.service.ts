@@ -4979,12 +4979,12 @@ export class TasksService {
             gameId: convertGameId,
             name: `Game ${convertGameId}`,
             description: 'on-going',
-            startTime: moment(
+            startTime: moment.unix(
               typeof gameTimeStart === 'bigint'
                 ? Number(gameTimeStart)
                 : gameTimeStart
             ),
-            endTime: moment(
+            endTime: moment.unix(
               typeof gameTimeEnd === 'bigint'
                 ? Number(gameTimeEnd)
                 : gameTimeEnd
