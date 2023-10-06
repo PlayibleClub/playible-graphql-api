@@ -4964,9 +4964,11 @@ export class TasksService {
     gameContract.on(
       'AddGame',
       async (gameId, gameTimeStart, gameTimeEnd, event) => {
+        const convertGameId =
+          typeof gameId === 'bigint' ? Number(gameId) : gameId;
         const game = await Game.findOne({
           where: {
-            gameId: gameId,
+            gameId: convertGameId,
             contract: ContractType.POLYGON,
             sport: SportType.NFL,
           },
@@ -4974,17 +4976,17 @@ export class TasksService {
         if (!game) {
           //game doesn't exist
           await Game.create({
-            gameId: gameId,
-            name: `Game ${gameId}`,
+            gameId: convertGameId,
+            name: `Game ${convertGameId}`,
             description: 'on-going',
             startTime: moment(
               typeof gameTimeStart === 'bigint'
-                ? gameTimeStart.toString()
+                ? Number(gameTimeStart)
                 : gameTimeStart
             ),
             endTime: moment(
               typeof gameTimeEnd === 'bigint'
-                ? gameTimeEnd.toString()
+                ? Number(gameTimeEnd)
                 : gameTimeEnd
             ),
             sport: SportType.NFL,
@@ -4992,11 +4994,11 @@ export class TasksService {
           }).save();
 
           Logger.debug(
-            `Game ${gameId} created for ${SportType.NFL} at ${ContractType.POLYGON}`
+            `Game ${convertGameId} created for ${SportType.NFL} at ${ContractType.POLYGON}`
           );
         } else {
           Logger.error(
-            `Game ${gameId} for ${SportType.NFL} at ${ContractType.POLYGON} already exists`
+            `Game ${convertGameId} for ${SportType.NFL} at ${ContractType.POLYGON} already exists`
           );
         }
 
@@ -5008,10 +5010,12 @@ export class TasksService {
       'SucceedLineupSubmission',
       async (result, gameId, teamName, address, lineup, event) => {
         this.logger.debug(result);
+        const convertGameId =
+          typeof gameId === 'bigint' ? Number(gameId) : gameId;
         const eventLogs = event;
         const game = await Game.findOne({
           where: {
-            gameId: gameId,
+            gameId: convertGameId,
             sport: SportType.NFL,
             contract: ContractType.POLYGON,
           },
@@ -5060,12 +5064,12 @@ export class TasksService {
             this.logger.debug('Successfully added team');
           } else {
             this.logger.debug(
-              `Team already exists on Game ${gameId} for ${SportType.NFL} at ${ContractType.POLYGON}`
+              `Team already exists on Game ${convertGameId} for ${SportType.NFL} at ${ContractType.POLYGON}`
             );
           }
         } else {
           this.logger.error(
-            `Game ${gameId} does not exist for ${SportType.NFL} at ${ContractType.POLYGON}`
+            `Game ${convertGameId} does not exist for ${SportType.NFL} at ${ContractType.POLYGON}`
           );
         }
       }
