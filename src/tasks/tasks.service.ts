@@ -4977,8 +4977,16 @@ export class TasksService {
             gameId: gameId,
             name: `Game ${gameId}`,
             description: 'on-going',
-            startTime: moment(gameTimeStart),
-            endTime: moment(gameTimeEnd),
+            startTime: moment(
+              typeof gameTimeStart === 'bigint'
+                ? gameTimeStart.toString()
+                : gameTimeStart
+            ),
+            endTime: moment(
+              typeof gameTimeEnd === 'bigint'
+                ? gameTimeEnd.toString()
+                : gameTimeEnd
+            ),
             sport: SportType.NFL,
             contract: ContractType.POLYGON,
           }).save();
