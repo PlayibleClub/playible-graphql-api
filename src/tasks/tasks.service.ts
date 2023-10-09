@@ -4874,16 +4874,20 @@ export class TasksService {
             );
             success = true;
           } else {
-            const newAddress = await PolygonAddress.create({
-              address: toAddr,
-            }).save();
+            try {
+              const newAddress = await PolygonAddress.create({
+                address: toAddr,
+              }).save();
+              await PolygonToken.create({
+                sport: SportType.NFL,
+                tokenId: Number(token),
+                type: TokenType.REG,
+                polygonAddress: newAddress,
+              }).save();
+            } catch (e) {
+              this.logger.debug(e);
+            }
 
-            await PolygonToken.create({
-              sport: SportType.NFL,
-              tokenId: Number(token),
-              type: TokenType.REG,
-              polygonAddress: newAddress,
-            }).save();
             this.logger.debug(
               `Token ${token} transfered from ${fromAddr} to new address ${toAddr}`
             );
