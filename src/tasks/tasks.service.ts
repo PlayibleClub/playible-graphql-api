@@ -4885,13 +4885,18 @@ export class TasksService {
                 type: TokenType.REG,
                 polygonAddress: newAddress,
               }).save();
+              this.logger.debug(
+                `Token ${token} transfered from ${fromAddr} to new address ${toAddr}`
+              );
+              success = true;
             } catch (e) {
               switch (e.constructor) {
                 case QueryFailedError:
                   this.logger.debug(`Address exists, async issue`);
                   let code = (e as any).code;
                   this.logger.debug(`Code: ${code}`);
-                  if (code === 23505) {
+                  if (code === '23505' || code === 23505) {
+                    this.logger.debug('Start transfer due to async issue');
                     //polygon address is existing but errors due to async
                     const receivingAddress = await PolygonAddress.findOne({
                       where: {
@@ -4905,6 +4910,10 @@ export class TasksService {
                         type: TokenType.REG,
                         polygonAddress: receivingAddress,
                       }).save();
+                      success = true;
+                      this.logger.debug(
+                        `Token ${token} transfered from ${fromAddr} to new address ${toAddr}`
+                      );
                     }
                   }
                   break;
@@ -4913,11 +4922,6 @@ export class TasksService {
                   break;
               }
             }
-
-            this.logger.debug(
-              `Token ${token} transfered from ${fromAddr} to new address ${toAddr}`
-            );
-            success = true;
           }
           if (success) {
             this.logger.debug(
