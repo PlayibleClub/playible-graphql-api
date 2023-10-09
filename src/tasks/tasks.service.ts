@@ -4886,14 +4886,27 @@ export class TasksService {
                 polygonAddress: newAddress,
               }).save();
             } catch (e) {
-              this.logger.error(e);
               switch (e.constructor) {
                 case QueryFailedError:
-                  this.logger.debug(`Query failed error`);
-                  let message = (e as QueryFailedError).message;
+                  this.logger.debug(`Address exists, async issue`);
                   let code = (e as any).code;
-                  this.logger.debug(`Message: ${message}`);
                   this.logger.debug(`Code: ${code}`);
+                  if (code === 23505) {
+                    //polygon address is existing but errors due to async
+                    const receivingAddress = await PolygonAddress.findOne({
+                      where: {
+                        address: toAddr,
+                      },
+                    });
+                    if (receivingAddress) {
+                      await PolygonToken.create({
+                        sport: SportType.NFL,
+                        tokenId: Number(token),
+                        type: TokenType.REG,
+                        polygonAddress: receivingAddress,
+                      }).save();
+                    }
+                  }
                   break;
                 default:
                   this.logger.error(e);
