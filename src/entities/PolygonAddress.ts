@@ -16,7 +16,7 @@ export class PolygonAddress extends BaseEntity {
   id!: number;
 
   @Field(() => String)
-  @Column('text', { unique: true })
+  @Column({ type: 'text', nullable: false })
   address!: string;
 
   @Field(() => [PolygonToken])

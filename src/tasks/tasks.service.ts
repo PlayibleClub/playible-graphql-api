@@ -4840,6 +4840,9 @@ export class TasksService {
     athleteStorageContract.on(
       'TokenTransfer',
       async (fromAddr, toAddr, token) => {
+        this.logger.debug(
+          `Start single transfer from ${fromAddr} to ${toAddr}`
+        );
         const transferToken = await PolygonToken.findOne({
           where: {
             sport: SportType.NFL,
@@ -4901,6 +4904,7 @@ export class TasksService {
     athleteStorageContract.on(
       'TokenTransferBatch',
       async (fromAddr, toAddr, ids) => {
+        this.logger.debug(`Start batch transfer from ${fromAddr} to ${toAddr}`);
         for (let token of ids) {
           const transferToken = await PolygonToken.findOne({
             where: {
