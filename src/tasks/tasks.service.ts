@@ -4857,7 +4857,7 @@ export class TasksService {
               address: toAddr,
             },
           });
-
+          let success: boolean = false;
           if (receivingAddress) {
             //toAddress exists
             await PolygonToken.create({
@@ -4869,6 +4869,7 @@ export class TasksService {
             this.logger.debug(
               `Token ${token} transfered from ${fromAddr} to ${toAddr}`
             );
+            success = true;
           } else {
             const newAddress = await PolygonAddress.create({
               address: toAddr,
@@ -4883,6 +4884,14 @@ export class TasksService {
             this.logger.debug(
               `Token ${token} transfered from ${fromAddr} to new address ${toAddr}`
             );
+            success = true;
+          }
+          if (success) {
+            this.logger.debug(
+              `Start delete of token ${Number(token)} on ${fromAddr}`
+            );
+
+            await PolygonToken.remove(transferToken);
           }
         } else {
           this.logger.error('ERROR Token does not exist on from address');
@@ -4910,7 +4919,7 @@ export class TasksService {
                 address: toAddr,
               },
             });
-
+            let success: boolean = false;
             if (receivingAddress) {
               //toAddress exists
               await PolygonToken.create({
@@ -4922,6 +4931,7 @@ export class TasksService {
               this.logger.debug(
                 `Token ${token} transfered from ${fromAddr} to ${toAddr}`
               );
+              success = true;
             } else {
               const newAddress = await PolygonAddress.create({
                 address: toAddr,
@@ -4936,6 +4946,14 @@ export class TasksService {
               this.logger.debug(
                 `Token ${token} transfered from ${fromAddr} to new address ${toAddr}`
               );
+              success = true;
+            }
+            if (success) {
+              this.logger.debug(
+                `Start delete of token ${Number(token)} on ${fromAddr}`
+              );
+
+              await PolygonToken.remove(transferToken);
             }
           } else {
             this.logger.error('ERROR Token does not exist on from address');
