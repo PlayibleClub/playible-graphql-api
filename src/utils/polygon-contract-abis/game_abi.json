@@ -331,6 +331,106 @@
 		"type": "function"
 	},
 	{
+		"inputs": [],
+		"name": "getAllGameIds",
+		"outputs": [
+			{
+				"internalType": "uint256[]",
+				"name": "",
+				"type": "uint256[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "getAllGamesInfo",
+		"outputs": [
+			{
+				"components": [
+					{
+						"internalType": "address[]",
+						"name": "whitelist",
+						"type": "address[]"
+					},
+					{
+						"internalType": "uint16",
+						"name": "usageCost",
+						"type": "uint16"
+					},
+					{
+						"components": [
+							{
+								"internalType": "string[]",
+								"name": "positions",
+								"type": "string[]"
+							},
+							{
+								"internalType": "uint8",
+								"name": "amount",
+								"type": "uint8"
+							}
+						],
+						"internalType": "struct Game.PositionsInfo[]",
+						"name": "positions",
+						"type": "tuple[]"
+					},
+					{
+						"internalType": "uint8",
+						"name": "lineupLen",
+						"type": "uint8"
+					},
+					{
+						"internalType": "uint64",
+						"name": "joinedPlayerCounter",
+						"type": "uint64"
+					},
+					{
+						"internalType": "uint64",
+						"name": "joinedTeamCounter",
+						"type": "uint64"
+					},
+					{
+						"internalType": "string",
+						"name": "gameDescription",
+						"type": "string"
+					},
+					{
+						"internalType": "string",
+						"name": "prizeDescription",
+						"type": "string"
+					},
+					{
+						"internalType": "string",
+						"name": "gameImage",
+						"type": "string"
+					},
+					{
+						"internalType": "uint256",
+						"name": "startTime",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint256",
+						"name": "endTime",
+						"type": "uint256"
+					},
+					{
+						"internalType": "bool",
+						"name": "valid",
+						"type": "bool"
+					}
+				],
+				"internalType": "struct Game.GameInfo[]",
+				"name": "",
+				"type": "tuple[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
 		"inputs": [
 			{
 				"internalType": "uint256",
