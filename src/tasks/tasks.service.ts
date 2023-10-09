@@ -13,6 +13,7 @@ import {
   In,
   QueryBuilder,
   ArrayContains,
+  QueryFailedError,
 } from 'typeorm';
 import convert from 'xml-js';
 import moment from 'moment-timezone';
@@ -4885,7 +4886,19 @@ export class TasksService {
                 polygonAddress: newAddress,
               }).save();
             } catch (e) {
-              this.logger.debug(e);
+              this.logger.error(e);
+              switch (e.constructor) {
+                case QueryFailedError:
+                  this.logger.debug(`Query failed error`);
+                  let message = (e as QueryFailedError).message;
+                  let code = (e as any).code;
+                  this.logger.debug(`Message: ${message}`);
+                  this.logger.debug(`Code: ${code}`);
+                  break;
+                default:
+                  this.logger.error(e);
+                  break;
+              }
             }
 
             this.logger.debug(
