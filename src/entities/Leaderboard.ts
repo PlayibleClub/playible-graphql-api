@@ -4,11 +4,14 @@ import {
   Column,
   Entity,
   OneToMany,
+  OneToOne,
   PrimaryGeneratedColumn,
+  JoinColumn,
   Relation,
 } from 'typeorm';
 import { SportType } from '../utils/types';
 import { GameTeam } from './GameTeam';
+import { Game } from './Game';
 
 @ObjectType()
 @Entity()
@@ -26,16 +29,12 @@ export class Leaderboard extends BaseEntity {
   sport: SportType = SportType.MLB;
 
   @Field(() => Number, { nullable: true })
-  @Column({ type: 'numeric', nullable: true })
-  nearGameId?: number;
+  @OneToOne(() => Game, { cascade: true, nullable: true })
+  @JoinColumn()
+  nearGameId!: Relation<Game> | null;
 
   @Field(() => Number, { nullable: true })
-  @Column({ type: 'numeric', nullable: true })
-  polygonGameId?: number;
-
-  @Field(() => [GameTeam])
-  @OneToMany(() => GameTeam, (gameTeam) => gameTeam.game, {
-    cascade: true,
-  })
-  teams!: Relation<GameTeam>[];
+  @OneToOne(() => Game, { cascade: true, nullable: true })
+  @JoinColumn()
+  polygonGameId?: Relation<Game> | null;
 }
