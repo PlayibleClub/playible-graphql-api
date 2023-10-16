@@ -1,39 +1,53 @@
-import { Arg, Authorized, Field, Mutation, ObjectType, Query, Resolver } from "type-graphql"
+import {
+  Arg,
+  Authorized,
+  Field,
+  Mutation,
+  ObjectType,
+  Query,
+  Resolver,
+} from 'type-graphql';
 
-import { Account } from "../entities/Account"
-import { Asset } from "../entities/Asset"
-import { Athlete } from "../entities/Athlete"
-import { AthleteStat } from '../entities/AthleteStat'
-import { Collection } from "../entities/Collection"
-import { Game } from "../entities/Game"
-import { GameTeam } from "../entities/GameTeam"
-import { GameTeamAthlete } from "../entities/GameTeamAthlete"
-import { LeaderboardResult} from '../utils/types'
-import { LessThanOrEqual, MoreThan, MoreThanOrEqual, QueryBuilder } from "typeorm"
-import { CreateGameArgs, CreateTeamArgs, GetGameArgs } from "../args/GameArgs"
-import { GameTab, SportType } from "../utils/types"
-import { AppDataSource } from '../utils/db'
-import moment from "moment-timezone"
+import { Account } from '../entities/Account';
+import { Asset } from '../entities/Asset';
+import { Athlete } from '../entities/Athlete';
+import { AthleteStat } from '../entities/AthleteStat';
+import { Collection } from '../entities/Collection';
+import { Game } from '../entities/Game';
+import { GameTeam } from '../entities/GameTeam';
+import { GameTeamAthlete } from '../entities/GameTeamAthlete';
+import { LeaderboardResult } from '../utils/types';
+import {
+  LessThanOrEqual,
+  MoreThan,
+  MoreThanOrEqual,
+  QueryBuilder,
+} from 'typeorm';
+import { CreateGameArgs, CreateTeamArgs, GetGameArgs } from '../args/GameArgs';
+import { GameTab, SportType, ContractType } from '../utils/types';
+import { AppDataSource } from '../utils/db';
+import moment from 'moment-timezone';
+import { Leaderboard } from '../entities/Leaderboard';
 @ObjectType()
 class GameResponse {
   @Field()
-  count: number
+  count: number;
   @Field(() => [Game], { nullable: true })
-  data?: Game[] | null
+  data?: Game[] | null;
 }
 
 @ObjectType()
 class CreateTeamResponse {
   @Field(() => [String], { nullable: true })
-  errors?: string[]
+  errors?: string[];
   @Field(() => GameTeam, { nullable: true })
-  team?: GameTeam | null
+  team?: GameTeam | null;
 }
 
 @Resolver()
 export class GameResolver {
   @Query(() => Game)
-  async getGameById(@Arg("id") id: number): Promise<Game> {
+  async getGameById(@Arg('id') id: number): Promise<Game> {
     return await Game.findOneOrFail({
       where: { id },
       relations: {
@@ -45,17 +59,19 @@ export class GameResolver {
           },
         },
       },
-    })
+    });
   }
 
   @Query(() => GameResponse)
-  async getGames(@Arg("args", { nullable: true }) { filter, pagination }: GetGameArgs): Promise<GameResponse> {
-    let args: any = {}
-    var now = new Date()
+  async getGames(
+    @Arg('args', { nullable: true }) { filter, pagination }: GetGameArgs
+  ): Promise<GameResponse> {
+    let args: any = {};
+    var now = new Date();
 
     if (pagination) {
-      args["take"] = pagination.limit
-      args["skip"] = pagination.offset
+      args['take'] = pagination.limit;
+      args['skip'] = pagination.offset;
     }
 
     switch (filter?.tab) {
@@ -65,8 +81,8 @@ export class GameResolver {
           where: {
             startTime: MoreThan(now),
           },
-        }
-        break
+        };
+        break;
       case GameTab.ACTIVE:
         args = {
           ...args,
@@ -74,23 +90,25 @@ export class GameResolver {
             startTime: LessThanOrEqual(now),
             endTime: MoreThanOrEqual(now),
           },
-        }
-        break
+        };
+        break;
       case GameTab.COMPLETED:
         args = {
           ...args,
           where: {
             endTime: LessThanOrEqual(now),
           },
-        }
-        break
+        };
+        break;
       default:
-        break
+        break;
     }
 
     const [data, count] = await Game.findAndCount({
       ...args,
-      where: filter?.sport ? { ...args.where, sport: filter?.sport } : args.where,
+      where: filter?.sport
+        ? { ...args.where, sport: filter?.sport }
+        : args.where,
       relations: {
         teams: {
           account: true,
@@ -101,29 +119,76 @@ export class GameResolver {
         },
       },
       order: {
-        id: "ASC",
+        id: 'ASC',
       },
-    })
-    return { data, count }
+    });
+    return { data, count };
   }
 
   @Query(() => [LeaderboardResult])
   async getLeaderboard(
-    @Arg("gameId") gameId: number,
-    @Arg("sport") sport: SportType,
+    @Arg('gameId') gameId: number,
+    @Arg('sport') sport: SportType
   ): Promise<LeaderboardResult[]> {
-    
-
-    const returnTeam = await AppDataSource.getRepository(Game).createQueryBuilder("g").groupBy("gt.id").orderBy("total", "DESC").select(['SUM(as.fantasyScore) as total', "gt.name as team_name", "gt.id as game_team_id", "gt.wallet_address as wallet_address"]).innerJoin("g.teams", "gt").innerJoin("gt.athletes", "gta").innerJoin("gta.athlete", "a").innerJoin("a.stats", "as")
-                        .where("g.gameId = :gameId", { gameId: gameId}).andWhere("as.gameDate >= g.startTime").andWhere("as.gameDate <= g.endTime").andWhere("g.sport = :sport", {sport: sport}).andWhere("as.played = 1").getRawMany()
-    return returnTeam
-
+    const returnTeam = await AppDataSource.getRepository(Game)
+      .createQueryBuilder('g')
+      .groupBy('gt.id')
+      .orderBy('total', 'DESC')
+      .select([
+        'SUM(as.fantasyScore) as total',
+        'gt.name as team_name',
+        'gt.id as game_team_id',
+        'gt.wallet_address as wallet_address',
+      ])
+      .innerJoin('g.teams', 'gt')
+      .innerJoin('gt.athletes', 'gta')
+      .innerJoin('gta.athlete', 'a')
+      .innerJoin('a.stats', 'as')
+      .where('g.gameId = :gameId', { gameId: gameId })
+      .andWhere('as.gameDate >= g.startTime')
+      .andWhere('as.gameDate <= g.endTime')
+      .andWhere('g.sport = :sport', { sport: sport })
+      .andWhere('as.played = 1')
+      .getRawMany();
+    return returnTeam;
   }
 
-  @Authorized("ADMIN")
+  @Authorized('ADMIN')
+  @Mutation(() => Leaderboard)
+  async mergeIntoLeaderboard(
+    @Arg('nearGameId') nearGameId: number,
+    @Arg('polygonGameId') polygonGameId: number,
+    @Arg('sport') sport: SportType
+  ): Promise<Leaderboard> {
+    //find gameIds of both NEAR and Polygon contracts to merge
+    const nearGame = await Game.findOneOrFail({
+      where: {
+        sport: sport,
+        gameId: nearGameId,
+        contract: ContractType.NEAR,
+      },
+    });
+    const polygonGame = await Game.findOneOrFail({
+      where: {
+        sport: sport,
+        gameId: polygonGameId,
+        contract: ContractType.POLYGON,
+      },
+    });
+
+    const newLeaderboard = await Leaderboard.create({
+      sport: sport,
+      nearGameId: nearGame,
+      polygonGameId: polygonGame,
+    }).save();
+
+    return newLeaderboard;
+  }
+
+  @Authorized('ADMIN')
   @Mutation(() => Game)
   async createGame(
-    @Arg("args")
+    @Arg('args')
     { name, description, startTime, endTime, prize, sport }: CreateGameArgs
   ): Promise<Game> {
     const game = await Game.create({
@@ -133,7 +198,7 @@ export class GameResolver {
       endTime,
       prize,
       sport,
-    }).save()
+    }).save();
 
     return await Game.findOneOrFail({
       where: { id: game.id },
@@ -143,33 +208,33 @@ export class GameResolver {
           //account: true,
         },
       },
-    })
+    });
   }
 
-  @Authorized("ADMIN")
+  @Authorized('ADMIN')
   @Mutation(() => Boolean)
-  async deleteGamebyId(@Arg("id") id: number): Promise<Boolean> {
-    await Game.delete({ id })
-    return true
+  async deleteGamebyId(@Arg('id') id: number): Promise<Boolean> {
+    await Game.delete({ id });
+    return true;
   }
 
   @Mutation(() => CreateTeamResponse)
   async createTeam(
-    @Arg("args")
+    @Arg('args')
     { name, gameId, walletAddr, athletes }: CreateTeamArgs
   ): Promise<CreateTeamResponse> {
-    const errors: string[] = []
+    const errors: string[] = [];
 
     // Check if game exists
-    const game = await Game.findOne({ where: { id: gameId } })
+    const game = await Game.findOne({ where: { id: gameId } });
     if (!game) {
-      errors.push("Game does not exist.")
+      errors.push('Game does not exist.');
     }
 
     // Check if game could still be joined
-    const now = new Date()
+    const now = new Date();
     if (game && now >= game?.startTime) {
-      errors.push("Game could not be joined anymore.")
+      errors.push('Game could not be joined anymore.');
     }
 
     // Check if all athletes exist
@@ -177,22 +242,24 @@ export class GameResolver {
       const curAthlete = await Athlete.findOne({
         where: { id: athlete.id },
         relations: { team: true },
-      })
+      });
       if (!curAthlete) {
-        errors.push(`Athlete ${athlete.id} does not exist.`)
+        errors.push(`Athlete ${athlete.id} does not exist.`);
       }
       if (curAthlete?.team.sport !== game?.sport) {
-        errors.push(`Athlete ${athlete.id} does not match the sport of the game.`)
+        errors.push(
+          `Athlete ${athlete.id} does not match the sport of the game.`
+        );
       }
     }
 
-    if (errors.length) return { errors }
+    if (errors.length) return { errors };
 
-    let account = await Account.findOne({ where: { address: walletAddr } })
+    let account = await Account.findOne({ where: { address: walletAddr } });
     if (!account) {
       account = await Account.create({
         address: walletAddr,
-      }).save()
+      }).save();
     }
 
     if (name && game && account) {
@@ -200,36 +267,36 @@ export class GameResolver {
         name,
         game,
         //account,
-      }).save()
+      }).save();
 
       for (let athlete of athletes) {
         const curAthlete = await Athlete.findOneOrFail({
           where: { id: athlete.id },
-        })
+        });
 
         let collection = await Collection.findOneBy({
           address: athlete.contractAddr,
-        })
+        });
         if (!collection) {
           collection = await Collection.create({
             address: athlete.contractAddr,
-          }).save()
+          }).save();
         }
 
-        let asset = await Asset.findOneBy({ tokenId: athlete.tokenId })
+        let asset = await Asset.findOneBy({ tokenId: athlete.tokenId });
         if (!asset) {
           asset = await Asset.create({
             tokenId: athlete.tokenId,
             account,
             collection,
-          }).save()
+          }).save();
         }
 
         await GameTeamAthlete.create({
           gameTeam,
           //asset,
           athlete: curAthlete,
-        }).save()
+        }).save();
       }
 
       gameTeam = await GameTeam.findOneOrFail({
@@ -242,11 +309,11 @@ export class GameResolver {
             //asset: { collection: true },
           },
         },
-      })
+      });
 
-      return { team: gameTeam }
+      return { team: gameTeam };
     }
 
-    return { team: null }
+    return { team: null };
   }
 }
