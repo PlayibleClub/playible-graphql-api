@@ -482,8 +482,8 @@ export class TasksService {
             } catch (err) {
               this.logger.error(err);
             }
+            counter++;
           }
-          counter++;
         }
         await Athlete.save([...newAthlete, ...updateAthlete], { chunk: 20 });
         this.logger.debug(`Athlete count: ${counter}`);
