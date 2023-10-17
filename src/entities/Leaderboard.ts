@@ -28,13 +28,13 @@ export class Leaderboard extends BaseEntity {
   })
   sport: SportType = SportType.MLB;
 
-  @Field(() => Number, { nullable: true })
+  @Field(() => Game, { nullable: true })
   @OneToOne(() => Game, { cascade: true, nullable: true })
   @JoinColumn()
-  nearGameId!: Relation<Game> | null;
+  nearGame?: Relation<Game> | null;
 
-  @Field(() => Number, { nullable: true })
+  @Field(() => Game, { nullable: true })
   @OneToOne(() => Game, { cascade: true, nullable: true })
   @JoinColumn()
-  polygonGameId?: Relation<Game> | null;
+  polygonGame?: Relation<Game> | null;
 }
