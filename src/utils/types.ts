@@ -128,4 +128,7 @@ export class LeaderboardResult {
 
   @Field(() => Number)
   total: number;
+
+  @Field(() => String)
+  chain_name: ContractType;
 }
