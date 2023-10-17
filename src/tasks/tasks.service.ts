@@ -361,7 +361,7 @@ export class TasksService {
     );
   }
 
-  //@Timeout(1)
+  @Timeout(1)
   async syncNbaData() {
     const teamsCount = await Team.count({
       where: { sport: SportType.NBA },
@@ -408,27 +408,88 @@ export class TasksService {
 
       if (status === 200) {
         for (let athlete of data) {
-          try {
-            const team = await Team.findOne({
-              where: { apiId: athlete['GlobalTeamID'] },
-            });
+          if (NBA_ATHLETE_IDS.includes(athlete['PlayerID'])) {
+            try {
+              const team = await Team.findOne({
+                where: { apiId: athlete['GlobalTeamID'] },
+              });
 
-            if (team) {
-              await Athlete.create({
-                apiId: athlete['PlayerID'],
-                firstName: athlete['FirstName'],
-                lastName: athlete['LastName'],
-                position: athlete['Position'],
-                jersey: athlete['Jersey'],
-                team,
-                isActive: athlete['Status'] === 'Active',
-                isInjured: athlete['InjuryStatus'],
-              }).save();
+              if (team) {
+                await Athlete.create({
+                  apiId: athlete['PlayerID'],
+                  firstName: athlete['FirstName'],
+                  lastName: athlete['LastName'],
+                  position: athlete['Position'],
+                  jersey: athlete['Jersey'],
+                  team,
+                  isActive: athlete['Status'] === 'Active',
+                  isInjured: athlete['InjuryStatus'],
+                }).save();
+              }
+            } catch (e) {
+              this.logger.error(e);
             }
-          } catch (e) {
-            this.logger.error(e);
           }
         }
+      }
+    } else {
+      const { data, status } = await axios.get(
+        `${process.env.SPORTS_DATA_URL}nba/scores/json/Players?key=${process.env.SPORTS_DATA_NBA_KEY}`
+      );
+      if (status === 200) {
+        const newAthlete: Athlete[] = [];
+        const updateAthlete: Athlete[] = [];
+        let counter = 0;
+        for (let athlete of data) {
+          if (NBA_ATHLETE_IDS.includes(athlete['PlayerID'])) {
+            try {
+              const team = await Team.findOne({
+                where: { apiId: athlete['GlobalTeamID'] },
+              });
+              if (team) {
+                const currAthlete = await Athlete.findOne({
+                  where: { apiId: athlete['PlayerID'] },
+                });
+
+                if (currAthlete) {
+                  currAthlete.firstName = athlete['FirstName'];
+                  currAthlete.lastName = athlete['LastName'];
+                  currAthlete.position =
+                    athlete['Position'] !== null ? athlete['Position'] : 'N/A';
+                  currAthlete.jersey = athlete['Jersey'];
+                  currAthlete.isActive = athlete['Status'] === 'Active';
+                  currAthlete.isInjured = athlete['InjuryStatus'];
+                  currAthlete.team = team;
+                  updateAthlete.push(currAthlete);
+                } else {
+                  newAthlete.push(
+                    Athlete.create({
+                      apiId: athlete['PlayerID'],
+                      firstName: athlete['FirstName'],
+                      lastName: athlete['LastName'],
+                      position:
+                        athlete['Position'] !== null
+                          ? athlete['Position']
+                          : 'N/A',
+                      jersey: athlete['Jersey'],
+                      team,
+                      isActive: athlete['Status'] === 'Active',
+                      isInjured: athlete['InjuryStatus'],
+                    })
+                  );
+                }
+              }
+            } catch (err) {
+              this.logger.error(err);
+            }
+          }
+          counter++;
+        }
+        await Athlete.save([...newAthlete, ...updateAthlete], { chunk: 20 });
+        this.logger.debug(`Athlete count: ${counter}`);
+        this.logger.debug('NBA Athletes: UPDATED');
+      } else {
+        this.logger.error('NBA Athletes: SPORTS DATA ERROR');
       }
     }
 
@@ -1022,7 +1083,7 @@ export class TasksService {
     }
   }
 
-  // @Timeout(1)
+  @Timeout(300000)
   async generateAthleteNbaAssets() {
     this.logger.debug('Generate Athlete NBA Assets: STARTED');
 
@@ -1372,7 +1433,7 @@ export class TasksService {
       });
     }
   }
-  // @Timeout(1)
+  @Timeout(450000)
   async generateAthleteNbaAssetsAnimation() {
     this.logger.debug('Generate Athlete NBA Assets Animation: STARTED');
 
@@ -1645,7 +1706,7 @@ export class TasksService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`);
   }
 
-  // @Timeout(1)
+  @Timeout(600000)
   async generateAthleteNbaAssetsPromo() {
     this.logger.debug('Generate Athlete NBA Assets Promo: STARTED');
 
@@ -2150,7 +2211,7 @@ export class TasksService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`);
   }
 
-  // @Timeout(1)
+  @Timeout(750000)
   async generateAthleteNbaAssetsLocked() {
     this.logger.debug('Generate Athlete NBA Assets Locked: STARTED');
 
