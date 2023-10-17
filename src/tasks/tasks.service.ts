@@ -361,7 +361,7 @@ export class TasksService {
     );
   }
 
-  @Timeout(1)
+  //@Timeout(1)
   async syncNbaData() {
     const teamsCount = await Team.count({
       where: { sport: SportType.NBA },
@@ -1083,7 +1083,7 @@ export class TasksService {
     }
   }
 
-  @Timeout(300000)
+  //@Timeout(300000)
   async generateAthleteNbaAssets() {
     this.logger.debug('Generate Athlete NBA Assets: STARTED');
 
@@ -1433,7 +1433,7 @@ export class TasksService {
       });
     }
   }
-  @Timeout(450000)
+  //@Timeout(450000)
   async generateAthleteNbaAssetsAnimation() {
     this.logger.debug('Generate Athlete NBA Assets Animation: STARTED');
 
@@ -1706,7 +1706,7 @@ export class TasksService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`);
   }
 
-  @Timeout(600000)
+  //@Timeout(600000)
   async generateAthleteNbaAssetsPromo() {
     this.logger.debug('Generate Athlete NBA Assets Promo: STARTED');
 
@@ -2211,7 +2211,7 @@ export class TasksService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`);
   }
 
-  @Timeout(750000)
+  //@Timeout(750000)
   async generateAthleteNbaAssetsLocked() {
     this.logger.debug('Generate Athlete NBA Assets Locked: STARTED');
 
