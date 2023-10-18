@@ -4745,462 +4745,503 @@ export class TasksService {
 
   @Timeout(1)
   async runPolygonNFLMainnetAthleteWebSocketListener() {
-    console.log('Start polygon athlete listen');
-    const network = 'maticmum'; // dont forget to change to polygon mainnet
-    const athleteStorage = athleteStorageABI;
-    const provider = new ethers.AlchemyProvider(
-      network,
-      process.env.ALCHEMY_POLYGON_MUMBAI_API_KEY
-    );
+    function listenToAthleteStorage() {
+      let logger = new Logger('NFLAthleteStorage');
+      console.log('Start polygon athlete listen');
+      const network = 'maticmum'; // dont forget to change to polygon mainnet
+      const athleteStorage = athleteStorageABI;
+      const provider = new ethers.AlchemyProvider(
+        network,
+        process.env.ALCHEMY_POLYGON_MUMBAI_API_KEY
+      );
 
-    provider.pollingInterval = 20000;
+      provider.pollingInterval = 20000;
 
-    const athleteStorageContract = new Contract(
-      process.env.POLYGON_ATHLETE_STORAGE_ADDRESS ?? 'contract',
-      athleteStorage,
-      provider
-    );
+      const athleteStorageContract = new Contract(
+        process.env.POLYGON_ATHLETE_STORAGE_ADDRESS ?? 'contract',
+        athleteStorage,
+        provider
+      );
 
-    //receive tokensMinted, add address to entity if unique, push tokenIds if not existing
-    athleteStorageContract.on(
-      'TokensMinted',
-      async (ownerAddress, tokens, event) => {
-        console.log(`Receiver address: ${ownerAddress}`);
-        console.log(tokens);
-        console.log(event.log);
+      //receive tokensMinted, add address to entity if unique, push tokenIds if not existing
+      try {
+        athleteStorageContract.on(
+          'TokensMinted',
+          async (ownerAddress, tokens, event) => {
+            console.log(`Receiver address: ${ownerAddress}`);
+            console.log(tokens);
+            console.log(event.log);
 
-        const polygonAddress = await PolygonAddress.findOne({
-          where: {
-            address: ownerAddress,
-          },
-        });
-        if (polygonAddress) {
-          for (let token of tokens) {
-            const addToken = await PolygonToken.findOne({
+            const polygonAddress = await PolygonAddress.findOne({
               where: {
-                tokenId: Number(token),
-                sport: SportType.NFL,
-                polygonAddress: {
-                  address: ownerAddress,
-                },
+                address: ownerAddress,
               },
             });
-            if (addToken) {
-              this.logger.error(
-                `FAILURE THIS SHOULD NOT HAPPEN Token ${Number(
-                  token
-                )} already exists for ${ownerAddress}`
-              );
+            if (polygonAddress) {
+              for (let token of tokens) {
+                const addToken = await PolygonToken.findOne({
+                  where: {
+                    tokenId: Number(token),
+                    sport: SportType.NFL,
+                    polygonAddress: {
+                      address: ownerAddress,
+                    },
+                  },
+                });
+                if (addToken) {
+                  logger.error(
+                    `FAILURE THIS SHOULD NOT HAPPEN Token ${Number(
+                      token
+                    )} already exists for ${ownerAddress}`
+                  );
+                } else {
+                  await PolygonToken.create({
+                    tokenId: Number(token),
+                    sport: SportType.NFL,
+                    polygonAddress: polygonAddress,
+                    type: TokenType.REG,
+                  }).save();
+                  logger.debug(
+                    `Added new token ${Number(
+                      token
+                    )} to address ${ownerAddress}`
+                  );
+                }
+              }
             } else {
-              await PolygonToken.create({
-                tokenId: Number(token),
-                sport: SportType.NFL,
-                polygonAddress: polygonAddress,
-                type: TokenType.REG,
-              }).save();
-              this.logger.debug(
-                `Added new token ${Number(token)} to address ${ownerAddress}`
-              );
-            }
-          }
-        } else {
-          const newAddress = await PolygonAddress.create({
-            address: ownerAddress,
-          }).save();
-
-          for (let token of tokens) {
-            const addToken = await PolygonToken.findOne({
-              where: {
-                tokenId: Number(token),
-                sport: SportType.NFL,
-                polygonAddress: {
-                  address: ownerAddress,
-                },
-              },
-            });
-            if (addToken) {
-              this.logger.error(
-                `FAILURE Token ${Number(
-                  token
-                )} already exists on address ${ownerAddress}`
-              );
-            } else {
-              await PolygonToken.create({
-                tokenId: Number(token),
-                sport: SportType.NFL,
-                polygonAddress: newAddress,
-                type: TokenType.REG,
-              }).save();
-              this.logger.debug(
-                `Added new token ${Number(
-                  token
-                )} to NEW address ${ownerAddress}`
-              );
-            }
-          }
-        }
-      }
-    );
-
-    athleteStorageContract.on(
-      'TokenBurn',
-      async (address, token, amount, event) => {
-        const tempAmount = amount;
-        const tempEvent = event;
-        const deleteToken = await PolygonToken.findOne({
-          where: {
-            sport: SportType.NFL,
-            tokenId: Number(token),
-            polygonAddress: {
-              address: address,
-            },
-          },
-        });
-
-        if (deleteToken) {
-          //found correct owner, with correct tokenId, and with correct sport
-          await PolygonToken.remove(deleteToken);
-          this.logger.debug(`Token ${token} burned on account ${address}`);
-        } else {
-          this.logger.error(
-            `ERROR! Token ${Number(token)} not found in address ${address}`
-          );
-        }
-      }
-    );
-
-    athleteStorageContract.on(
-      'TokenBurnBatch',
-      async (address, tokens, amounts, event) => {
-        const tempAmounts = amounts;
-        const tempEvent = event;
-        for (let token of tokens) {
-          const deleteToken = await PolygonToken.findOne({
-            where: {
-              sport: SportType.NFL,
-              tokenId: Number(token),
-              polygonAddress: {
-                address: address,
-              },
-            },
-          });
-
-          if (deleteToken) {
-            //found corrent owner, with correct tokenId, and with correct sport
-            await PolygonToken.remove(deleteToken);
-            this.logger.debug(`Token ${token} burned on account ${address}`);
-          } else {
-            this.logger.error(
-              `ERROR! Token ${Number(
-                token
-              )} not found in address ${address} in Burn BATCH`
-            );
-          }
-        }
-      }
-    );
-    athleteStorageContract.on(
-      'TokenTransfer',
-      async (fromAddr, toAddr, token) => {
-        this.logger.debug(
-          `Start single transfer from ${fromAddr} to ${toAddr}`
-        );
-        const transferToken = await PolygonToken.findOne({
-          where: {
-            sport: SportType.NFL,
-            tokenId: Number(token),
-            polygonAddress: {
-              address: fromAddr,
-            },
-          },
-        });
-        if (transferToken) {
-          //token exists within fromAddress
-
-          const receivingAddress = await PolygonAddress.findOne({
-            where: {
-              address: toAddr,
-            },
-          });
-          let success: boolean = false;
-          if (receivingAddress) {
-            //toAddress exists
-            await PolygonToken.create({
-              sport: SportType.NFL,
-              tokenId: Number(token),
-              type: TokenType.REG,
-              polygonAddress: receivingAddress,
-            }).save();
-            this.logger.debug(
-              `Token ${token} transfered from ${fromAddr} to ${toAddr}`
-            );
-            success = true;
-          } else {
-            try {
               const newAddress = await PolygonAddress.create({
-                address: toAddr,
+                address: ownerAddress,
               }).save();
-              await PolygonToken.create({
-                sport: SportType.NFL,
-                tokenId: Number(token),
-                type: TokenType.REG,
-                polygonAddress: newAddress,
-              }).save();
-              this.logger.debug(
-                `Token ${token} transfered from ${fromAddr} to new address ${toAddr}`
-              );
-              success = true;
-            } catch (e) {
-              switch (e.constructor) {
-                case QueryFailedError:
-                  this.logger.debug(`Address exists, async issue`);
-                  let code = (e as any).code;
-                  this.logger.debug(`Code: ${code}`);
-                  if (code === '23505' || code === 23505) {
-                    this.logger.debug('Start transfer due to async issue');
-                    //polygon address is existing but errors due to async
-                    const receivingAddress = await PolygonAddress.findOne({
-                      where: {
-                        address: toAddr,
-                      },
-                    });
-                    if (receivingAddress) {
-                      await PolygonToken.create({
-                        sport: SportType.NFL,
-                        tokenId: Number(token),
-                        type: TokenType.REG,
-                        polygonAddress: receivingAddress,
-                      }).save();
-                      success = true;
-                      this.logger.debug(
-                        `Token ${token} transfered from ${fromAddr} to new address ${toAddr}`
-                      );
-                    }
-                  }
-                  break;
-                default:
-                  this.logger.error(e);
-                  break;
+
+              for (let token of tokens) {
+                const addToken = await PolygonToken.findOne({
+                  where: {
+                    tokenId: Number(token),
+                    sport: SportType.NFL,
+                    polygonAddress: {
+                      address: ownerAddress,
+                    },
+                  },
+                });
+                if (addToken) {
+                  logger.error(
+                    `FAILURE Token ${Number(
+                      token
+                    )} already exists on address ${ownerAddress}`
+                  );
+                } else {
+                  await PolygonToken.create({
+                    tokenId: Number(token),
+                    sport: SportType.NFL,
+                    polygonAddress: newAddress,
+                    type: TokenType.REG,
+                  }).save();
+                  logger.debug(
+                    `Added new token ${Number(
+                      token
+                    )} to NEW address ${ownerAddress}`
+                  );
+                }
               }
             }
           }
-          if (success) {
-            this.logger.debug(
-              `Start delete of token ${Number(token)} on ${fromAddr}`
-            );
+        );
 
-            await PolygonToken.remove(transferToken);
-          }
-        } else {
-          this.logger.error('ERROR Token does not exist on from address');
-        }
-      }
-    );
-    athleteStorageContract.on(
-      'TokenTransferBatch',
-      async (fromAddr, toAddr, ids) => {
-        this.logger.debug(`Start batch transfer from ${fromAddr} to ${toAddr}`);
-        for (let token of ids) {
-          const transferToken = await PolygonToken.findOne({
-            where: {
-              sport: SportType.NFL,
-              tokenId: Number(token),
-              polygonAddress: {
-                address: fromAddr,
-              },
-            },
-          });
-          if (transferToken) {
-            //token exists within fromAddress
-
-            const receivingAddress = await PolygonAddress.findOne({
+        athleteStorageContract.on(
+          'TokenBurn',
+          async (address, token, amount, event) => {
+            const tempAmount = amount;
+            const tempEvent = event;
+            const deleteToken = await PolygonToken.findOne({
               where: {
-                address: toAddr,
+                sport: SportType.NFL,
+                tokenId: Number(token),
+                polygonAddress: {
+                  address: address,
+                },
               },
             });
-            let success: boolean = false;
-            if (receivingAddress) {
-              //toAddress exists
-              await PolygonToken.create({
-                sport: SportType.NFL,
-                tokenId: Number(token),
-                type: TokenType.REG,
-                polygonAddress: receivingAddress,
-              }).save();
-              this.logger.debug(
-                `Token ${token} transfered from ${fromAddr} to ${toAddr}`
-              );
-              success = true;
+
+            if (deleteToken) {
+              //found correct owner, with correct tokenId, and with correct sport
+              await PolygonToken.remove(deleteToken);
+              logger.debug(`Token ${token} burned on account ${address}`);
             } else {
-              const newAddress = await PolygonAddress.create({
-                address: toAddr,
-              }).save();
+              logger.error(
+                `ERROR! Token ${Number(token)} not found in address ${address}`
+              );
+            }
+          }
+        );
 
-              await PolygonToken.create({
+        athleteStorageContract.on(
+          'TokenBurnBatch',
+          async (address, tokens, amounts, event) => {
+            const tempAmounts = amounts;
+            const tempEvent = event;
+            for (let token of tokens) {
+              const deleteToken = await PolygonToken.findOne({
+                where: {
+                  sport: SportType.NFL,
+                  tokenId: Number(token),
+                  polygonAddress: {
+                    address: address,
+                  },
+                },
+              });
+
+              if (deleteToken) {
+                //found corrent owner, with correct tokenId, and with correct sport
+                await PolygonToken.remove(deleteToken);
+                logger.debug(`Token ${token} burned on account ${address}`);
+              } else {
+                logger.error(
+                  `ERROR! Token ${Number(
+                    token
+                  )} not found in address ${address} in Burn BATCH`
+                );
+              }
+            }
+          }
+        );
+        athleteStorageContract.on(
+          'TokenTransfer',
+          async (fromAddr, toAddr, token) => {
+            logger.debug(`Start single transfer from ${fromAddr} to ${toAddr}`);
+            const transferToken = await PolygonToken.findOne({
+              where: {
                 sport: SportType.NFL,
                 tokenId: Number(token),
-                type: TokenType.REG,
-                polygonAddress: newAddress,
-              }).save();
-              this.logger.debug(
-                `Token ${token} transfered from ${fromAddr} to new address ${toAddr}`
-              );
-              success = true;
-            }
-            if (success) {
-              this.logger.debug(
-                `Start delete of token ${Number(token)} on ${fromAddr}`
-              );
+                polygonAddress: {
+                  address: fromAddr,
+                },
+              },
+            });
+            if (transferToken) {
+              //token exists within fromAddress
 
-              await PolygonToken.remove(transferToken);
+              const receivingAddress = await PolygonAddress.findOne({
+                where: {
+                  address: toAddr,
+                },
+              });
+              let success: boolean = false;
+              if (receivingAddress) {
+                //toAddress exists
+                await PolygonToken.create({
+                  sport: SportType.NFL,
+                  tokenId: Number(token),
+                  type: TokenType.REG,
+                  polygonAddress: receivingAddress,
+                }).save();
+                logger.debug(
+                  `Token ${token} transfered from ${fromAddr} to ${toAddr}`
+                );
+                success = true;
+              } else {
+                try {
+                  const newAddress = await PolygonAddress.create({
+                    address: toAddr,
+                  }).save();
+                  await PolygonToken.create({
+                    sport: SportType.NFL,
+                    tokenId: Number(token),
+                    type: TokenType.REG,
+                    polygonAddress: newAddress,
+                  }).save();
+                  logger.debug(
+                    `Token ${token} transfered from ${fromAddr} to new address ${toAddr}`
+                  );
+                  success = true;
+                } catch (e) {
+                  switch (e.constructor) {
+                    case QueryFailedError:
+                      logger.debug(`Address exists, async issue`);
+                      let code = (e as any).code;
+                      logger.debug(`Code: ${code}`);
+                      if (code === '23505' || code === 23505) {
+                        logger.debug('Start transfer due to async issue');
+                        //polygon address is existing but errors due to async
+                        const receivingAddress = await PolygonAddress.findOne({
+                          where: {
+                            address: toAddr,
+                          },
+                        });
+                        if (receivingAddress) {
+                          await PolygonToken.create({
+                            sport: SportType.NFL,
+                            tokenId: Number(token),
+                            type: TokenType.REG,
+                            polygonAddress: receivingAddress,
+                          }).save();
+                          success = true;
+                          logger.debug(
+                            `Token ${token} transfered from ${fromAddr} to new address ${toAddr}`
+                          );
+                        }
+                      }
+                      break;
+                    default:
+                      logger.error(e);
+                      break;
+                  }
+                }
+              }
+              if (success) {
+                logger.debug(
+                  `Start delete of token ${Number(token)} on ${fromAddr}`
+                );
+
+                await PolygonToken.remove(transferToken);
+              }
+            } else {
+              logger.error('ERROR Token does not exist on from address');
             }
-          } else {
-            this.logger.error('ERROR Token does not exist on from address');
           }
+        );
+        athleteStorageContract.on(
+          'TokenTransferBatch',
+          async (fromAddr, toAddr, ids) => {
+            logger.debug(`Start batch transfer from ${fromAddr} to ${toAddr}`);
+            for (let token of ids) {
+              const transferToken = await PolygonToken.findOne({
+                where: {
+                  sport: SportType.NFL,
+                  tokenId: Number(token),
+                  polygonAddress: {
+                    address: fromAddr,
+                  },
+                },
+              });
+              if (transferToken) {
+                //token exists within fromAddress
+
+                const receivingAddress = await PolygonAddress.findOne({
+                  where: {
+                    address: toAddr,
+                  },
+                });
+                let success: boolean = false;
+                if (receivingAddress) {
+                  //toAddress exists
+                  await PolygonToken.create({
+                    sport: SportType.NFL,
+                    tokenId: Number(token),
+                    type: TokenType.REG,
+                    polygonAddress: receivingAddress,
+                  }).save();
+                  logger.debug(
+                    `Token ${token} transfered from ${fromAddr} to ${toAddr}`
+                  );
+                  success = true;
+                } else {
+                  const newAddress = await PolygonAddress.create({
+                    address: toAddr,
+                  }).save();
+
+                  await PolygonToken.create({
+                    sport: SportType.NFL,
+                    tokenId: Number(token),
+                    type: TokenType.REG,
+                    polygonAddress: newAddress,
+                  }).save();
+                  logger.debug(
+                    `Token ${token} transfered from ${fromAddr} to new address ${toAddr}`
+                  );
+                  success = true;
+                }
+                if (success) {
+                  logger.debug(
+                    `Start delete of token ${Number(token)} on ${fromAddr}`
+                  );
+
+                  await PolygonToken.remove(transferToken);
+                }
+              } else {
+                logger.error('ERROR Token does not exist on from address');
+              }
+            }
+          }
+        );
+      } catch (error) {
+        const code = (error as any).code;
+        const message = (error as any).message;
+        if (
+          (code === '-32000' || code === -32000) &&
+          message === 'filter not found'
+        ) {
+          logger.error(
+            'Encountered an error in alchemy listeners, rerunning function to reconnect'
+          );
+          athleteStorageContract.removeAllListeners();
+          setTimeout(() => listenToAthleteStorage(), 1000);
         }
       }
-    );
+    }
+
+    listenToAthleteStorage();
   }
   @Timeout(1)
   async runPolygonMainnetNFLGameWebSocketListener() {
-    console.log('Start polygon listen');
-    const network = 'maticmum';
-    const address = process.env.METAMASK_WALLET_ADDRESS ?? 'default';
-    const abi = gameABI;
-    const provider = new ethers.AlchemyProvider(
-      network,
-      process.env.ALCHEMY_POLYGON_MUMBAI_API_KEY
-    );
+    function listenToNFLGameContract() {
+      const logger = new Logger('NFLGameContract');
+      console.log('Start polygon listen');
+      const network = 'maticmum';
+      const address = process.env.METAMASK_WALLET_ADDRESS ?? 'default';
+      const abi = gameABI;
+      const provider = new ethers.AlchemyProvider(
+        network,
+        process.env.ALCHEMY_POLYGON_MUMBAI_API_KEY
+      );
 
-    provider.pollingInterval = 20000;
-    const gameContract = new Contract(
-      process.env.POLYGON_GAME_ADDRESS ?? 'contract',
-      abi,
-      provider
-    );
-    gameContract.on(
-      'AddGame',
-      async (gameId, gameTimeStart, gameTimeEnd, event) => {
-        const convertGameId =
-          typeof gameId === 'bigint' ? Number(gameId) : gameId;
-        const game = await Game.findOne({
-          where: {
-            gameId: convertGameId,
-            contract: ContractType.POLYGON,
-            sport: SportType.NFL,
-          },
-        });
-        if (!game) {
-          //game doesn't exist
-          await Game.create({
-            gameId: convertGameId,
-            name: `Game ${convertGameId}`,
-            description: 'on-going',
-            startTime: moment.unix(
-              typeof gameTimeStart === 'bigint'
-                ? Number(gameTimeStart)
-                : gameTimeStart
-            ),
-            endTime: moment.unix(
-              typeof gameTimeEnd === 'bigint'
-                ? Number(gameTimeEnd)
-                : gameTimeEnd
-            ),
-            sport: SportType.NFL,
-            contract: ContractType.POLYGON,
-          }).save();
-
-          Logger.debug(
-            `Game ${convertGameId} created for ${SportType.NFL} at ${ContractType.POLYGON}`
-          );
-        } else {
-          Logger.error(
-            `Game ${convertGameId} for ${SportType.NFL} at ${ContractType.POLYGON} already exists`
-          );
-        }
-
-        console.log(event.log);
-      }
-    );
-
-    gameContract.on(
-      'SucceedLineupSubmission',
-      async (result, gameId, teamName, address, lineup, event) => {
-        this.logger.debug(result);
-        const convertGameId =
-          typeof gameId === 'bigint' ? Number(gameId) : gameId;
-        const eventLogs = event;
-        const game = await Game.findOne({
-          where: {
-            gameId: convertGameId,
-            sport: SportType.NFL,
-            contract: ContractType.POLYGON,
-          },
-        });
-        if (game) {
-          // game exists
-          const gameTeam = await GameTeam.findOne({
-            where: {
-              game: {
-                id: game.id,
+      provider.pollingInterval = 20000;
+      const gameContract = new Contract(
+        process.env.POLYGON_GAME_ADDRESS ?? 'contract',
+        abi,
+        provider
+      );
+      try {
+        gameContract.on(
+          'AddGame',
+          async (gameId, gameTimeStart, gameTimeEnd, event) => {
+            const convertGameId =
+              typeof gameId === 'bigint' ? Number(gameId) : gameId;
+            const game = await Game.findOne({
+              where: {
+                gameId: convertGameId,
+                contract: ContractType.POLYGON,
+                sport: SportType.NFL,
               },
-              name: teamName,
-              wallet_address: address,
-            },
-            relations: {
-              game: true,
-            },
-          });
-
-          if (!gameTeam) {
-            const currGameTeam = await GameTeam.create({
-              game: game,
-              name: teamName,
-              wallet_address: address,
             });
-            const teamLineup = lineup;
-            for (let apiId of lineup) {
-              const athlete = await Athlete.findOne({
+            if (!game) {
+              //game doesn't exist
+              await Game.create({
+                gameId: convertGameId,
+                name: `Game ${convertGameId}`,
+                description: 'on-going',
+                startTime: moment.unix(
+                  typeof gameTimeStart === 'bigint'
+                    ? Number(gameTimeStart)
+                    : gameTimeStart
+                ),
+                endTime: moment.unix(
+                  typeof gameTimeEnd === 'bigint'
+                    ? Number(gameTimeEnd)
+                    : gameTimeEnd
+                ),
+                sport: SportType.NFL,
+                contract: ContractType.POLYGON,
+              }).save();
+
+              logger.debug(
+                `Game ${convertGameId} created for ${SportType.NFL} at ${ContractType.POLYGON}`
+              );
+            } else {
+              logger.error(
+                `Game ${convertGameId} for ${SportType.NFL} at ${ContractType.POLYGON} already exists`
+              );
+            }
+
+            console.log(event.log);
+          }
+        );
+
+        gameContract.on(
+          'SucceedLineupSubmission',
+          async (result, gameId, teamName, address, lineup, event) => {
+            logger.debug(result);
+            const convertGameId =
+              typeof gameId === 'bigint' ? Number(gameId) : gameId;
+            const eventLogs = event;
+            const game = await Game.findOne({
+              where: {
+                gameId: convertGameId,
+                sport: SportType.NFL,
+                contract: ContractType.POLYGON,
+              },
+            });
+            if (game) {
+              // game exists
+              const gameTeam = await GameTeam.findOne({
                 where: {
-                  apiId: Number(apiId),
+                  game: {
+                    id: game.id,
+                  },
+                  name: teamName,
+                  wallet_address: address,
+                },
+                relations: {
+                  game: true,
                 },
               });
-              if (athlete) {
-                try {
-                  await GameTeamAthlete.create({
-                    gameTeam: currGameTeam,
-                    athlete: athlete,
-                  }).save();
-                } catch (e) {
-                  this.logger.debug(e);
+
+              if (!gameTeam) {
+                const currGameTeam = await GameTeam.create({
+                  game: game,
+                  name: teamName,
+                  wallet_address: address,
+                });
+                const teamLineup = lineup;
+                for (let apiId of lineup) {
+                  const athlete = await Athlete.findOne({
+                    where: {
+                      apiId: Number(apiId),
+                    },
+                  });
+                  if (athlete) {
+                    try {
+                      await GameTeamAthlete.create({
+                        gameTeam: currGameTeam,
+                        athlete: athlete,
+                      }).save();
+                    } catch (e) {
+                      logger.debug(e);
+                    }
+                  } else {
+                    logger.debug('ERROR athlete apiId not found');
+                  }
                 }
+                logger.debug('Successfully added team');
               } else {
-                this.logger.debug('ERROR athlete apiId not found');
+                logger.debug(
+                  `Team already exists on Game ${convertGameId} for ${SportType.NFL} at ${ContractType.POLYGON}`
+                );
               }
+            } else {
+              logger.error(
+                `Game ${convertGameId} does not exist for ${SportType.NFL} at ${ContractType.POLYGON}`
+              );
             }
-            this.logger.debug('Successfully added team');
-          } else {
-            this.logger.debug(
-              `Team already exists on Game ${convertGameId} for ${SportType.NFL} at ${ContractType.POLYGON}`
-            );
           }
-        } else {
-          this.logger.error(
-            `Game ${convertGameId} does not exist for ${SportType.NFL} at ${ContractType.POLYGON}`
+        );
+      } catch (error) {
+        const code = (error as any).code;
+        const message = (error as any).message;
+        if (
+          (code === '-32000' || code === -32000) &&
+          message === 'filter not found'
+        ) {
+          logger.error(
+            'Encountered an error in alchemy listeners, rerunning function to reconnect'
           );
+          gameContract.removeAllListeners();
+          setTimeout(() => listenToNFLGameContract(), 1000);
         }
       }
-    );
-    // const filter = {
-    //   topics: [
-    //     "0xf67cbd2d2262c1c99a110c17514f7e1c866ec08c3becf5ab2f4986c1ea01a56b",
-    //   ],
-    // };
-    // provider.on(filter, (log, event) => {
-    //   console.log(log);
-    //   console.log(event);
-    // });
+
+      // const filter = {
+      //   topics: [
+      //     "0xf67cbd2d2262c1c99a110c17514f7e1c866ec08c3becf5ab2f4986c1ea01a56b",
+      //   ],
+      // };
+      // provider.on(filter, (log, event) => {
+      //   console.log(log);
+      //   console.log(event);
+      // });
+    }
+    listenToNFLGameContract();
   }
+
   //@Timeout(1)
   async runNearMainnetBaseballWebSocketListener() {
     function listenToMainnet() {
