@@ -379,7 +379,7 @@ export class AthleteResolver {
         //fileArray.push(Buffer.from(response.data, "utf8"));
         const data = Buffer.from(response.data, 'utf8');
         const fileBaseParams = {
-          Bucket: 'playibletestnetnfl',
+          Bucket: process.env.FILEBUCKET_BUCKET_NAME ?? '',
           ContentType: 'image/svg+xml',
           Key: `${fileType}_${athlete.apiId}`,
           ACL: 'public-read',
