@@ -5,9 +5,14 @@
 				"internalType": "uint256",
 				"name": "requestId",
 				"type": "uint256"
+			},
+			{
+				"internalType": "uint256[]",
+				"name": "randomWords",
+				"type": "uint256[]"
 			}
 		],
-		"name": "mintBatch",
+		"name": "rawFulfillRandomWords",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -38,16 +43,6 @@
 				"internalType": "address",
 				"name": "_athleteAddr",
 				"type": "address"
-			},
-			{
-				"internalType": "uint256",
-				"name": "_packCount",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "_athleteCount",
-				"type": "uint256"
 			}
 		],
 		"stateMutability": "nonpayable",
@@ -92,19 +87,6 @@
 			}
 		],
 		"name": "ApprovalForAll",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "newAthleteCount",
-				"type": "uint256"
-			}
-		],
-		"name": "AthleteCountUpdated",
 		"type": "event"
 	},
 	{
@@ -155,6 +137,13 @@
 			}
 		],
 		"name": "executeAddAthletes",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "incrementTokenId",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -251,32 +240,6 @@
 		"anonymous": false,
 		"inputs": [
 			{
-				"indexed": false,
-				"internalType": "address",
-				"name": "newOwnerId",
-				"type": "address"
-			}
-		],
-		"name": "LogOwnerIdUpdated",
-		"type": "event"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "requestId",
-				"type": "uint256"
-			}
-		],
-		"name": "mintBatchTest",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
 				"indexed": true,
 				"internalType": "address",
 				"name": "previousOwner",
@@ -291,37 +254,6 @@
 		],
 		"name": "OwnershipTransferred",
 		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "newAthleteCount",
-				"type": "uint256"
-			}
-		],
-		"name": "PackCountUpdated",
-		"type": "event"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "requestId",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256[]",
-				"name": "randomWords",
-				"type": "uint256[]"
-			}
-		],
-		"name": "rawFulfillRandomWords",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
 	},
 	{
 		"inputs": [],
@@ -619,25 +551,12 @@
 	{
 		"inputs": [
 			{
-				"internalType": "uint256",
-				"name": "newAthleteCount",
-				"type": "uint256"
+				"internalType": "address",
+				"name": "_newPackNFTAddr",
+				"type": "address"
 			}
 		],
-		"name": "updateAthleteCount",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "newPackCount",
-				"type": "uint256"
-			}
-		],
-		"name": "updatePackCount",
+		"name": "updatePackNFTAddr",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -782,7 +701,7 @@
 	},
 	{
 		"inputs": [],
-		"name": "athleteCount",
+		"name": "athletePositionCount",
 		"outputs": [
 			{
 				"internalType": "uint256",
@@ -842,62 +761,6 @@
 		"type": "function"
 	},
 	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "requestId",
-				"type": "uint256"
-			}
-		],
-		"name": "findAthletesToMint",
-		"outputs": [
-			{
-				"components": [
-					{
-						"internalType": "string",
-						"name": "athleteId",
-						"type": "string"
-					},
-					{
-						"internalType": "string",
-						"name": "tokenUri",
-						"type": "string"
-					},
-					{
-						"internalType": "string",
-						"name": "symbol",
-						"type": "string"
-					},
-					{
-						"internalType": "string",
-						"name": "name",
-						"type": "string"
-					},
-					{
-						"internalType": "string",
-						"name": "team",
-						"type": "string"
-					},
-					{
-						"internalType": "string",
-						"name": "position",
-						"type": "string"
-					},
-					{
-						"internalType": "string",
-						"name": "release",
-						"type": "string"
-					}
-				],
-				"internalType": "struct OpenPack.athleteInfo[]",
-				"name": "",
-				"type": "tuple[]"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
 		"inputs": [],
 		"name": "getAthleteAddr",
 		"outputs": [
@@ -912,38 +775,12 @@
 	},
 	{
 		"inputs": [],
-		"name": "getAthleteCount",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
 		"name": "getAthletePositionSize",
 		"outputs": [
 			{
 				"internalType": "uint256",
 				"name": "",
 				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "getAthletePositionsToMint",
-		"outputs": [
-			{
-				"internalType": "string[]",
-				"name": "",
-				"type": "string[]"
 			}
 		],
 		"stateMutability": "view",
@@ -979,6 +816,19 @@
 	},
 	{
 		"inputs": [],
+		"name": "getCurrentTokenId",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
 		"name": "getOwner",
 		"outputs": [
 			{
@@ -1004,19 +854,6 @@
 		"type": "function"
 	},
 	{
-		"inputs": [],
-		"name": "getPackCount",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
 		"inputs": [
 			{
 				"internalType": "string",
@@ -1030,44 +867,6 @@
 				"internalType": "uint256",
 				"name": "",
 				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "requestId",
-				"type": "uint256"
-			}
-		],
-		"name": "getRandomAnyPosition",
-		"outputs": [
-			{
-				"internalType": "string",
-				"name": "",
-				"type": "string"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "requestId",
-				"type": "uint256"
-			}
-		],
-		"name": "getRandomFlexPosition",
-		"outputs": [
-			{
-				"internalType": "string",
-				"name": "",
-				"type": "string"
 			}
 		],
 		"stateMutability": "view",
@@ -1111,19 +910,6 @@
 				"internalType": "uint256[]",
 				"name": "randomWords",
 				"type": "uint256[]"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "getStarterListSize",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
 			}
 		],
 		"stateMutability": "view",
@@ -1236,38 +1022,6 @@
 		"type": "function"
 	},
 	{
-		"inputs": [],
-		"name": "packCount",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "requestId",
-				"type": "uint256"
-			}
-		],
-		"name": "positionsToMint",
-		"outputs": [
-			{
-				"internalType": "string[]",
-				"name": "",
-				"type": "string[]"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
 		"inputs": [
 			{
 				"internalType": "uint256",
@@ -1324,6 +1078,19 @@
 				"internalType": "bool",
 				"name": "exists",
 				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "starterListCount",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
 			}
 		],
 		"stateMutability": "view",
