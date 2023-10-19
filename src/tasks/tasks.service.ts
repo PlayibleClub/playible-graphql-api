@@ -5180,8 +5180,7 @@ export class TasksService {
                   game: game,
                   name: teamName,
                   wallet_address: address,
-                });
-                const teamLineup = lineup;
+                }).save();
                 for (let apiId of lineup) {
                   const athlete = await Athlete.findOne({
                     where: {
