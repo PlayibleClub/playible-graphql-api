@@ -3990,8 +3990,8 @@ export class TasksService {
     }
   }
 
-  //@Timeout(1)
   ////@Interval(4200000) // Runs every 1 hour 10 minutes
+  @Timeout(1)
   async updateNbaSchedules() {
     this.logger.debug('UPDATE NBA Schedules: STARTED');
 
@@ -4016,7 +4016,7 @@ export class TasksService {
       }
 
       const { data, status } = await axios.get(
-        `${process.env.SPORTS_DATA_URL}nba/scores/json/Games/${currSeason.apiSeason}?key=${process.env.SPORTS_DATA_NBA_KEY}`
+        `${process.env.SPORTS_DATA_URL}nba/scores/json/SchedulesBasic/${currSeason.season}?key=${process.env.SPORTS_DATA_NBA_KEY}`
       );
 
       if (status === 200) {
