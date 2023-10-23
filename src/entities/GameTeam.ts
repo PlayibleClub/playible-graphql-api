@@ -33,7 +33,10 @@ export class GameTeam extends BaseEntity {
   fantasyScore: number = 0;
 
   @Field(() => Game)
-  @ManyToOne(() => Game, (game) => game.teams)
+  @ManyToOne(() => Game, (game) => game.teams, {
+    onDelete: 'CASCADE',
+    orphanedRowAction: 'delete',
+  })
   game!: Relation<Game>;
 
   // @Field(() => Account)
