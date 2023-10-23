@@ -232,7 +232,7 @@ export class GameResolver {
     return results;
   }
 
-  //@Authorized('ADMIN')
+  @Authorized('ADMIN')
   @Mutation(() => Leaderboard)
   async mergeIntoLeaderboard(
     @Arg('nearGameId') nearGameId: number,
