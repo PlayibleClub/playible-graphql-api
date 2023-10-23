@@ -24,6 +24,7 @@ import { NearBlock } from '../entities/NearBlock';
 import { NearResponse } from '../entities/NearResponse';
 import { PolygonAddress } from '../entities/PolygonAddress';
 import { PolygonToken } from '../entities/PolygonToken';
+import { Leaderboard } from '../entities/Leaderboard';
 export const AppDataSource = new DataSource({
   type: 'postgres',
   host: process.env.POSTGRES_HOST,
@@ -54,6 +55,7 @@ export const AppDataSource = new DataSource({
     NearResponse,
     PolygonAddress,
     PolygonToken,
+    Leaderboard,
   ],
   synchronize: true,
   // logging: true,
