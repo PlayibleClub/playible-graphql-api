@@ -470,6 +470,7 @@ export class AthleteResolver {
               name: `${athlete.firstName} ${athlete.lastName}`,
               team: athlete.team.key,
               position: athlete.position,
+              release: '1',
             },
           };
           return {

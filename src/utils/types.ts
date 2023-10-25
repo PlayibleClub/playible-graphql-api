@@ -62,6 +62,7 @@ export type IPFSMetadata = {
     name: string;
     team: string;
     position: string;
+    release: string;
   };
 };
 
