@@ -3887,7 +3887,7 @@ export class TasksService {
 
   async updateNflCurrentSeason() {}
 
-  //@Timeout(1)
+  @Timeout(1)
   ////@Interval(3600000) //Runs every 1 hour
   async updateNbaCurrentSeason() {
     this.logger.debug('Update NBA Current Season: STARTED');
