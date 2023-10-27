@@ -600,6 +600,67 @@ export class AthleteResolver {
     return athleteTokens.length;
   }
 
+  @Mutation(() => Boolean)
+  async updateMetadataOfNearAthlete(
+    // @Arg('sportType') sportType: SportType,
+    // @Arg('isPromo') isPromo: boolean = false,
+    @Arg('tokenId') tokenId: string,
+    @Arg('tokenPosition') tokenPosition: string,
+    @Arg('tokenTeam') tokenTeam: string
+  ): Promise<Boolean> {
+    //TODO: add switch case for different contracts
+
+    let apiId = '';
+    if (tokenId.includes('PR') || tokenId.includes('SB')) {
+      tokenId = tokenId.split('_')[1];
+    }
+    apiId = tokenId.split('CR')[0];
+    const athlete = await Athlete.findOneOrFail({
+      where: {
+        apiId: Number(apiId),
+      },
+      relations: {
+        team: true,
+      },
+    });
+    let newPosition = '';
+    let newTeam = '';
+
+    if (tokenPosition) {
+      newPosition = athlete.position !== tokenPosition ? athlete.position : '';
+    }
+    if (tokenTeam) {
+      newTeam = athlete.team.key !== tokenTeam ? athlete.team.key : '';
+    }
+
+    if (newPosition.length > 0 || newTeam.length > 0) {
+      const nearApi = await setup();
+      const account = await nearApi.account(
+        process.env.NEAR_BASKETBALL_ATHLETE_KEY || ''
+      );
+      const contract: any = new Contract(
+        account,
+        'athlete.basketball.playible.testnet',
+        {
+          viewMethods: [],
+          changeMethods: ['update_team_and_position_of_token'],
+        }
+      );
+
+      const success: boolean = await contract.update_team_and_position_of_token(
+        {
+          token_id: tokenId,
+          team: newTeam !== '' ? newTeam : null,
+          position: newPosition !== '' ? newPosition : null,
+        }
+      );
+      return success;
+    } else {
+      //no changes will be made
+      return false;
+    }
+  }
+
   @Authorized('ADMIN')
   @Mutation(() => String)
   async updateNflAthleteStatsSeason(
