@@ -11,7 +11,7 @@ import {
   Resolver,
 } from 'type-graphql';
 import { AthleteSortOptions, GetAthletesArgs } from '../args/AthleteArgs';
-import { setup, changeAthleteMetadataSetup } from '../near-api';
+import { setup } from '../near-api';
 import axios, { AxiosResponse } from 'axios';
 import { S3 } from 'aws-sdk';
 import { Athlete } from '../entities/Athlete';
@@ -649,7 +649,8 @@ export class AthleteResolver {
   ): Promise<Boolean> {
     //TODO: add switch case for different contracts
 
-    const nearApi = await changeAthleteMetadataSetup(SportType.NBA);
+    //const nearApi = await changeAthleteMetadataSetup(SportType.NBA);
+    const nearApi = await setup();
     const account = await nearApi.account(
       'athlete.basketball.playible.testnet'
     );
