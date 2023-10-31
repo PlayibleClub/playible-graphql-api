@@ -11,7 +11,7 @@ import {
   Resolver,
 } from 'type-graphql';
 import { AthleteSortOptions, GetAthletesArgs } from '../args/AthleteArgs';
-import { setup } from '../near-api';
+import { setup, changeAthleteMetadataSetup } from '../near-api';
 import axios, { AxiosResponse } from 'axios';
 import { S3 } from 'aws-sdk';
 import { Athlete } from '../entities/Athlete';
@@ -395,15 +395,27 @@ export class AthleteResolver {
           console.log(`Status Code ${statusCode}`);
           console.log(`Filename: ${fileType}_${athlete.apiId}`);
           console.log(`CID: ${headers['x-amz-meta-cid']}`);
-          athlete.cid = headers['x-amz-meta-cid'];
-          athlete.tokenURI = `https://ipfs.filebase.io/ipfs/${headers['x-amz-meta-cid']}`;
-          await Athlete.save(athlete);
+          switch (imageType) {
+            case 'nftImageLocked':
+              athlete.promoCid = headers['x-amz-meta-cid'];
+              athlete.tokenPromoURI = `https://ipfs.filebase.io/ipfs/${headers['x-amz-meta-cid']}`;
+              break;
+            case 'nftImagePromo':
+              athlete.soulBoundCid = headers['x-amz-meta-cid'];
+              athlete.tokenSoulboundURI = `https://ipfs.filebase.io/ipfs/${headers['x-amz-meta-cid']}`;
+              break;
+            case 'nftImage':
+              athlete.cid = headers['x-amz-meta-cid'];
+              athlete.tokenURI = `https://ipfs.filebase.io/ipfs/${headers['x-amz-meta-cid']}`;
+              break;
+          }
         });
         request.on('error', (error) => {
           console.log(error);
         });
         request.send();
       }
+      await Athlete.save(athlete);
     }
 
     return athletes.length;
@@ -450,10 +462,36 @@ export class AthleteResolver {
         })
       ).map((athlete) => {
         if (isPromo) {
+          const promoIpfs: IPFSMetadata = {
+            name: `${athlete.firstName} ${athlete.lastName} Promotional Token`,
+            description: 'Playible Athlete Token',
+            image: athlete.tokenPromoURI,
+            properties: {
+              athleteId: athlete.id.toString(),
+              symbol: athlete.apiId.toString(),
+              name: `${athlete.firstName} ${athlete.lastName}`,
+              team: athlete.team.key,
+              position: athlete.position,
+              release: '1',
+            },
+          };
+          const soulboundIpfs: IPFSMetadata = {
+            name: `${athlete.firstName} ${athlete.lastName} Soulbound Token`,
+            description: 'Playible Athlete Token',
+            image: athlete.tokenSoulboundURI,
+            properties: {
+              athleteId: athlete.id.toString(),
+              symbol: athlete.apiId.toString(),
+              name: `${athlete.firstName} ${athlete.lastName}`,
+              team: athlete.team.key,
+              position: athlete.position,
+              release: '1',
+            },
+          };
           return {
             athleteId: athlete.id.toString(),
-            soulboundTokenUri: athlete.nftImageLocked,
-            singleUseTokenUri: athlete.nftImagePromo,
+            soulboundTokenUri: JSON.stringify(soulboundIpfs),
+            singleUseTokenUri: JSON.stringify(promoIpfs),
             symbol: athlete.apiId.toString(),
             name: `${athlete.firstName} ${athlete.lastName}`,
             team: athlete.team.key,
@@ -604,17 +642,32 @@ export class AthleteResolver {
   async updateMetadataOfNearAthlete(
     // @Arg('sportType') sportType: SportType,
     // @Arg('isPromo') isPromo: boolean = false,
-    @Arg('tokenId') tokenId: string,
-    @Arg('tokenPosition') tokenPosition: string,
-    @Arg('tokenTeam') tokenTeam: string
+    @Arg('tokenId') tokenId: string
   ): Promise<Boolean> {
     //TODO: add switch case for different contracts
 
+    const nearApi = await changeAthleteMetadataSetup(SportType.NBA);
+    const account = await nearApi.account(
+      'athlete.basketball.playible.testnet'
+    );
+    const contract: any = new Contract(
+      account,
+      'athlete.basketball.playible.testnet',
+      {
+        viewMethods: ['get_team_and_position_of_token'],
+        changeMethods: ['update_team_and_position_of_token'],
+      }
+    );
     let apiId = '';
     if (tokenId.includes('PR') || tokenId.includes('SB')) {
       tokenId = tokenId.split('_')[1];
     }
     apiId = tokenId.split('CR')[0];
+
+    const athleteFromNear = await contract.get_team_and_position_of_token({
+      token_id: tokenId,
+    });
+
     const athlete = await Athlete.findOneOrFail({
       where: {
         apiId: Number(apiId),
@@ -623,30 +676,20 @@ export class AthleteResolver {
         team: true,
       },
     });
-    let newPosition = '';
-    let newTeam = '';
+    let newPosition =
+      athlete.position !== athleteFromNear.position ? athlete.position : '';
+    let newTeam =
+      athlete.team.key !== athleteFromNear.team ? athlete.team.key : '';
 
-    if (tokenPosition) {
-      newPosition = athlete.position !== tokenPosition ? athlete.position : '';
-    }
-    if (tokenTeam) {
-      newTeam = athlete.team.key !== tokenTeam ? athlete.team.key : '';
-    }
+    // if (athleteFromNear) {
+    //   newPosition = athlete.position !== tokenPosition ? athlete.position : '';
+    // }
+    // if (tokenTeam) {
+    //   newTeam = athlete.team.key !== tokenTeam ? athlete.team.key : '';
+    // }
 
     if (newPosition.length > 0 || newTeam.length > 0) {
-      const nearApi = await setup();
-      const account = await nearApi.account(
-        process.env.NEAR_BASKETBALL_ATHLETE_KEY || ''
-      );
-      const contract: any = new Contract(
-        account,
-        'athlete.basketball.playible.testnet',
-        {
-          viewMethods: [],
-          changeMethods: ['update_team_and_position_of_token'],
-        }
-      );
-
+      console.log('Found wrong team or position');
       const success: boolean = await contract.update_team_and_position_of_token(
         {
           token_id: tokenId,
