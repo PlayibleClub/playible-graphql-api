@@ -20,6 +20,11 @@
 	{
 		"inputs": [
 			{
+				"internalType": "uint64",
+				"name": "subscriptionId",
+				"type": "uint64"
+			},
+			{
 				"internalType": "string",
 				"name": "_version",
 				"type": "string"
@@ -33,16 +38,6 @@
 				"internalType": "string",
 				"name": "_release",
 				"type": "string"
-			},
-			{
-				"internalType": "address",
-				"name": "_packAddress",
-				"type": "address"
-			},
-			{
-				"internalType": "address",
-				"name": "_athleteAddr",
-				"type": "address"
 			}
 		],
 		"stateMutability": "nonpayable",
@@ -107,7 +102,12 @@
 					},
 					{
 						"internalType": "string",
-						"name": "tokenUri",
+						"name": "soulboundTokenUri",
+						"type": "string"
+					},
+					{
+						"internalType": "string",
+						"name": "singleUseTokenUri",
 						"type": "string"
 					},
 					{
@@ -131,7 +131,7 @@
 						"type": "string"
 					}
 				],
-				"internalType": "struct OpenPack.addAthleteInfo[]",
+				"internalType": "struct PromotionalOpenPack.addAthleteInfo[]",
 				"name": "athletes",
 				"type": "tuple[]"
 			}
@@ -143,7 +143,14 @@
 	},
 	{
 		"inputs": [],
-		"name": "incrementTokenId",
+		"name": "incrementSingleUseTokenCounter",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "incrementSoulboundTokenCounter",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -160,7 +167,12 @@
 					},
 					{
 						"internalType": "string",
-						"name": "tokenUri",
+						"name": "soulboundTokenUri",
+						"type": "string"
+					},
+					{
+						"internalType": "string",
+						"name": "singleUseTokenUri",
 						"type": "string"
 					},
 					{
@@ -190,7 +202,7 @@
 					}
 				],
 				"indexed": false,
-				"internalType": "struct OpenPack.athleteInfo",
+				"internalType": "struct PromotionalOpenPack.athleteInfo",
 				"name": "athleteInfo",
 				"type": "tuple"
 			}
@@ -413,6 +425,19 @@
 	{
 		"inputs": [
 			{
+				"internalType": "enum PromotionalOpenPack.PackType",
+				"name": "_packType",
+				"type": "uint8"
+			}
+		],
+		"name": "setPackType",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
 				"internalType": "string[]",
 				"name": "positions",
 				"type": "string[]"
@@ -538,25 +563,12 @@
 	{
 		"inputs": [
 			{
-				"internalType": "address",
-				"name": "_newAthleteAddr",
-				"type": "address"
+				"internalType": "uint64",
+				"name": "newSubscriptionId",
+				"type": "uint64"
 			}
 		],
-		"name": "updateAthleteAddr",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "_newPackNFTAddr",
-				"type": "address"
-			}
-		],
-		"name": "updatePackNFTAddr",
+		"name": "updateSubscriptionId",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -597,7 +609,12 @@
 			},
 			{
 				"internalType": "string",
-				"name": "tokenUri",
+				"name": "soulboundTokenUri",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "singleUseTokenUri",
 				"type": "string"
 			},
 			{
@@ -688,19 +705,6 @@
 	},
 	{
 		"inputs": [],
-		"name": "athleteAddr",
-		"outputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
 		"name": "athletePositionCount",
 		"outputs": [
 			{
@@ -762,12 +766,12 @@
 	},
 	{
 		"inputs": [],
-		"name": "getAthleteAddr",
+		"name": "currentPackType",
 		"outputs": [
 			{
-				"internalType": "string",
+				"internalType": "enum PromotionalOpenPack.PackType",
 				"name": "",
-				"type": "string"
+				"type": "uint8"
 			}
 		],
 		"stateMutability": "view",
@@ -816,7 +820,20 @@
 	},
 	{
 		"inputs": [],
-		"name": "getCurrentTokenId",
+		"name": "getCurrentSingleUseTokenId",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "getCurrentSoulboundTokenId",
 		"outputs": [
 			{
 				"internalType": "uint256",
@@ -842,12 +859,12 @@
 	},
 	{
 		"inputs": [],
-		"name": "getPackAddr",
+		"name": "getPackType",
 		"outputs": [
 			{
-				"internalType": "string",
+				"internalType": "enum PromotionalOpenPack.PackType",
 				"name": "",
-				"type": "string"
+				"type": "uint8"
 			}
 		],
 		"stateMutability": "view",
@@ -998,19 +1015,6 @@
 	{
 		"inputs": [],
 		"name": "owner",
-		"outputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "packAddr",
 		"outputs": [
 			{
 				"internalType": "address",
@@ -1179,7 +1183,12 @@
 					},
 					{
 						"internalType": "string",
-						"name": "tokenUri",
+						"name": "soulboundTokenUri",
+						"type": "string"
+					},
+					{
+						"internalType": "string",
+						"name": "singleUseTokenUri",
 						"type": "string"
 					},
 					{
@@ -1208,7 +1217,7 @@
 						"type": "string"
 					}
 				],
-				"internalType": "struct OpenPack.athleteInfo[]",
+				"internalType": "struct PromotionalOpenPack.athleteInfo[]",
 				"name": "",
 				"type": "tuple[]"
 			}
@@ -1322,7 +1331,12 @@
 					},
 					{
 						"internalType": "string",
-						"name": "tokenUri",
+						"name": "soulboundTokenUri",
+						"type": "string"
+					},
+					{
+						"internalType": "string",
+						"name": "singleUseTokenUri",
 						"type": "string"
 					},
 					{
@@ -1351,9 +1365,22 @@
 						"type": "string"
 					}
 				],
-				"internalType": "struct OpenPack.athleteInfo",
+				"internalType": "struct PromotionalOpenPack.athleteInfo",
 				"name": "",
 				"type": "tuple"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "viewSubscriptionId",
+		"outputs": [
+			{
+				"internalType": "uint64",
+				"name": "",
+				"type": "uint64"
 			}
 		],
 		"stateMutability": "view",
