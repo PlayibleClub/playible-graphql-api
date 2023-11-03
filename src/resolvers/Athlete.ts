@@ -689,6 +689,7 @@ export class AthleteResolver {
     const athleteFromNear = await contract.get_team_and_position_of_token({
       token_id: tokenId,
     });
+    console.log(athleteFromNear);
     const athlete = await Athlete.findOneOrFail({
       where: {
         apiId: Number(apiId),
