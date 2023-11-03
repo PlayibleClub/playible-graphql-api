@@ -396,6 +396,7 @@ export class AthleteResolver {
         const request = s3Filebase.putObject(fileBaseParams);
         request.on('httpHeaders', async (statusCode, headers) => {
           // console.log(`Status Code ${statusCode}`);
+          let test = statusCode;
           // console.log(`Filename: ${fileType}_${athlete.apiId}`);
           // console.log(`CID: ${headers['x-amz-meta-cid']}`);
           switch (imageType) {
