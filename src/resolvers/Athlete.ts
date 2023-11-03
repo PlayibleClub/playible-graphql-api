@@ -438,6 +438,9 @@ export class AthleteResolver {
         athleteIds = NFL_ATHLETE_IDS;
         contractABI = JSON.stringify(nflOpenPackABI);
         break;
+      case SportType.NFL_PROMO:
+        athleteIds = NFL_ATHLETE_PROMO_IDS;
+        contractABI = JSON.stringify(nflOpenPackABI);
     }
     //const network = "maticmum"; // polygon testnet
     const network = 'maticmum'; // Polygon zkEVM Testnet ChainId
