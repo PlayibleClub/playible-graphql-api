@@ -11,7 +11,7 @@ import {
   Resolver,
 } from 'type-graphql';
 import { AthleteSortOptions, GetAthletesArgs } from '../args/AthleteArgs';
-import { setup } from '../near-api';
+import { setup, changeAthleteMetadataSetup } from '../near-api';
 import axios, { AxiosResponse } from 'axios';
 import { S3 } from 'aws-sdk';
 import { Athlete } from '../entities/Athlete';
