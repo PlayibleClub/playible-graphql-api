@@ -657,22 +657,22 @@ export class AthleteResolver {
       sportType //if it doesn't work, change to main sport account id
     ) {
       case SportType.NFL:
-        contractId = process.env.NEAR_ATHLETE_NFL_ACCOUNT_ID;
+        contractId = process.env.NEAR_NFL_ATHLETE_ACCOUNT_ID;
         break;
       case SportType.NFL_PROMO:
-        contractId = process.env.NEAR_ATHLETE_NFL_PROMO_ACCOUNT_ID;
+        contractId = process.env.NEAR_NFL_ATHLETE_PROMO_ACCOUNT_ID;
         break;
       case SportType.NBA:
-        contractId = process.env.NEAR_ATHLETE_NBA_ACCOUNT_ID;
+        contractId = process.env.NEAR_NBA_ATHLETE_ACCOUNT_ID;
         break;
       case SportType.NBA_PROMO:
-        contractId = process.env.NEAR_ATHLETE_NBA_PROMO_ACCOUNT_ID;
+        contractId = process.env.NEAR_NBA_ATHLETE_PROMO_ACCOUNT_ID;
         break;
       case SportType.MLB:
-        contractId = process.env.NEAR_ATHLETE_MLB_ACCOUNT_ID;
+        contractId = process.env.NEAR_MLB_ATHLETE_ACCOUNT_ID;
         break;
       case SportType.MLB_PROMO:
-        contractId = process.env.NEAR_ATHLETE_MLB_PROMO_ACCOUNT_ID;
+        contractId = process.env.NEAR_MLB_ATHLETE_PROMO_ACCOUNT_ID;
     }
     const nearApi = await changeAthleteMetadataSetup(sportType);
     const account = await nearApi.account(contractId || '');

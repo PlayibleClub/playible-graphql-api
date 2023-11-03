@@ -42,8 +42,8 @@ export const changeAthleteMetadataSetup = async (
       accountId = process.env.NEAR_NFL_PROMO_ACCOUNT_ID || '';
       break;
     case SportType.NBA:
-      keyString = process.env.NEAR_NBA_KEY || ''; // change to specific sport var
-      accountId = process.env.NEAR_NBA_ACCOUNT_ID || '';
+      keyString = process.env.NEAR_NBA_ATHLETE_KEY || ''; // change to specific sport var
+      accountId = process.env.NEAR_NBA_ATHLETE_ACCOUNT_ID || '';
 
       break;
     case SportType.NBA_PROMO:
