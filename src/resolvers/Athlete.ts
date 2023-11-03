@@ -652,6 +652,7 @@ export class AthleteResolver {
   ): Promise<Boolean> {
     //TODO: add switch case for different contracts
     let contractId;
+    console.log(`Start update of NEAR athlete metadata for athlete ${tokenId}`);
     switch (
       sportType //if it doesn't work, change to main sport account id
     ) {
@@ -688,7 +689,6 @@ export class AthleteResolver {
     const athleteFromNear = await contract.get_team_and_position_of_token({
       token_id: tokenId,
     });
-
     const athlete = await Athlete.findOneOrFail({
       where: {
         apiId: Number(apiId),
