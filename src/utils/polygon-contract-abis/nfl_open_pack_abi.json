@@ -194,11 +194,6 @@
 						"internalType": "string",
 						"name": "position",
 						"type": "string"
-					},
-					{
-						"internalType": "string",
-						"name": "release",
-						"type": "string"
 					}
 				],
 				"indexed": false,
@@ -635,11 +630,6 @@
 			{
 				"internalType": "string",
 				"name": "position",
-				"type": "string"
-			},
-			{
-				"internalType": "string",
-				"name": "release",
 				"type": "string"
 			}
 		],
@@ -1210,11 +1200,6 @@
 						"internalType": "string",
 						"name": "position",
 						"type": "string"
-					},
-					{
-						"internalType": "string",
-						"name": "release",
-						"type": "string"
 					}
 				],
 				"internalType": "struct PromotionalOpenPack.athleteInfo[]",
@@ -1357,11 +1342,6 @@
 					{
 						"internalType": "string",
 						"name": "position",
-						"type": "string"
-					},
-					{
-						"internalType": "string",
-						"name": "release",
 						"type": "string"
 					}
 				],
