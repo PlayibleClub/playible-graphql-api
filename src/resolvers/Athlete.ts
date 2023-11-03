@@ -466,8 +466,8 @@ export class AthleteResolver {
       ).map((athlete) => {
         if (isPromo) {
           const promoIpfs: IPFSMetadata = {
-            name: `${athlete.firstName} ${athlete.lastName} Promotional Token`,
-            description: 'Playible Athlete Token',
+            name: `${athlete.firstName} ${athlete.lastName} Token`,
+            description: 'Playible Athlete Promotional Token',
             image: athlete.tokenPromoURI,
             properties: {
               athleteId: athlete.id.toString(),
@@ -479,8 +479,8 @@ export class AthleteResolver {
             },
           };
           const soulboundIpfs: IPFSMetadata = {
-            name: `${athlete.firstName} ${athlete.lastName} Soulbound Token`,
-            description: 'Playible Athlete Token',
+            name: `${athlete.firstName} ${athlete.lastName} Token`,
+            description: 'Playible Athlete Soulbound Token',
             image: athlete.tokenSoulboundURI,
             properties: {
               athleteId: athlete.id.toString(),
@@ -643,24 +643,38 @@ export class AthleteResolver {
 
   @Mutation(() => Boolean)
   async updateMetadataOfNearAthlete(
-    // @Arg('sportType') sportType: SportType,
-    // @Arg('isPromo') isPromo: boolean = false,
+    @Arg('sportType') sportType: SportType,
     @Arg('tokenId') tokenId: string
   ): Promise<Boolean> {
     //TODO: add switch case for different contracts
-
-    const nearApi = await changeAthleteMetadataSetup(SportType.NBA);
-    const account = await nearApi.account(
-      'athlete.basketball.playible.testnet'
-    );
-    const contract: any = new Contract(
-      account,
-      'athlete.basketball.playible.testnet',
-      {
-        viewMethods: ['get_team_and_position_of_token'],
-        changeMethods: ['update_team_and_position_of_token'],
-      }
-    );
+    let contractId;
+    switch (
+      sportType //if it doesn't work, change to main sport account id
+    ) {
+      case SportType.NFL:
+        contractId = process.env.NEAR_ATHLETE_NFL_ACCOUNT_ID;
+        break;
+      case SportType.NFL_PROMO:
+        contractId = process.env.NEAR_ATHLETE_NFL_PROMO_ACCOUNT_ID;
+        break;
+      case SportType.NBA:
+        contractId = process.env.NEAR_ATHLETE_NBA_ACCOUNT_ID;
+        break;
+      case SportType.NBA_PROMO:
+        contractId = process.env.NEAR_ATHLETE_NBA_PROMO_ACCOUNT_ID;
+        break;
+      case SportType.MLB:
+        contractId = process.env.NEAR_ATHLETE_MLB_ACCOUNT_ID;
+        break;
+      case SportType.MLB_PROMO:
+        contractId = process.env.NEAR_ATHLETE_MLB_PROMO_ACCOUNT_ID;
+    }
+    const nearApi = await changeAthleteMetadataSetup(sportType);
+    const account = await nearApi.account(contractId || '');
+    const contract: any = new Contract(account, contractId || '', {
+      viewMethods: ['get_team_and_position_of_token'],
+      changeMethods: ['update_team_and_position_of_token'],
+    });
     let apiId = '';
     if (tokenId.includes('PR') || tokenId.includes('SB')) {
       tokenId = tokenId.split('_')[1];
@@ -692,7 +706,9 @@ export class AthleteResolver {
     // }
 
     if (newPosition.length > 0 || newTeam.length > 0) {
-      console.log('Found wrong team or position');
+      console.log(
+        `Found wrong team or position for athlete apiId ${athlete.apiId} and tokenId ${tokenId}`
+      );
       const success: boolean = await contract.update_team_and_position_of_token(
         {
           token_id: tokenId,
