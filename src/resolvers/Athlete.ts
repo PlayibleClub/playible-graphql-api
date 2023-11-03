@@ -652,30 +652,37 @@ export class AthleteResolver {
   ): Promise<Boolean> {
     //TODO: add switch case for different contracts
     let contractId;
+    let accountId;
     console.log(`Start update of NEAR athlete metadata for athlete ${tokenId}`);
     switch (
       sportType //if it doesn't work, change to main sport account id
     ) {
       case SportType.NFL:
+        accountId = process.env.NEAR_NFL_ACCOUNT_ID;
         contractId = process.env.NEAR_NFL_ATHLETE_ACCOUNT_ID;
         break;
       case SportType.NFL_PROMO:
+        accountId = process.env.NEAR_NFL_ACCOUNT_ID;
         contractId = process.env.NEAR_NFL_ATHLETE_PROMO_ACCOUNT_ID;
         break;
       case SportType.NBA:
+        accountId = process.env.NEAR_NBA_ACCOUNT_ID;
         contractId = process.env.NEAR_NBA_ATHLETE_ACCOUNT_ID;
         break;
       case SportType.NBA_PROMO:
+        accountId = process.env.NEAR_NBA_ACCOUNT_ID;
         contractId = process.env.NEAR_NBA_ATHLETE_PROMO_ACCOUNT_ID;
         break;
       case SportType.MLB:
+        accountId = process.env.NEAR_MLB_ACCOUNT_ID;
         contractId = process.env.NEAR_MLB_ATHLETE_ACCOUNT_ID;
         break;
       case SportType.MLB_PROMO:
+        accountId = process.env.NEAR_MLB_ACCOUNT_ID;
         contractId = process.env.NEAR_MLB_ATHLETE_PROMO_ACCOUNT_ID;
     }
     const nearApi = await changeAthleteMetadataSetup(sportType);
-    const account = await nearApi.account(contractId || '');
+    const account = await nearApi.account(accountId || '');
     const contract: any = new Contract(account, contractId || '', {
       viewMethods: ['get_team_and_position_of_token'],
       changeMethods: ['update_team_and_position_of_token'],
