@@ -688,10 +688,11 @@ export class AthleteResolver {
       changeMethods: ['update_team_and_position_of_token'],
     });
     let apiId = '';
+    let tempTokenId = '';
     if (tokenId.includes('PR') || tokenId.includes('SB')) {
-      tokenId = tokenId.split('_')[1];
+      tempTokenId = tokenId.split('_')[1];
     }
-    apiId = tokenId.split('CR')[0];
+    apiId = tempTokenId.split('CR')[0];
 
     const athleteFromNear = await contract.get_team_and_position_of_token({
       token_id: tokenId,
