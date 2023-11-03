@@ -719,16 +719,22 @@ export class AthleteResolver {
         team: newTeam,
         position: newPosition,
       });
-      const success: boolean = await contract.update_team_and_position_of_token(
-        {
-          token_id: tokenId,
-          team: newTeam !== '' ? newTeam : null,
-          position: newPosition !== '' ? newPosition : null,
-        },
-        '300000000000000'
-      );
-      console.log(success);
-      return success;
+      try {
+        const success: boolean =
+          await contract.update_team_and_position_of_token(
+            {
+              token_id: tokenId,
+              team: newTeam !== '' ? newTeam : null,
+              position: newPosition !== '' ? newPosition : null,
+            },
+            '300000000000000'
+          );
+        console.log(success);
+        return success;
+      } catch (error) {
+        console.log(error);
+        return false;
+      }
     } else {
       //no changes will be made
       return false;
