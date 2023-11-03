@@ -34,29 +34,29 @@ export const changeAthleteMetadataSetup = async (
   let accountId = '';
   switch (sport) {
     case SportType.NFL:
-      keyString = process.env.NEAR_NFL_ATHLETE_KEY || '';
-      accountId = process.env.NEAR_NFL_ATHLETE_ACCOUNT_ID || '';
+      keyString = process.env.NEAR_NFL_MAIN_KEY || '';
+      accountId = process.env.NEAR_NFL_ACCOUNT_ID || '';
       break;
     case SportType.NFL_PROMO:
-      keyString = process.env.NEAR_NFL_ATHLETE_PROMO_KEY || '';
-      accountId = process.env.NEAR_NFL_ATHLETE_PROMO_ACCOUNT_ID || '';
+      keyString = process.env.NEAR_NFL_MAIN_KEY || '';
+      accountId = process.env.NEAR_NFL_PROMO_ACCOUNT_ID || '';
       break;
     case SportType.NBA:
-      keyString = process.env.NEAR_NBA_ATHLETE_KEY || ''; // change to specific sport var
-      accountId = process.env.NEAR_NBA_ATHLETE_ACCOUNT_ID || '';
+      keyString = process.env.NEAR_NBA_MAIN_KEY || ''; // change to specific sport var
+      accountId = process.env.NEAR_NBA_ACCOUNT_ID || '';
 
       break;
     case SportType.NBA_PROMO:
-      keyString = process.env.NEAR_NBA_PROMO_ATHLETE_KEY || '';
-      accountId = process.env.NEAR_NBA_PROMO_ATHLETE_ACCOUNT_ID || '';
+      keyString = process.env.NEAR_NBA_MAIN_KEY || '';
+      accountId = process.env.NEAR_NBA_PROMO_ACCOUNT_ID || '';
       break;
     case SportType.MLB:
-      keyString = process.env.NEAR_MLB_ATHLETE_KEY || '';
-      accountId = process.env.NEAR_MLB_ATHLETE_ACCOUNT_ID || '';
+      keyString = process.env.NEAR_MLB_MAIN_KEY || '';
+      accountId = process.env.NEAR_MLB_ACCOUNT_ID || '';
       break;
     case SportType.MLB_PROMO:
-      keyString = process.env.NEAR_MLB_ATHLETE_PROMO_KEY || '';
-      accountId = process.env.NEAR_MLB_ATHLETE_PROMO_ACCOUNT_ID || '';
+      keyString = process.env.NEAR_MLB_MAIN_KEY || '';
+      accountId = process.env.NEAR_MLB_PROMO_ACCOUNT_ID || '';
       break;
     default:
       break;
