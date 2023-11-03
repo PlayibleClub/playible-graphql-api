@@ -724,7 +724,8 @@ export class AthleteResolver {
           token_id: tokenId,
           team: newTeam !== '' ? newTeam : null,
           position: newPosition !== '' ? newPosition : null,
-        }
+        },
+        '300000000000000'
       );
       console.log(success);
       return success;
