@@ -714,6 +714,11 @@ export class AthleteResolver {
       console.log(
         `Found wrong team or position for athlete apiId ${athlete.apiId} and tokenId ${tokenId}`
       );
+      console.log({
+        token_id: tokenId,
+        team: newTeam,
+        position: newPosition,
+      });
       const success: boolean = await contract.update_team_and_position_of_token(
         {
           token_id: tokenId,
@@ -721,6 +726,7 @@ export class AthleteResolver {
           position: newPosition !== '' ? newPosition : null,
         }
       );
+      console.log(success);
       return success;
     } else {
       //no changes will be made
