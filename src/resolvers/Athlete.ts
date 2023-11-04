@@ -688,7 +688,7 @@ export class AthleteResolver {
       changeMethods: ['update_team_and_position_of_token'],
     });
     let apiId = '';
-    let tempTokenId = '';
+    let tempTokenId = tokenId;
     if (tokenId.includes('PR') || tokenId.includes('SB')) {
       tempTokenId = tokenId.split('_')[1];
     }
