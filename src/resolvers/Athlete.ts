@@ -413,13 +413,13 @@ export class AthleteResolver {
               athlete.tokenURI = `https://ipfs.filebase.io/ipfs/${headers['x-amz-meta-cid']}`;
               break;
           }
+          await Athlete.save(athlete);
         });
         request.on('error', (error) => {
           console.log(error);
         });
         request.send();
       }
-      await Athlete.save(athlete);
     }
 
     return athletes.length;
