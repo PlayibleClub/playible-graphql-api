@@ -3761,7 +3761,7 @@ export class TasksService {
     }
   }
 
-  //@Timeout(1)
+  @Timeout(1)
   async getInitialNflTimeframe() {
     this.logger.debug('Get Initial NFL Timeframe: STARTED');
 
@@ -3819,7 +3819,7 @@ export class TasksService {
   }
 
   //@Timeout(1)
-  /////@Interval(259200000) //Runs every 3 days
+  @Interval(259200000) //Runs every 3 days
   async updateNflTimeframe() {
     this.logger.debug('Update NFL Timeframe: STARTED');
 
