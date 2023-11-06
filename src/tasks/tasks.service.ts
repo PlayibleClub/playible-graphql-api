@@ -78,8 +78,9 @@ import { getSportType } from '../helpers/Sport';
 import { addGameHandler, submitLineupHandler } from '../helpers/EventHandler';
 import { computeShoheiOhtaniScores } from '../helpers/Athlete';
 import e from 'express';
-import gameABI from '../utils/polygon-contract-abis/game_abi.json';
-import athleteStorageABI from '../utils/polygon-contract-abis/athlete_storage_abi.json';
+import gameABI from '../utils/polygon-contract-abis/game_storage.json';
+import athleteStorageABI from '../utils/polygon-contract-abis/regular_athlete_storage.json';
+import promoAthleteStorageABI from '../utils/polygon-contract-abis/promo_athlete_storage.json';
 @Injectable()
 export class TasksService {
   private readonly logger = new Logger(TasksService.name);
@@ -4892,7 +4893,7 @@ export class TasksService {
     }
   }
   //@Timeout(1)
-  async runPolygonNFLMainnetAthleteWebSocketListener() {
+  async runPolygonMainnetNFLAthleteWebSocketListener() {
     function listenToAthleteStorage() {
       let logger = new Logger('NFLAthleteStorage');
       console.log('Start polygon athlete listen');
@@ -5229,7 +5230,7 @@ export class TasksService {
 
     listenToAthleteStorage();
   }
-  //@Timeout(1)
+  @Timeout(1)
   async runPolygonMainnetNFLGameWebSocketListener() {
     function listenToNFLGameContract() {
       const logger = new Logger('NFLGameContract');
