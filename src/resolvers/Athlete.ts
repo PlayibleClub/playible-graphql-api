@@ -401,12 +401,12 @@ export class AthleteResolver {
           // console.log(`CID: ${headers['x-amz-meta-cid']}`);
           switch (imageType) {
             case 'nftImageLocked':
-              athlete.promoCid = headers['x-amz-meta-cid'];
-              athlete.tokenPromoURI = `https://ipfs.filebase.io/ipfs/${headers['x-amz-meta-cid']}`;
-              break;
-            case 'nftImagePromo':
               athlete.soulBoundCid = headers['x-amz-meta-cid'];
               athlete.tokenSoulboundURI = `https://ipfs.filebase.io/ipfs/${headers['x-amz-meta-cid']}`;
+              break;
+            case 'nftImagePromo':
+              athlete.promoCid = headers['x-amz-meta-cid'];
+              athlete.tokenPromoURI = `https://ipfs.filebase.io/ipfs/${headers['x-amz-meta-cid']}`;
               break;
             case 'nftImage':
               athlete.cid = headers['x-amz-meta-cid'];
