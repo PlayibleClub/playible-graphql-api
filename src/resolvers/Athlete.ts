@@ -31,7 +31,8 @@ import {
 } from './../utils/athlete-ids';
 import moment from 'moment';
 import { ethers } from 'ethers';
-import nflOpenPackABI from './../utils/polygon-contract-abis/nfl_open_pack_abi.json';
+import promoOpenPackStorageABI from './../utils/polygon-contract-abis/promo_open_pack_storage.json';
+import regularOpenPackStorageABI from './../utils/polygon-contract-abis/regular_open_pack_storage.json';
 import { IPFSMetadata } from './../utils/types';
 @ObjectType()
 class Distribution {
@@ -437,11 +438,11 @@ export class AthleteResolver {
     switch (sportType) {
       case SportType.NFL:
         athleteIds = NFL_ATHLETE_IDS;
-        contractABI = JSON.stringify(nflOpenPackABI);
+        contractABI = JSON.stringify(regularOpenPackStorageABI);
         break;
       case SportType.NFL_PROMO:
         athleteIds = NFL_ATHLETE_PROMO_IDS;
-        contractABI = JSON.stringify(nflOpenPackABI);
+        contractABI = JSON.stringify(promoOpenPackStorageABI);
     }
     //const network = "maticmum"; // polygon testnet
     const network = 'maticmum'; // Polygon zkEVM Testnet ChainId
@@ -469,6 +470,7 @@ export class AthleteResolver {
         })
       ).map((athlete) => {
         if (isPromo) {
+          console.log('going here');
           const promoIpfs: IPFSMetadata = {
             name: `${athlete.firstName} ${athlete.lastName} Token`,
             description: 'Playible Athlete Promotional Token',
