@@ -2,23 +2,10 @@
 	{
 		"inputs": [
 			{
-				"internalType": "uint256",
-				"name": "requestId",
-				"type": "uint256"
+				"internalType": "uint64",
+				"name": "subscriptionId",
+				"type": "uint64"
 			},
-			{
-				"internalType": "uint256[]",
-				"name": "randomWords",
-				"type": "uint256[]"
-			}
-		],
-		"name": "rawFulfillRandomWords",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
 			{
 				"internalType": "string",
 				"name": "_version",
@@ -33,16 +20,6 @@
 				"internalType": "string",
 				"name": "_release",
 				"type": "string"
-			},
-			{
-				"internalType": "address",
-				"name": "_packAddress",
-				"type": "address"
-			},
-			{
-				"internalType": "address",
-				"name": "_athleteAddr",
-				"type": "address"
 			}
 		],
 		"stateMutability": "nonpayable",
@@ -91,7 +68,7 @@
 	},
 	{
 		"inputs": [],
-		"name": "clearData",
+		"name": "deleteAthletesInBatches",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -254,6 +231,24 @@
 		],
 		"name": "OwnershipTransferred",
 		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "requestId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256[]",
+				"name": "randomWords",
+				"type": "uint256[]"
+			}
+		],
+		"name": "rawFulfillRandomWords",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
 	},
 	{
 		"inputs": [],
@@ -538,25 +533,12 @@
 	{
 		"inputs": [
 			{
-				"internalType": "address",
-				"name": "_newAthleteAddr",
-				"type": "address"
+				"internalType": "uint64",
+				"name": "newSubscriptionId",
+				"type": "uint64"
 			}
 		],
-		"name": "updateAthleteAddr",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "_newPackNFTAddr",
-				"type": "address"
-			}
-		],
-		"name": "updatePackNFTAddr",
+		"name": "updateSubscriptionId",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -688,19 +670,6 @@
 	},
 	{
 		"inputs": [],
-		"name": "athleteAddr",
-		"outputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
 		"name": "athletePositionCount",
 		"outputs": [
 			{
@@ -755,19 +724,6 @@
 				"internalType": "uint256[]",
 				"name": "",
 				"type": "uint256[]"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "getAthleteAddr",
-		"outputs": [
-			{
-				"internalType": "string",
-				"name": "",
-				"type": "string"
 			}
 		],
 		"stateMutability": "view",
@@ -830,19 +786,6 @@
 	{
 		"inputs": [],
 		"name": "getOwner",
-		"outputs": [
-			{
-				"internalType": "string",
-				"name": "",
-				"type": "string"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "getPackAddr",
 		"outputs": [
 			{
 				"internalType": "string",
@@ -998,19 +941,6 @@
 	{
 		"inputs": [],
 		"name": "owner",
-		"outputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "packAddr",
 		"outputs": [
 			{
 				"internalType": "address",
@@ -1354,6 +1284,19 @@
 				"internalType": "struct OpenPack.athleteInfo",
 				"name": "",
 				"type": "tuple"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "viewSubscriptionId",
+		"outputs": [
+			{
+				"internalType": "uint64",
+				"name": "",
+				"type": "uint64"
 			}
 		],
 		"stateMutability": "view",

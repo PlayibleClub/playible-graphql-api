@@ -78,8 +78,9 @@ import { getSportType } from '../helpers/Sport';
 import { addGameHandler, submitLineupHandler } from '../helpers/EventHandler';
 import { computeShoheiOhtaniScores } from '../helpers/Athlete';
 import e from 'express';
-import gameABI from '../utils/polygon-contract-abis/game_abi.json';
-import athleteStorageABI from '../utils/polygon-contract-abis/athlete_storage_abi.json';
+import gameABI from '../utils/polygon-contract-abis/game_storage.json';
+import athleteStorageABI from '../utils/polygon-contract-abis/regular_athlete_storage.json';
+import promoAthleteStorageABI from '../utils/polygon-contract-abis/promo_athlete_storage.json';
 @Injectable()
 export class TasksService {
   private readonly logger = new Logger(TasksService.name);
@@ -946,150 +947,150 @@ export class TasksService {
   }
 
   //@Timeout(1)
-  async syncNearData() {
-    //for mainnet
-    const lakeConfig: types.LakeConfig = {
-      //credentials
-      s3BucketName: 'near-lake-data-mainnet',
-      s3RegionName: 'eu-central-1',
-      startBlockHeight: 133726304, // for testnet
-      //startBlockHeight: 97856450//97543661//97856450, //97239921 old
-    };
-    let count = 0;
+  // async syncNearData() {
+  //   //for mainnet
+  //   const lakeConfig: types.LakeConfig = {
+  //     //credentials
+  //     s3BucketName: 'near-lake-data-mainnet',
+  //     s3RegionName: 'eu-central-1',
+  //     startBlockHeight: 143077381, // for testnet
+  //     //startBlockHeight: 97856450//97543661//97856450, //97239921 old
+  //   };
+  //   let count = 0;
 
-    let nearBlocks: NearBlock[] = [];
-    let nearResponses: NearResponse[] = [];
-    //Function to receive responses from lake-indexer
-    async function handleStreamerMessage(
-      streamerMessage: types.StreamerMessage
-    ): Promise<void> {
-      // console.log(`
-      // Block #${streamerMessage.block.header.height}
-      // Shards: ${streamerMessage.shards.length
-      // }`)
-      //console.log(count)
-      count = +count + +1;
-      console.log(count);
-      if (count === 500) {
-        await NearBlock.save([...nearBlocks], { chunk: 20 });
-        await NearResponse.save([...nearResponses], { chunk: 20 });
-        throw 'Aborted';
-      }
-      //check if current block height is existing within the database
-      const blockHeight = streamerMessage.block.header.height;
-      console.log(blockHeight);
+  //   let nearBlocks: NearBlock[] = [];
+  //   let nearResponses: NearResponse[] = [];
+  //   //Function to receive responses from lake-indexer
+  //   async function handleStreamerMessage(
+  //     streamerMessage: types.StreamerMessage
+  //   ): Promise<void> {
+  //     // console.log(`
+  //     // Block #${streamerMessage.block.header.height}
+  //     // Shards: ${streamerMessage.shards.length
+  //     // }`)
+  //     //console.log(count)
+  //     count = +count + +1;
+  //     console.log(count);
+  //     if (count === 500) {
+  //       await NearBlock.save([...nearBlocks], { chunk: 20 });
+  //       await NearResponse.save([...nearResponses], { chunk: 20 });
+  //       throw 'Aborted';
+  //     }
+  //     //check if current block height is existing within the database
+  //     const blockHeight = streamerMessage.block.header.height;
+  //     console.log(blockHeight);
 
-      const block = await NearBlock.findOne({
-        where: {
-          height: streamerMessage.block.header.height,
-          hash: streamerMessage.block.header.hash,
-        },
-      });
+  //     const block = await NearBlock.findOne({
+  //       where: {
+  //         height: streamerMessage.block.header.height,
+  //         hash: streamerMessage.block.header.hash,
+  //       },
+  //     });
 
-      if (!block) {
-        //console.log(`Response array length ${nearResponses.length}`)
-        for (let shard of streamerMessage.shards) {
-          if (shard.chunk !== undefined && shard.chunk !== null) {
-            let filteredReceipts = shard.receiptExecutionOutcomes.filter(
-              (x) =>
-                x.executionOutcome.outcome.executorId ===
-                'game.baseball.playible.near'
-            );
+  //     if (!block) {
+  //       //console.log(`Response array length ${nearResponses.length}`)
+  //       for (let shard of streamerMessage.shards) {
+  //         if (shard.chunk !== undefined && shard.chunk !== null) {
+  //           let filteredReceipts = shard.receiptExecutionOutcomes.filter(
+  //             (x) =>
+  //               x.executionOutcome.outcome.executorId ===
+  //               'game.baseball.playible.near'
+  //           );
 
-            if (filteredReceipts.length > 0) {
-              Logger.debug('Found playible receipt');
+  //           if (filteredReceipts.length > 0) {
+  //             Logger.debug('Found playible receipt');
 
-              for (let receipt of filteredReceipts) {
-                if (
-                  receipt.receipt !== null &&
-                  'Action' in receipt.receipt.receipt
-                ) {
-                  let object: FunctionCallAction = JSON.parse(
-                    JSON.stringify(receipt.receipt.receipt.Action.actions[0])
-                  );
-                  if (object.FunctionCall.methodName === 'add_game') {
-                    // const object: EventAddGameType = JSON.parse(JSON.stringify(receipt.executionOutcome.outcome.logs[0]))
-                    // console.log(object.EVENT_JSON.event)
-                    const event: EventAddGameType = JSON.parse(
-                      receipt.executionOutcome.outcome.logs[0].substring(11)
-                    );
-                    const sport = getSportType(
-                      receipt.executionOutcome.outcome.executorId
-                    );
+  //             for (let receipt of filteredReceipts) {
+  //               if (
+  //                 receipt.receipt !== null &&
+  //                 'Action' in receipt.receipt.receipt
+  //               ) {
+  //                 let object: FunctionCallAction = JSON.parse(
+  //                   JSON.stringify(receipt.receipt.receipt.Action.actions[0])
+  //                 );
+  //                 if (object.FunctionCall.methodName === 'add_game') {
+  //                   // const object: EventAddGameType = JSON.parse(JSON.stringify(receipt.executionOutcome.outcome.logs[0]))
+  //                   // console.log(object.EVENT_JSON.event)
+  //                   const event: EventAddGameType = JSON.parse(
+  //                     receipt.executionOutcome.outcome.logs[0].substring(11)
+  //                   );
+  //                   const sport = getSportType(
+  //                     receipt.executionOutcome.outcome.executorId
+  //                   );
 
-                    let success = await addGameHandler(event, sport);
+  //                   let success = await addGameHandler(event, sport);
 
-                    if (success) {
-                      let nearBlock = await NearBlock.create({
-                        height: streamerMessage.block.header.height,
-                        hash: streamerMessage.block.header.hash,
-                        timestamp: moment().utc(),
-                      });
+  //                   if (success) {
+  //                     let nearBlock = await NearBlock.create({
+  //                       height: streamerMessage.block.header.height,
+  //                       hash: streamerMessage.block.header.hash,
+  //                       timestamp: moment().utc(),
+  //                     });
 
-                      let saveResponse = await NearResponse.create({
-                        receiverId: receipt.receipt.receiverId,
-                        signerId: receipt.receipt.predecessorId,
-                        receiptIds: [receipt.receipt.receiptId],
-                        methodName: object.FunctionCall.methodName,
-                        status: ResponseStatus.SUCCESS,
-                      });
+  //                     let saveResponse = await NearResponse.create({
+  //                       receiverId: receipt.receipt.receiverId,
+  //                       signerId: receipt.receipt.predecessorId,
+  //                       receiptIds: [receipt.receipt.receiptId],
+  //                       methodName: object.FunctionCall.methodName,
+  //                       status: ResponseStatus.SUCCESS,
+  //                     });
 
-                      nearBlock.nearResponse = saveResponse;
-                      await NearBlock.save(nearBlock);
-                      Logger.debug(
-                        `Successfully created Block ${streamerMessage.block.header.height} for ${object.FunctionCall.methodName} call`
-                      );
-                    }
-                  } else if (
-                    object.FunctionCall.methodName ===
-                    'submit_lineup_result_callbacks'
-                  ) {
-                    //console.log(receipt.executionOutcome.outcome.logs)
-                    const event: EventSubmitLineupType = JSON.parse(
-                      receipt.executionOutcome.outcome.logs[0].substring(11)
-                    );
-                    const sport = getSportType(
-                      receipt.executionOutcome.outcome.executorId
-                    );
+  //                     nearBlock.nearResponse = saveResponse;
+  //                     await NearBlock.save(nearBlock);
+  //                     Logger.debug(
+  //                       `Successfully created Block ${streamerMessage.block.header.height} for ${object.FunctionCall.methodName} call`
+  //                     );
+  //                   }
+  //                 } else if (
+  //                   object.FunctionCall.methodName ===
+  //                   'submit_lineup_result_callbacks'
+  //                 ) {
+  //                   //console.log(receipt.executionOutcome.outcome.logs)
+  //                   const event: EventSubmitLineupType = JSON.parse(
+  //                     receipt.executionOutcome.outcome.logs[0].substring(11)
+  //                   );
+  //                   const sport = getSportType(
+  //                     receipt.executionOutcome.outcome.executorId
+  //                   );
 
-                    let success = await submitLineupHandler(event, sport);
+  //                   let success = await submitLineupHandler(event, sport);
 
-                    if (success) {
-                      let nearBlock = await NearBlock.create({
-                        height: streamerMessage.block.header.height,
-                        hash: streamerMessage.block.header.hash,
-                        timestamp: moment().utc(),
-                      });
-                      let saveResponse = await NearResponse.create({
-                        receiverId: receipt.receipt.receiverId,
-                        signerId: event.data[0].signer,
-                        receiptIds: [receipt.receipt.receiptId],
-                        methodName: event.event,
-                        status: ResponseStatus.SUCCESS,
-                      });
-                      nearBlock.nearResponse = saveResponse;
-                      await NearBlock.save(nearBlock);
-                      Logger.debug(
-                        `Successfully created Block ${streamerMessage.block.header.height} for ${object.FunctionCall.methodName} call`
-                      );
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      } else {
-        console.log('Block already exists.');
-      }
-    }
+  //                   if (success) {
+  //                     let nearBlock = await NearBlock.create({
+  //                       height: streamerMessage.block.header.height,
+  //                       hash: streamerMessage.block.header.hash,
+  //                       timestamp: moment().utc(),
+  //                     });
+  //                     let saveResponse = await NearResponse.create({
+  //                       receiverId: receipt.receipt.receiverId,
+  //                       signerId: event.EVENT_JSON.data[0].signer,
+  //                       receiptIds: [receipt.receipt.receiptId],
+  //                       methodName: event.EVENT_JSON.event,
+  //                       status: ResponseStatus.SUCCESS,
+  //                     });
+  //                     nearBlock.nearResponse = saveResponse;
+  //                     await NearBlock.save(nearBlock);
+  //                     Logger.debug(
+  //                       `Successfully created Block ${streamerMessage.block.header.height} for ${object.FunctionCall.methodName} call`
+  //                     );
+  //                   }
+  //                 }
+  //               }
+  //             }
+  //           }
+  //         }
+  //       }
+  //     } else {
+  //       console.log('Block already exists.');
+  //     }
+  //   }
 
-    try {
-      await startStream(lakeConfig, handleStreamerMessage);
-    } catch (e) {
-      console.log(e);
-    }
-  }
+  //   try {
+  //     await startStream(lakeConfig, handleStreamerMessage);
+  //   } catch (e) {
+  //     console.log(e);
+  //   }
+  // }
 
   //@Timeout(300000)
   async generateAthleteNbaAssets() {
@@ -4753,7 +4754,155 @@ export class TasksService {
   }
 
   //@Timeout(1)
-  async runPolygonNFLMainnetAthleteWebSocketListener() {
+  async runNearLakeFrameworkIndexer() {
+    const lakeConfig: types.LakeConfig = {
+      //credentials
+      s3BucketName: 'near-lake-data-testnet',
+      s3RegionName: 'eu-central-1',
+      startBlockHeight: 143081340, // for testnet
+      //startBlockHeight: 97856450//97543661//97856450, //97239921 old
+    };
+    const nearGameMainnetContracts = [
+      'game.baseball.playible.near',
+      'game.nfl.playible.near',
+      'game.basketball.playible.near',
+    ];
+    const nearGameTestnetContracts = [
+      'game.baseball.playible.testnet',
+      'game.nfl.playible.testnet',
+      'game.basketball.playible.testnet',
+    ];
+    //Function to receive responses from lake-indexer
+    async function handleStreamerMessage(
+      streamerMessage: types.StreamerMessage
+    ): Promise<void> {
+      // console.log(`
+      // Block #${streamerMessage.block.header.height}
+      // Shards: ${streamerMessage.shards.length
+      // }`)
+      //console.log(count)
+      //check if current block height is existing within the database
+
+      const block = await NearBlock.findOne({
+        where: {
+          height: streamerMessage.block.header.height,
+          hash: streamerMessage.block.header.hash,
+        },
+      });
+      console.log(streamerMessage.block.header.height);
+      if (!block) {
+        //console.log(`Response array length ${nearResponses.length}`)
+        for (let shard of streamerMessage.shards) {
+          if (shard.chunk !== undefined && shard.chunk !== null) {
+            let filteredReceipts = shard.receiptExecutionOutcomes.filter(
+              (x) =>
+                nearGameTestnetContracts.includes(
+                  x.executionOutcome.outcome.executorId
+                )
+              // x.executionOutcome.outcome.executorId ===
+              // 'game.baseball.playible.near'
+            );
+
+            if (filteredReceipts.length > 0) {
+              Logger.debug('Found playible receipt');
+
+              for (let receipt of filteredReceipts) {
+                if (
+                  receipt.receipt !== null &&
+                  'Action' in receipt.receipt.receipt
+                ) {
+                  console.log(receipt.receipt.receipt.Action.actions[0]);
+                  let object: FunctionCallAction = JSON.parse(
+                    JSON.stringify(receipt.receipt.receipt.Action.actions[0])
+                  );
+                  if (object.FunctionCall.methodName === 'add_game') {
+                    // const object: EventAddGameType = JSON.parse(JSON.stringify(receipt.executionOutcome.outcome.logs[0]))
+                    // console.log(object.EVENT_JSON.event)
+                    console.log(receipt.executionOutcome.outcome.logs[0]);
+                    const event: EventAddGameType = JSON.parse(
+                      receipt.executionOutcome.outcome.logs[0].substring(11)
+                    );
+                    const sport = getSportType(
+                      receipt.executionOutcome.outcome.executorId
+                    );
+
+                    let success = await addGameHandler(event, sport);
+
+                    if (success) {
+                      let nearBlock = await NearBlock.create({
+                        height: streamerMessage.block.header.height,
+                        hash: streamerMessage.block.header.hash,
+                        timestamp: moment().utc(),
+                      });
+
+                      let saveResponse = await NearResponse.create({
+                        receiverId: receipt.receipt.receiverId,
+                        signerId: receipt.receipt.predecessorId,
+                        receiptIds: [receipt.receipt.receiptId],
+                        methodName: object.FunctionCall.methodName,
+                        status: ResponseStatus.SUCCESS,
+                      });
+
+                      nearBlock.nearResponse = saveResponse;
+                      await NearBlock.save(nearBlock);
+                      Logger.debug(
+                        `Successfully created Block ${streamerMessage.block.header.height} for ${object.FunctionCall.methodName} call`
+                      );
+                    }
+                  } else if (
+                    object.FunctionCall.methodName ===
+                    'submit_lineup_result_callbacks'
+                  ) {
+                    //console.log(receipt.executionOutcome.outcome.logs)
+                    console.log(receipt.executionOutcome.outcome.logs);
+                    const event: EventSubmitLineupType = JSON.parse(
+                      receipt.executionOutcome.outcome.logs[0].substring(11)
+                    );
+                    const sport = getSportType(
+                      receipt.executionOutcome.outcome.executorId
+                    );
+
+                    let success = await submitLineupHandler(event, sport);
+
+                    if (success) {
+                      let nearBlock = await NearBlock.create({
+                        height: streamerMessage.block.header.height,
+                        hash: streamerMessage.block.header.hash,
+                        timestamp: moment().utc(),
+                      });
+                      let saveResponse = await NearResponse.create({
+                        receiverId: receipt.receipt.receiverId,
+                        signerId: event.data[0].signer,
+                        receiptIds: [receipt.receipt.receiptId],
+                        methodName: event.event,
+                        status: ResponseStatus.SUCCESS,
+                      });
+                      nearBlock.nearResponse = saveResponse;
+                      await NearBlock.save(nearBlock);
+                      Logger.debug(
+                        `Successfully created Block ${streamerMessage.block.header.height} for ${object.FunctionCall.methodName} call`
+                      );
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      } else {
+        console.log('Block already exists.');
+      }
+    }
+
+    try {
+      console.log('test');
+      await startStream(lakeConfig, handleStreamerMessage);
+    } catch (e) {
+      console.log(e);
+    }
+  }
+  //@Timeout(1)
+  async runPolygonMainnetNFLAthleteWebSocketListener() {
     function listenToAthleteStorage() {
       let logger = new Logger('NFLAthleteStorage');
       console.log('Start polygon athlete listen');
@@ -5251,238 +5400,238 @@ export class TasksService {
   }
 
   //@Timeout(1)
-  async runNearMainnetBaseballWebSocketListener() {
-    function listenToMainnet() {
-      const ws = new WebSocket('wss://events.near.stream/ws');
-      ws.on('open', function open() {
-        ws.send(
-          JSON.stringify({
-            secret: 'secret',
-            filter: [
-              {
-                account_id: 'game.baseball.playible.near',
-                event: {
-                  event: 'add_game',
-                  standard: 'game',
-                },
-              },
-              {
-                account_id: 'game.baseball.playible.near',
-                event: {
-                  event: 'lineup_submission_result',
-                  standard: 'game',
-                },
-              },
-            ],
-            //capped at 15?
-          })
-        );
-      });
+  // async runNearMainnetBaseballWebSocketListener() {
+  //   function listenToMainnet() {
+  //     const ws = new WebSocket('wss://events.near.stream/ws');
+  //     ws.on('open', function open() {
+  //       ws.send(
+  //         JSON.stringify({
+  //           secret: 'secret',
+  //           filter: [
+  //             {
+  //               account_id: 'game.baseball.playible.near',
+  //               event: {
+  //                 event: 'add_game',
+  //                 standard: 'game',
+  //               },
+  //             },
+  //             {
+  //               account_id: 'game.baseball.playible.near',
+  //               event: {
+  //                 event: 'lineup_submission_result',
+  //                 standard: 'game',
+  //               },
+  //             },
+  //           ],
+  //           //capped at 15?
+  //         })
+  //       );
+  //     });
 
-      ws.on('close', function close() {
-        Logger.debug('Connection closed, reconnecting...');
-        setTimeout(() => listenToMainnet(), 1000);
-      });
-      ws.on('message', async function incoming(data) {
-        const logger = new Logger('WEBSOCKET');
-        logger.debug('MESSAGE RECEIVED');
-        const msg = JSON.parse(data.toString());
-        //console.log(msg.events[0].predecessor_id);
-        //console.log(util.inspect(msg, false, null, true))
-        console.log(data.toString());
-        // console.log(msg.events.length);
-        // //console.log(msg.events[0].event.data[0].game_id);
-        if (msg.events.length > 0) {
-          for (let event of msg.events) {
-            if (event.event.event === 'lineup_submission_result') {
-              console.log('lineup submission');
-              const sport = getSportType(event.account_id);
-              const eventObj: EventSubmitLineupType = event.event;
+  //     ws.on('close', function close() {
+  //       Logger.debug('Connection closed, reconnecting...');
+  //       setTimeout(() => listenToMainnet(), 1000);
+  //     });
+  //     ws.on('message', async function incoming(data) {
+  //       const logger = new Logger('WEBSOCKET');
+  //       logger.debug('MESSAGE RECEIVED');
+  //       const msg = JSON.parse(data.toString());
+  //       //console.log(msg.events[0].predecessor_id);
+  //       //console.log(util.inspect(msg, false, null, true))
+  //       console.log(data.toString());
+  //       // console.log(msg.events.length);
+  //       // //console.log(msg.events[0].event.data[0].game_id);
+  //       if (msg.events.length > 0) {
+  //         for (let event of msg.events) {
+  //           if (event.event.event === 'lineup_submission_result') {
+  //             console.log('lineup submission');
+  //             const sport = getSportType(event.account_id);
+  //             const eventObj: EventSubmitLineupType = event.event;
 
-              let success = await submitLineupHandler(eventObj, sport);
+  //             let success = await submitLineupHandler(eventObj, sport);
 
-              if (success) {
-                let nearBlock = await NearBlock.create({
-                  height: event.block_height,
-                  hash: event.block_hash,
-                  timestamp: moment().utc(),
-                });
-                let saveResponse = await NearResponse.create({
-                  receiverId: event.account_id,
-                  signerId: event.event.data[0].signer,
-                  receiptIds: [event.receipt_id],
-                  methodName: event.event.event,
-                  status: ResponseStatus.SUCCESS,
-                });
+  //             if (success) {
+  //               let nearBlock = await NearBlock.create({
+  //                 height: event.block_height,
+  //                 hash: event.block_hash,
+  //                 timestamp: moment().utc(),
+  //               });
+  //               let saveResponse = await NearResponse.create({
+  //                 receiverId: event.account_id,
+  //                 signerId: event.event.data[0].signer,
+  //                 receiptIds: [event.receipt_id],
+  //                 methodName: event.event.event,
+  //                 status: ResponseStatus.SUCCESS,
+  //               });
 
-                nearBlock.nearResponse = saveResponse;
-                await NearBlock.save(nearBlock);
-                Logger.debug(
-                  `Successfully created Block ${event.block_height} for ${event.event.event} call`
-                );
-              }
-              // const game = await Game.findOne({
-              //   where: {
-              //     gameId: event.event.data[0].game_id,
-              //     sport: sport
-              //   }
-              // })
+  //               nearBlock.nearResponse = saveResponse;
+  //               await NearBlock.save(nearBlock);
+  //               Logger.debug(
+  //                 `Successfully created Block ${event.block_height} for ${event.event.event} call`
+  //               );
+  //             }
+  //             // const game = await Game.findOne({
+  //             //   where: {
+  //             //     gameId: event.event.data[0].game_id,
+  //             //     sport: sport
+  //             //   }
+  //             // })
 
-              // if(game){
-              //   const gameTeam = await GameTeam.findOne({
-              //     where: {
-              //       game: {
-              //         id: game.id
-              //       },
-              //       name: event.event.data[0].team_name,
-              //       wallet_address: event.event.data[0].signer,
-              //     },
+  //             // if(game){
+  //             //   const gameTeam = await GameTeam.findOne({
+  //             //     where: {
+  //             //       game: {
+  //             //         id: game.id
+  //             //       },
+  //             //       name: event.event.data[0].team_name,
+  //             //       wallet_address: event.event.data[0].signer,
+  //             //     },
 
-              //   })
+  //             //   })
 
-              //   if(!gameTeam){
-              //     await GameTeam.create({
-              //       game: game,
-              //       name: event.event.data[0].team_name,
-              //       wallet_address: event.event.data[0].signer,
-              //     }).save()
+  //             //   if(!gameTeam){
+  //             //     await GameTeam.create({
+  //             //       game: game,
+  //             //       name: event.event.data[0].team_name,
+  //             //       wallet_address: event.event.data[0].signer,
+  //             //     }).save()
 
-              //     const lineup = event.event.data[0].lineup
-              //       //get the apiId
-              //     const currGameTeam = await GameTeam.findOneOrFail({
-              //       where: {
-              //         game: {
-              //           gameId: event.event.data[0].gameId
-              //         },
-              //         name: event.event.data[0].team_name,
-              //         wallet_address: event.event.data[0].signer
-              //       }
-              //     })
-              //     //console.log(lineup)
-              //     for(let token_id of lineup){
-              //       let apiId = ""
+  //             //     const lineup = event.event.data[0].lineup
+  //             //       //get the apiId
+  //             //     const currGameTeam = await GameTeam.findOneOrFail({
+  //             //       where: {
+  //             //         game: {
+  //             //           gameId: event.event.data[0].gameId
+  //             //         },
+  //             //         name: event.event.data[0].team_name,
+  //             //         wallet_address: event.event.data[0].signer
+  //             //       }
+  //             //     })
+  //             //     //console.log(lineup)
+  //             //     for(let token_id of lineup){
+  //             //       let apiId = ""
 
-              //       if(token_id.includes("PR") || token_id.includes("SB")){
-              //         token_id = token_id.split("_")[1]
-              //       }
-              //       apiId = token_id.split("CR")[0]
+  //             //       if(token_id.includes("PR") || token_id.includes("SB")){
+  //             //         token_id = token_id.split("_")[1]
+  //             //       }
+  //             //       apiId = token_id.split("CR")[0]
 
-              //       const athlete = await Athlete.findOne({
-              //         where: {apiId: parseInt(apiId)}
-              //       })
-              //       if(athlete){
-              //         try{
-              //           await GameTeamAthlete.create({
-              //             gameTeam: currGameTeam,
-              //             athlete: athlete,
-              //           }).save()
+  //             //       const athlete = await Athlete.findOne({
+  //             //         where: {apiId: parseInt(apiId)}
+  //             //       })
+  //             //       if(athlete){
+  //             //         try{
+  //             //           await GameTeamAthlete.create({
+  //             //             gameTeam: currGameTeam,
+  //             //             athlete: athlete,
+  //             //           }).save()
 
-              //         }
-              //         catch(e){
-              //           Logger.error(e)
-              //         }
+  //             //         }
+  //             //         catch(e){
+  //             //           Logger.error(e)
+  //             //         }
 
-              //       } else{
-              //         Logger.error("ERROR athlete apiId not found, disregarding...")
-              //       }
-              //       //get the athlete, add to gameteamathlete
-              //     }
+  //             //       } else{
+  //             //         Logger.error("ERROR athlete apiId not found, disregarding...")
+  //             //       }
+  //             //       //get the athlete, add to gameteamathlete
+  //             //     }
 
-              //     Logger.debug("Successfully added team")
-              //     let nearBlock = await NearBlock.create({
-              //       height: event.block_height,
-              //       hash: event.block_hash,
-              //       timestamp: moment().utc(),
-              //     })
-              //     let saveResponse = await NearResponse.create({
-              //       receiverId: event.account_id,
-              //       signerId: event.event.data[0].signer,
-              //       receiptIds: [event.receipt_id],
-              //       methodName: event.event.event,
-              //       status: ResponseStatus.SUCCESS,
-              //     })
+  //             //     Logger.debug("Successfully added team")
+  //             //     let nearBlock = await NearBlock.create({
+  //             //       height: event.block_height,
+  //             //       hash: event.block_hash,
+  //             //       timestamp: moment().utc(),
+  //             //     })
+  //             //     let saveResponse = await NearResponse.create({
+  //             //       receiverId: event.account_id,
+  //             //       signerId: event.event.data[0].signer,
+  //             //       receiptIds: [event.receipt_id],
+  //             //       methodName: event.event.event,
+  //             //       status: ResponseStatus.SUCCESS,
+  //             //     })
 
-              //     nearBlock.nearResponse = saveResponse
-              //     await NearBlock.save(nearBlock)
-              //     Logger.debug(`Successfully created Block ${event.block_height} for ${event.event.event} call`)
-              //   } else{
-              //     Logger.error(`Team already exist on Game ${game.gameId} for ${game.sport}`)
-              //   }
-              // } else{
-              //   Logger.error(`Game ${event.event.data[0].game_id} does not exist for ${sport}`)
-              // }
-            } else if (event.event.event === 'add_game') {
-              console.log('add game');
-              let sport: SportType = SportType.MLB;
-              const eventObj: EventAddGameType = event.event;
+  //             //     nearBlock.nearResponse = saveResponse
+  //             //     await NearBlock.save(nearBlock)
+  //             //     Logger.debug(`Successfully created Block ${event.block_height} for ${event.event.event} call`)
+  //             //   } else{
+  //             //     Logger.error(`Team already exist on Game ${game.gameId} for ${game.sport}`)
+  //             //   }
+  //             // } else{
+  //             //   Logger.error(`Game ${event.event.data[0].game_id} does not exist for ${sport}`)
+  //             // }
+  //           } else if (event.event.event === 'add_game') {
+  //             console.log('add game');
+  //             let sport: SportType = SportType.MLB;
+  //             const eventObj: EventAddGameType = event.event;
 
-              let success = await addGameHandler(eventObj, sport);
-              if (success) {
-                let nearBlock = await NearBlock.create({
-                  height: event.block_height,
-                  hash: event.block_hash,
-                  timestamp: moment().utc(),
-                });
-                let saveResponse = await NearResponse.create({
-                  receiverId: event.account_id,
-                  signerId: event.event.data[0].predecessor_id,
-                  receiptIds: [event.receipt_id],
-                  methodName: event.event.event,
-                  status: ResponseStatus.SUCCESS,
-                });
+  //             let success = await addGameHandler(eventObj, sport);
+  //             if (success) {
+  //               let nearBlock = await NearBlock.create({
+  //                 height: event.block_height,
+  //                 hash: event.block_hash,
+  //                 timestamp: moment().utc(),
+  //               });
+  //               let saveResponse = await NearResponse.create({
+  //                 receiverId: event.account_id,
+  //                 signerId: event.event.data[0].predecessor_id,
+  //                 receiptIds: [event.receipt_id],
+  //                 methodName: event.event.event,
+  //                 status: ResponseStatus.SUCCESS,
+  //               });
 
-                nearBlock.nearResponse = saveResponse;
-                await NearBlock.save(nearBlock);
-                Logger.debug(
-                  `Successfully created Block ${event.block_height} for ${eventObj.event} call`
-                );
-              }
-              // const game = await Game.findOne({
-              //   where: {
-              //     gameId: event.event.data[0].game_id,
-              //     sport: sport
-              //   }
-              // })
-              // if(game){
-              //   Logger.error("Game " + event.event.data[0].game_id + " already exists")
-              // }
-              // else {
-              //   await Game.create({
-              //     gameId: event.event.data[0].game_id,
-              //     name: "Game " + event.event.data[0].game_id,
-              //     description: 'on-going',
-              //     startTime: moment(event.event.data[0].game_time_start),
-              //     endTime: moment(event.event.data[0].game_time_end),
-              //     sport: sport
-              //   }).save()
+  //               nearBlock.nearResponse = saveResponse;
+  //               await NearBlock.save(nearBlock);
+  //               Logger.debug(
+  //                 `Successfully created Block ${event.block_height} for ${eventObj.event} call`
+  //               );
+  //             }
+  //             // const game = await Game.findOne({
+  //             //   where: {
+  //             //     gameId: event.event.data[0].game_id,
+  //             //     sport: sport
+  //             //   }
+  //             // })
+  //             // if(game){
+  //             //   Logger.error("Game " + event.event.data[0].game_id + " already exists")
+  //             // }
+  //             // else {
+  //             //   await Game.create({
+  //             //     gameId: event.event.data[0].game_id,
+  //             //     name: "Game " + event.event.data[0].game_id,
+  //             //     description: 'on-going',
+  //             //     startTime: moment(event.event.data[0].game_time_start),
+  //             //     endTime: moment(event.event.data[0].game_time_end),
+  //             //     sport: sport
+  //             //   }).save()
 
-              //   Logger.debug(`Game ${event.event.data[0].game_id} created for ${SportType.MLB}`)
-              //   let nearBlock = await NearBlock.create({
-              //     height: event.block_height,
-              //     hash: event.block_hash,
-              //     timestamp: moment().utc(),
-              //   })
-              //   let saveResponse = await NearResponse.create({
-              //     receiverId: event.account_id,
-              //     signerId: event.event.data[0].predecessor_id,
-              //     receiptIds: [event.receipt_id],
-              //     methodName: event.event.event,
-              //     status: ResponseStatus.SUCCESS,
-              //   })
+  //             //   Logger.debug(`Game ${event.event.data[0].game_id} created for ${SportType.MLB}`)
+  //             //   let nearBlock = await NearBlock.create({
+  //             //     height: event.block_height,
+  //             //     hash: event.block_hash,
+  //             //     timestamp: moment().utc(),
+  //             //   })
+  //             //   let saveResponse = await NearResponse.create({
+  //             //     receiverId: event.account_id,
+  //             //     signerId: event.event.data[0].predecessor_id,
+  //             //     receiptIds: [event.receipt_id],
+  //             //     methodName: event.event.event,
+  //             //     status: ResponseStatus.SUCCESS,
+  //             //   })
 
-              //   nearBlock.nearResponse = saveResponse
-              //   await NearBlock.save(nearBlock)
-              //   Logger.debug(`Successfully created Block ${event.block_height} for ${event.event.event} call`)
+  //             //   nearBlock.nearResponse = saveResponse
+  //             //   await NearBlock.save(nearBlock)
+  //             //   Logger.debug(`Successfully created Block ${event.block_height} for ${event.event.event} call`)
 
-              // }
-            }
-          }
-        }
-      });
-    }
+  //             // }
+  //           }
+  //         }
+  //       }
+  //     });
+  //   }
 
-    listenToMainnet();
-  }
+  //   listenToMainnet();
+  // }
 
   //@Timeout(1)
   async updateGameTeamFantasyScores() {
