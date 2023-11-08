@@ -2711,7 +2711,7 @@ export class TasksService {
       this.logger.error('NFL Timeframes Data: SPORTS DATA ERROR');
     }
   }
-  //@Interval(3600000) //runs every 1 hour
+  @Interval(3600000) //runs every 1 hour
   async updateNflAthleteInjuryStatus() {
     this.logger.debug('Update NFL Athlete Injury Status: STARTED');
 
@@ -3762,7 +3762,7 @@ export class TasksService {
     }
   }
 
-  @Timeout(1)
+  //@Timeout(1)
   async getInitialNflTimeframe() {
     this.logger.debug('Get Initial NFL Timeframe: STARTED');
 
