@@ -187,6 +187,43 @@ export class GameResolver {
   }
 
   @Query(() => [LeaderboardResult])
+  async getLeaderboardResultForPlayer(
+    @Arg('gameId') gameId: number,
+    @Arg('sport') sport: SportType,
+    @Arg('contract') contract: ContractType,
+    @Arg('address') address: string,
+    @Arg('teamName') teamName: string
+  ): Promise<LeaderboardResult[]> {
+    const returnTeam = await AppDataSource.getRepository(Game)
+      .createQueryBuilder('g')
+      .groupBy('gt.id')
+      .addGroupBy('g.contract')
+      .orderBy('total', 'DESC')
+      .select([
+        'SUM(as2.fantasyScore) as total',
+        'gt.name as team_name',
+        'gt.id as game_team_id',
+        'gt.wallet_address as wallet_address',
+        'g.contract as chain_name',
+      ])
+      .innerJoin('g.teams', 'gt')
+      .innerJoin('gt.athletes', 'gta')
+      .innerJoin('gta.athlete', 'a')
+      .innerJoin('a.stats', 'as2')
+      .where('g.gameId = :gameId', { gameId: gameId })
+      .andWhere('as2.gameDate >= g.startTime')
+      .andWhere('as2.gameDate <= g.endTime')
+      .andWhere('g.sport = :sport', { sport: sport })
+      .andWhere('as2.played = 1')
+      .andWhere('g.contract = :contract', { contract: contract })
+      .andWhere('gt.name = :teamName', { teamName: teamName })
+      .andWhere('gt.wallet_address = :address', { address: address })
+      .getRawMany();
+    console.log(returnTeam);
+    return returnTeam;
+  }
+
+  @Query(() => [LeaderboardResult])
   async getMergedLeaderboardResult(
     @Arg('gameId') gameId: number,
     @Arg('sport') sport: SportType,
