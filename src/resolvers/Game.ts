@@ -126,7 +126,35 @@ export class GameResolver {
   }
 
   @Query(() => [LeaderboardResult])
-  async getLeaderboard(
+  async getLeaderboardTeams(
+    @Arg('gameId') gameId: number,
+    @Arg('sport') sport: SportType,
+    @Arg('contract') contract: ContractType
+  ): Promise<LeaderboardResult[]> {
+    const returnTeam = await AppDataSource.getRepository(Game)
+      .createQueryBuilder('g')
+      .groupBy('gt.id')
+      .addGroupBy('g.contract')
+      .orderBy('total', 'DESC')
+      .select([
+        '0 as total',
+        'gt.name as team_name',
+        'gt.id as game_team_id',
+        'gt.wallet_address as wallet_address',
+        'g.contract as chain_name',
+      ])
+      .innerJoin('g.teams', 'gt')
+      .innerJoin('gt.athletes', 'gta')
+      .innerJoin('gta.athlete', 'a')
+      .where('g.gameId = :gameId', { gameId: gameId })
+      .andWhere('g.sport = :sport', { sport: sport })
+      .andWhere('g.contract = :contract', { contract: contract })
+      .getRawMany();
+    console.log(returnTeam);
+    return returnTeam;
+  }
+  @Query(() => [LeaderboardResult])
+  async getLeaderboardResult(
     @Arg('gameId') gameId: number,
     @Arg('sport') sport: SportType,
     @Arg('contract') contract: ContractType
