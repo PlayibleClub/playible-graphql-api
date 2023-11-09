@@ -140,6 +140,7 @@ export class GameResolver {
         'gt.name as team_name',
         'gt.id as game_team_id',
         'gt.wallet_address as wallet_address',
+        'g.contract as chain_name',
       ])
       .innerJoin('g.teams', 'gt')
       .innerJoin('gt.athletes', 'gta')
@@ -152,6 +153,7 @@ export class GameResolver {
       .andWhere('as.played = 1')
       .andWhere('g.contract = :contract', { contract: contract })
       .getRawMany();
+    console.log(returnTeam);
     return returnTeam;
   }
 
