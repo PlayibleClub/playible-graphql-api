@@ -137,7 +137,7 @@ export class GameResolver {
       .addGroupBy('g.contract')
       .orderBy('total', 'DESC')
       .select([
-        'SUM(as.fantasyScore) as total',
+        'SUM(as2.fantasyScore) as total',
         'gt.name as team_name',
         'gt.id as game_team_id',
         'gt.wallet_address as wallet_address',
@@ -146,12 +146,12 @@ export class GameResolver {
       .innerJoin('g.teams', 'gt')
       .innerJoin('gt.athletes', 'gta')
       .innerJoin('gta.athlete', 'a')
-      .innerJoin('a.stats', 'as')
+      .innerJoin('a.stats', 'as2')
       .where('g.gameId = :gameId', { gameId: gameId })
-      .andWhere('as.gameDate >= g.startTime')
-      .andWhere('as.gameDate <= g.endTime')
+      .andWhere('as2.gameDate >= g.startTime')
+      .andWhere('as2.gameDate <= g.endTime')
       .andWhere('g.sport = :sport', { sport: sport })
-      .andWhere('as.played = 1')
+      .andWhere('as2.played = 1')
       .andWhere('g.contract = :contract', { contract: contract })
       .getRawMany();
     console.log(returnTeam);
