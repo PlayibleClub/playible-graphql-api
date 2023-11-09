@@ -134,6 +134,7 @@ export class GameResolver {
     const returnTeam = await AppDataSource.getRepository(Game)
       .createQueryBuilder('g')
       .groupBy('gt.id')
+      .addGroupBy('g.contract')
       .orderBy('total', 'DESC')
       .select([
         'SUM(as.fantasyScore) as total',
