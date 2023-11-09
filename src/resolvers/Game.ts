@@ -128,7 +128,8 @@ export class GameResolver {
   @Query(() => [LeaderboardResult])
   async getLeaderboard(
     @Arg('gameId') gameId: number,
-    @Arg('sport') sport: SportType
+    @Arg('sport') sport: SportType,
+    @Arg('contract') contract: ContractType
   ): Promise<LeaderboardResult[]> {
     const returnTeam = await AppDataSource.getRepository(Game)
       .createQueryBuilder('g')
@@ -149,6 +150,7 @@ export class GameResolver {
       .andWhere('as.gameDate <= g.endTime')
       .andWhere('g.sport = :sport', { sport: sport })
       .andWhere('as.played = 1')
+      .andWhere('g.contract = :contract', { contract: contract })
       .getRawMany();
     return returnTeam;
   }
