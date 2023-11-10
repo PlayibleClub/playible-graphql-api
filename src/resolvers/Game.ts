@@ -247,6 +247,76 @@ export class GameResolver {
   }
 
   @Query(() => [LeaderboardResult])
+  async getMergedLeaderboardTeams(
+    @Arg('gameId') gameId: number,
+    @Arg('sport') sport: SportType,
+    @Arg('chain') chain: ContractType
+  ): Promise<LeaderboardResult[]> {
+    let gameChain: string; //default
+    switch (chain) {
+      case ContractType.POLYGON:
+        gameChain = 'l.polygonGame = :gameId';
+        break;
+      case ContractType.NEAR:
+        gameChain = 'l.nearGame = :gameId';
+        break;
+      default:
+        return [];
+    }
+
+    //separate results
+    const polygonResults = await AppDataSource.getRepository(Leaderboard)
+      .createQueryBuilder('l')
+      .groupBy('gt.id')
+      .addGroupBy('g.contract')
+      .orderBy('total', 'DESC')
+      .select([
+        '0 as total',
+        'gt.name as team_name',
+        'gt.id as game_team_id',
+        'gt.wallet_address as wallet_address',
+        'g.contract as chain_name',
+      ])
+      .innerJoin('l.polygonGame', 'g')
+      .innerJoin('g.teams', 'gt')
+      .innerJoin('gt.athletes', 'gta')
+      .innerJoin('gta.athlete', 'a')
+      .where(gameChain, { gameId: gameId })
+      .andWhere('g.sport = :sport', { sport: sport })
+      // .andWhere('as.gameDate >= g.startTime')
+      // .andWhere('as.gameDate <= g.endTime')
+      //.andWhere('as.played = 1')
+      .getRawMany();
+    const nearResults = await AppDataSource.getRepository(Leaderboard)
+      .createQueryBuilder('l')
+      .groupBy('gt.id')
+      .addGroupBy('g.contract')
+      .orderBy('total', 'DESC')
+      .select([
+        '0 as total',
+        'gt.name as team_name',
+        'gt.id as game_team_id',
+        'gt.wallet_address as wallet_address',
+        'g.contract as chain_name',
+      ])
+      .innerJoin('l.nearGame', 'g')
+      .innerJoin('g.teams', 'gt')
+      .innerJoin('gt.athletes', 'gta')
+      .innerJoin('gta.athlete', 'a')
+      .where(gameChain, { gameId: gameId })
+      .andWhere('g.sport = :sport', { sport: sport })
+      // .andWhere('as.gameDate >= g.startTime')
+      // .andWhere('as.gameDate <= g.endTime')
+      //.andWhere('as.played = 1')
+      .getRawMany();
+
+    console.log(polygonResults);
+    console.log(nearResults);
+    const results = polygonResults.concat(nearResults);
+    results.sort((a, b) => b.total - a.total);
+    return results;
+  }
+  @Query(() => [LeaderboardResult])
   async getMergedLeaderboardResult(
     @Arg('gameId') gameId: number,
     @Arg('sport') sport: SportType,
