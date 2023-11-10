@@ -62,6 +62,29 @@ export class GameResolver {
     });
   }
 
+  @Query(() => Game)
+  async getGameByGameIdAndChain(
+    @Arg('gameId') gameId: number,
+    chain: ContractType
+  ): Promise<Game> {
+    return await Game.findOneOrFail({
+      where: {
+        gameId: gameId,
+        contract: chain,
+      },
+      relations: {
+        teams: {
+          athletes: {
+            athlete: {
+              team: true,
+              stats: true,
+            },
+          },
+        },
+      },
+    });
+  }
+
   @Query(() => GameResponse)
   async getGames(
     @Arg('args', { nullable: true }) { filter, pagination }: GetGameArgs
