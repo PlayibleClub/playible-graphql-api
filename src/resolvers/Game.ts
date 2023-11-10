@@ -65,7 +65,7 @@ export class GameResolver {
   @Query(() => Game)
   async getGameByGameIdAndChain(
     @Arg('gameId') gameId: number,
-    chain: ContractType
+    @Arg('chain') chain: ContractType
   ): Promise<Game> {
     return await Game.findOneOrFail({
       where: {
