@@ -247,7 +247,7 @@ export class GameResolver {
   }
 
   @Query(() => [LeaderboardResult])
-  async getMergedLeaderboardTeams(
+  async getMultiChainLeaderboardTeams(
     @Arg('gameId') gameId: number,
     @Arg('sport') sport: SportType,
     @Arg('chain') chain: ContractType
@@ -317,7 +317,7 @@ export class GameResolver {
     return results;
   }
   @Query(() => [LeaderboardResult])
-  async getMergedLeaderboardResult(
+  async getMultiChainLeaderboardResult(
     @Arg('gameId') gameId: number,
     @Arg('sport') sport: SportType,
     @Arg('chain') chain: ContractType
@@ -397,7 +397,7 @@ export class GameResolver {
 
   //@Authorized('ADMIN')
   @Mutation(() => Leaderboard)
-  async mergeIntoLeaderboard(
+  async mergeIntoMultiChainLeaderboard(
     @Arg('nearGameId') nearGameId: number,
     @Arg('polygonGameId') polygonGameId: number,
     @Arg('sport') sport: SportType
