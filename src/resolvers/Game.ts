@@ -65,11 +65,13 @@ export class GameResolver {
   @Query(() => Game)
   async getGameByGameIdAndChain(
     @Arg('gameId') gameId: number,
+    @Arg('sport') sport: SportType,
     @Arg('chain') chain: ContractType
   ): Promise<Game> {
     return await Game.findOneOrFail({
       where: {
         gameId: gameId,
+        sport: sport,
         contract: chain,
       },
       relations: {
