@@ -2,41 +2,13 @@
 	{
 		"inputs": [
 			{
-				"internalType": "uint256",
-				"name": "requestId",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256[]",
-				"name": "randomWords",
-				"type": "uint256[]"
-			}
-		],
-		"name": "rawFulfillRandomWords",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
 				"internalType": "uint64",
 				"name": "subscriptionId",
 				"type": "uint64"
 			},
 			{
 				"internalType": "string",
-				"name": "_version",
-				"type": "string"
-			},
-			{
-				"internalType": "string",
 				"name": "_sport",
-				"type": "string"
-			},
-			{
-				"internalType": "string",
-				"name": "_release",
 				"type": "string"
 			}
 		],
@@ -85,8 +57,14 @@
 		"type": "event"
 	},
 	{
-		"inputs": [],
-		"name": "clearData",
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "deleteAthletes",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -263,6 +241,24 @@
 		"type": "event"
 	},
 	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "requestId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256[]",
+				"name": "randomWords",
+				"type": "uint256[]"
+			}
+		],
+		"name": "rawFulfillRandomWords",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
 		"inputs": [],
 		"name": "renounceOwnership",
 		"outputs": [],
@@ -420,19 +416,6 @@
 	{
 		"inputs": [
 			{
-				"internalType": "enum PromotionalOpenPack.PackType",
-				"name": "_packType",
-				"type": "uint8"
-			}
-		],
-		"name": "setPackType",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
 				"internalType": "string[]",
 				"name": "positions",
 				"type": "string[]"
@@ -554,6 +537,19 @@
 		],
 		"name": "TransferSingle",
 		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "newLogicAddress",
+				"type": "address"
+			}
+		],
+		"name": "updatePromoOpenPackLogicAddress",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
 	},
 	{
 		"inputs": [
@@ -756,12 +752,12 @@
 	},
 	{
 		"inputs": [],
-		"name": "currentPackType",
+		"name": "getAddedAthletesCount",
 		"outputs": [
 			{
-				"internalType": "enum PromotionalOpenPack.PackType",
+				"internalType": "uint256",
 				"name": "",
-				"type": "uint8"
+				"type": "uint256"
 			}
 		],
 		"stateMutability": "view",
@@ -785,11 +781,6 @@
 		"name": "getContractInfo",
 		"outputs": [
 			{
-				"internalType": "string",
-				"name": "Version",
-				"type": "string"
-			},
-			{
 				"internalType": "address",
 				"name": "ownerId",
 				"type": "address"
@@ -797,11 +788,6 @@
 			{
 				"internalType": "string",
 				"name": "sport",
-				"type": "string"
-			},
-			{
-				"internalType": "string",
-				"name": "release",
 				"type": "string"
 			}
 		],
@@ -842,19 +828,6 @@
 				"internalType": "string",
 				"name": "",
 				"type": "string"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "getPackType",
-		"outputs": [
-			{
-				"internalType": "enum PromotionalOpenPack.PackType",
-				"name": "",
-				"type": "uint8"
 			}
 		],
 		"stateMutability": "view",
@@ -1155,56 +1128,6 @@
 				"internalType": "uint256",
 				"name": "",
 				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "viewAddedAthletes",
-		"outputs": [
-			{
-				"components": [
-					{
-						"internalType": "string",
-						"name": "athleteId",
-						"type": "string"
-					},
-					{
-						"internalType": "string",
-						"name": "soulboundTokenUri",
-						"type": "string"
-					},
-					{
-						"internalType": "string",
-						"name": "singleUseTokenUri",
-						"type": "string"
-					},
-					{
-						"internalType": "string",
-						"name": "symbol",
-						"type": "string"
-					},
-					{
-						"internalType": "string",
-						"name": "name",
-						"type": "string"
-					},
-					{
-						"internalType": "string",
-						"name": "team",
-						"type": "string"
-					},
-					{
-						"internalType": "string",
-						"name": "position",
-						"type": "string"
-					}
-				],
-				"internalType": "struct PromotionalOpenPack.athleteInfo[]",
-				"name": "",
-				"type": "tuple[]"
 			}
 		],
 		"stateMutability": "view",
