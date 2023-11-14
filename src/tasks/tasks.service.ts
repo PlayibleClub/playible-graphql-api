@@ -4780,7 +4780,7 @@ export class TasksService {
           hash: streamerMessage.block.header.hash,
         },
       });
-      console.log(streamerMessage.block.header.height);
+      //console.log(streamerMessage.block.header.height);
       if (!block) {
         //console.log(`Response array length ${nearResponses.length}`)
         for (let shard of streamerMessage.shards) {
