@@ -248,6 +248,45 @@ export class GameResolver {
     return returnTeam;
   }
 
+  @Query(() => Boolean)
+  async getMultiChainLeaderboardInfo(
+    @Arg('gameId') id: number,
+    @Arg('sport') sport: SportType,
+    @Arg('chain') chain: ContractType
+  ): Promise<Boolean> {
+    let result;
+    switch (chain) {
+      case ContractType.POLYGON:
+        result = await Leaderboard.findOne({
+          where: {
+            sport: sport,
+            polygonGame: {
+              id: id,
+            },
+          },
+        });
+        if (result !== null) {
+          return true;
+        } else {
+          return false;
+        }
+      case ContractType.NEAR:
+        result = await Leaderboard.findOne({
+          where: {
+            sport: sport,
+            nearGame: {
+              id: id,
+            },
+          },
+        });
+        if (result !== null) {
+          return true;
+        } else {
+          return false;
+        }
+    }
+  }
+
   @Query(() => [LeaderboardResult])
   async getMultiChainLeaderboardTeams(
     @Arg('gameId') gameId: number,
