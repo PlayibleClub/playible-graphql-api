@@ -249,7 +249,7 @@ export class GameResolver {
   }
 
   @Query(() => Boolean)
-  async getMultiChainLeaderboardInfo(
+  async checkIfGameExistsInMultiChainLeaderboard(
     @Arg('gameId') id: number,
     @Arg('sport') sport: SportType,
     @Arg('chain') chain: ContractType
