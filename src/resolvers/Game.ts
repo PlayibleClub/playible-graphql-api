@@ -154,7 +154,7 @@ export class GameResolver {
   async getLeaderboardTeams(
     @Arg('gameId') gameId: number,
     @Arg('sport') sport: SportType,
-    @Arg('contract') contract: ContractType
+    @Arg('chain') chain: ContractType
   ): Promise<LeaderboardResult[]> {
     const returnTeam = await AppDataSource.getRepository(Game)
       .createQueryBuilder('g')
@@ -173,7 +173,7 @@ export class GameResolver {
       .innerJoin('gta.athlete', 'a')
       .where('g.gameId = :gameId', { gameId: gameId })
       .andWhere('g.sport = :sport', { sport: sport })
-      .andWhere('g.contract = :contract', { contract: contract })
+      .andWhere('g.contract = :contract', { contract: chain })
       .getRawMany();
     console.log(returnTeam);
     return returnTeam;
@@ -182,7 +182,7 @@ export class GameResolver {
   async getLeaderboardResult(
     @Arg('gameId') gameId: number,
     @Arg('sport') sport: SportType,
-    @Arg('contract') contract: ContractType
+    @Arg('chain') chain: ContractType
   ): Promise<LeaderboardResult[]> {
     const returnTeam = await AppDataSource.getRepository(Game)
       .createQueryBuilder('g')
@@ -205,7 +205,7 @@ export class GameResolver {
       .andWhere('as2.gameDate <= g.endTime')
       .andWhere('g.sport = :sport', { sport: sport })
       .andWhere('as2.played = 1')
-      .andWhere('g.contract = :contract', { contract: contract })
+      .andWhere('g.contract = :contract', { contract: chain })
       .getRawMany();
     console.log(returnTeam);
     return returnTeam;
@@ -215,7 +215,7 @@ export class GameResolver {
   async getLeaderboardResultForPlayer(
     @Arg('gameId') gameId: number,
     @Arg('sport') sport: SportType,
-    @Arg('contract') contract: ContractType,
+    @Arg('chain') chain: ContractType,
     @Arg('address') address: string,
     @Arg('teamName') teamName: string
   ): Promise<LeaderboardResult[]> {
@@ -240,7 +240,7 @@ export class GameResolver {
       .andWhere('as2.gameDate <= g.endTime')
       .andWhere('g.sport = :sport', { sport: sport })
       .andWhere('as2.played = 1')
-      .andWhere('g.contract = :contract', { contract: contract })
+      .andWhere('g.contract = :contract', { contract: chain })
       .andWhere('gt.name = :teamName', { teamName: teamName })
       .andWhere('gt.wallet_address = :address', { address: address })
       .getRawMany();
