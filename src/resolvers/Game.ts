@@ -375,8 +375,6 @@ export class GameResolver {
         return [];
     }
 
-    const season = '2023REG';
-    const type = 'season';
     //separate results
     const polygonResults = await AppDataSource.getRepository(Leaderboard)
       .createQueryBuilder('l')
@@ -397,11 +395,9 @@ export class GameResolver {
       .innerJoin('a.stats', 'as2')
       .where(gameChain, { gameId: gameId })
       .andWhere('g.sport = :sport', { sport: sport })
-      .andWhere('as2.season = :season', { season: season })
-      .andWhere('as2.type = :type', { type: type })
-      // .andWhere('as.gameDate >= g.startTime')
-      // .andWhere('as.gameDate <= g.endTime')
-      //.andWhere('as.played = 1')
+      .andWhere('as2.gameDate >= g.startTime')
+      .andWhere('as2.gameDate <= g.endTime')
+      .andWhere('as2.played = 1')
       .getRawMany();
     const nearResults = await AppDataSource.getRepository(Leaderboard)
       .createQueryBuilder('l')
@@ -422,11 +418,9 @@ export class GameResolver {
       .innerJoin('a.stats', 'as2')
       .where(gameChain, { gameId: gameId })
       .andWhere('g.sport = :sport', { sport: sport })
-      // .andWhere('as.gameDate >= g.startTime')
-      // .andWhere('as.gameDate <= g.endTime')
-      .andWhere('as2.season = :season', { season: season })
-      .andWhere('as2.type = :type', { type: type })
-      //.andWhere('as.played = 1')
+      .andWhere('as2.gameDate >= g.startTime')
+      .andWhere('as2.gameDate <= g.endTime')
+      .andWhere('as2.played = 1')
       .getRawMany();
 
     console.log(polygonResults);
