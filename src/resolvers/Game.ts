@@ -248,16 +248,16 @@ export class GameResolver {
     return returnTeam;
   }
 
-  @Query(() => Boolean)
+  @Query(() => Leaderboard)
   async checkIfGameExistsInMultiChainLeaderboard(
     @Arg('gameId') id: number,
     @Arg('sport') sport: SportType,
     @Arg('chain') chain: ChainType
-  ): Promise<Boolean> {
+  ): Promise<Leaderboard> {
     let result;
     switch (chain) {
       case ChainType.POLYGON:
-        result = await Leaderboard.findOne({
+        result = await Leaderboard.findOneOrFail({
           where: {
             sport: sport,
             polygonGame: {
@@ -265,13 +265,9 @@ export class GameResolver {
             },
           },
         });
-        if (result !== null) {
-          return true;
-        } else {
-          return false;
-        }
+        return result;
       case ChainType.NEAR:
-        result = await Leaderboard.findOne({
+        result = await Leaderboard.findOneOrFail({
           where: {
             sport: sport,
             nearGame: {
@@ -279,11 +275,7 @@ export class GameResolver {
             },
           },
         });
-        if (result !== null) {
-          return true;
-        } else {
-          return false;
-        }
+        return result;
     }
   }
 
@@ -423,8 +415,6 @@ export class GameResolver {
       .andWhere('as2.played = 1')
       .getRawMany();
 
-    console.log(polygonResults);
-    console.log(nearResults);
     const results = polygonResults.concat(nearResults);
     results.sort((a, b) => b.total - a.total);
     return results;
