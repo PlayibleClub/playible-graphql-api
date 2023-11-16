@@ -266,6 +266,7 @@ export class GameResolver {
           },
           relations: {
             polygonGame: true,
+            nearGame: true,
           },
         });
         return result;
@@ -278,6 +279,7 @@ export class GameResolver {
             },
           },
           relations: {
+            polygonGame: true,
             nearGame: true,
           },
         });
