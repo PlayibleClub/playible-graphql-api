@@ -24,7 +24,7 @@ import {
   QueryBuilder,
 } from 'typeorm';
 import { CreateGameArgs, CreateTeamArgs, GetGameArgs } from '../args/GameArgs';
-import { GameTab, SportType, ContractType } from '../utils/types';
+import { GameTab, SportType, ChainType } from '../utils/types';
 import { AppDataSource } from '../utils/db';
 import moment from 'moment-timezone';
 import { Leaderboard } from '../entities/Leaderboard';
@@ -66,13 +66,13 @@ export class GameResolver {
   async getGameByGameIdAndChain(
     @Arg('gameId') gameId: number,
     @Arg('sport') sport: SportType,
-    @Arg('chain') chain: ContractType
+    @Arg('chain') chain: ChainType
   ): Promise<Game> {
     return await Game.findOneOrFail({
       where: {
         gameId: gameId,
         sport: sport,
-        contract: chain,
+        chain: chain,
       },
       relations: {
         teams: {
@@ -154,7 +154,7 @@ export class GameResolver {
   async getLeaderboardTeams(
     @Arg('gameId') gameId: number,
     @Arg('sport') sport: SportType,
-    @Arg('chain') chain: ContractType
+    @Arg('chain') chain: ChainType
   ): Promise<LeaderboardResult[]> {
     const returnTeam = await AppDataSource.getRepository(Game)
       .createQueryBuilder('g')
@@ -182,7 +182,7 @@ export class GameResolver {
   async getLeaderboardResult(
     @Arg('gameId') gameId: number,
     @Arg('sport') sport: SportType,
-    @Arg('chain') chain: ContractType
+    @Arg('chain') chain: ChainType
   ): Promise<LeaderboardResult[]> {
     const returnTeam = await AppDataSource.getRepository(Game)
       .createQueryBuilder('g')
@@ -215,7 +215,7 @@ export class GameResolver {
   async getLeaderboardResultForPlayer(
     @Arg('gameId') gameId: number,
     @Arg('sport') sport: SportType,
-    @Arg('chain') chain: ContractType,
+    @Arg('chain') chain: ChainType,
     @Arg('address') address: string,
     @Arg('teamName') teamName: string
   ): Promise<LeaderboardResult[]> {
@@ -252,11 +252,11 @@ export class GameResolver {
   async checkIfGameExistsInMultiChainLeaderboard(
     @Arg('gameId') id: number,
     @Arg('sport') sport: SportType,
-    @Arg('chain') chain: ContractType
+    @Arg('chain') chain: ChainType
   ): Promise<Boolean> {
     let result;
     switch (chain) {
-      case ContractType.POLYGON:
+      case ChainType.POLYGON:
         result = await Leaderboard.findOne({
           where: {
             sport: sport,
@@ -270,7 +270,7 @@ export class GameResolver {
         } else {
           return false;
         }
-      case ContractType.NEAR:
+      case ChainType.NEAR:
         result = await Leaderboard.findOne({
           where: {
             sport: sport,
@@ -291,14 +291,14 @@ export class GameResolver {
   async getMultiChainLeaderboardTeams(
     @Arg('gameId') gameId: number,
     @Arg('sport') sport: SportType,
-    @Arg('chain') chain: ContractType
+    @Arg('chain') chain: ChainType
   ): Promise<LeaderboardResult[]> {
     let gameChain: string; //default
     switch (chain) {
-      case ContractType.POLYGON:
+      case ChainType.POLYGON:
         gameChain = 'l.polygonGame = :gameId';
         break;
-      case ContractType.NEAR:
+      case ChainType.NEAR:
         gameChain = 'l.nearGame = :gameId';
         break;
       default:
@@ -361,14 +361,14 @@ export class GameResolver {
   async getMultiChainLeaderboardResult(
     @Arg('gameId') gameId: number,
     @Arg('sport') sport: SportType,
-    @Arg('chain') chain: ContractType
+    @Arg('chain') chain: ChainType
   ): Promise<LeaderboardResult[]> {
     let gameChain: string; //default
     switch (chain) {
-      case ContractType.POLYGON:
+      case ChainType.POLYGON:
         gameChain = 'l.polygonGame = :gameId';
         break;
-      case ContractType.NEAR:
+      case ChainType.NEAR:
         gameChain = 'l.nearGame = :gameId';
         break;
       default:
@@ -442,14 +442,14 @@ export class GameResolver {
       where: {
         sport: sport,
         gameId: nearGameId,
-        contract: ContractType.NEAR,
+        chain: ChainType.NEAR,
       },
     });
     const polygonGame = await Game.findOneOrFail({
       where: {
         sport: sport,
         gameId: polygonGameId,
-        contract: ContractType.POLYGON,
+        chain: ChainType.POLYGON,
       },
     });
 

@@ -16,7 +16,7 @@ export enum TokenType {
   SOULBOUND = 'soulbound',
 }
 
-export enum ContractType {
+export enum ChainType {
   NEAR = 'near',
   POLYGON = 'polygon',
 }
@@ -131,5 +131,5 @@ export class LeaderboardResult {
   total: number;
 
   @Field(() => String)
-  chain_name: ContractType;
+  chain_name: ChainType;
 }

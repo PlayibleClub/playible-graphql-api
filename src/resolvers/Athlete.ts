@@ -36,7 +36,7 @@ import moment from 'moment';
 import { ethers } from 'ethers';
 import promoOpenPackStorageABI from './../utils/polygon-contract-abis/promo_open_pack_storage.json';
 import regularOpenPackStorageABI from './../utils/polygon-contract-abis/regular_open_pack_storage.json';
-import { IPFSMetadata, ContractType } from './../utils/types';
+import { IPFSMetadata, ChainType } from './../utils/types';
 @ObjectType()
 class Distribution {
   @Field()
@@ -174,7 +174,7 @@ export class AthleteResolver {
     @Arg('teamName') teamName: string,
     @Arg('address') address: string,
     @Arg('gameId') gameId: number,
-    @Arg('chain') chain: ContractType,
+    @Arg('chain') chain: ChainType,
     @Arg('from') from: Date,
     @Arg('to') to: Date
   ): Promise<GameTeamAthlete[]> {
@@ -209,7 +209,7 @@ export class AthleteResolver {
           wallet_address: address,
           game: {
             gameId: gameId,
-            contract: chain,
+            chain: chain,
           },
         },
         // athlete: {
@@ -228,6 +228,7 @@ export class AthleteResolver {
       },
     });
     test.forEach((athlete) => {
+      //add played = 1
       athlete.athlete.stats = athlete.athlete.stats.filter((stat) => {
         stat.gameDate &&
           moment(stat.gameDate).unix() >= moment(from).unix() &&

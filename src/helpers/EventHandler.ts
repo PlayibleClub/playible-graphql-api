@@ -3,7 +3,7 @@ import {
   EventAddGameType,
   SportType,
   EventSubmitLineupType,
-  ContractType,
+  ChainType,
   TokenType,
 } from '../utils/types';
 import { getSportType } from '../helpers/Sport';
@@ -31,7 +31,7 @@ export async function addGameHandler(
       startTime: moment(event.data[0].game_time_start),
       endTime: moment(event.data[0].game_time_end),
       sport: sport,
-      contract: ContractType.NEAR,
+      chain: ChainType.NEAR,
     }).save();
 
     Logger.debug(`Game ${event.data[0].game_id} created for ${sport}`);
@@ -50,7 +50,7 @@ export async function submitLineupHandler(
     where: {
       gameId: event.data[0].game_id,
       sport: sport,
-      contract: ContractType.NEAR,
+      chain: ChainType.NEAR,
     },
   });
 
