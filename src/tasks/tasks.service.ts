@@ -5235,7 +5235,7 @@ export class TasksService {
     function listenToNFLGameContract() {
       const logger = new Logger('NFLGameContract');
       console.log('Start polygon listen');
-      const network = 'maticmum';
+      const network = 'maticmum'; //change to mainnet after
       const address = process.env.METAMASK_WALLET_ADDRESS ?? 'default';
       const abi = gameABI;
       const provider = new ethers.AlchemyProvider(
@@ -5297,7 +5297,7 @@ export class TasksService {
 
         gameContract.on(
           'SucceedLineupSubmission',
-          async (result, gameId, teamName, address, lineup, event) => {
+          async (result, gameId, teamName, address, lineup, tokens, event) => {
             logger.debug(result);
             const convertGameId =
               typeof gameId === 'bigint' ? Number(gameId) : gameId;
@@ -5330,17 +5330,32 @@ export class TasksService {
                   name: teamName,
                   wallet_address: address,
                 }).save();
-                for (let apiId of lineup) {
+                for (let i = 0; i < lineup.length; i++) {
                   const athlete = await Athlete.findOne({
                     where: {
-                      apiId: Number(apiId),
+                      apiId: Number(lineup[i]),
                     },
                   });
+                  let tokenId = Number(tokens[i]).toString();
+                  let tokenType: TokenType = TokenType.REG;
+                  switch (tokenId[0]) {
+                    case '1':
+                      tokenType = TokenType.REG;
+                      break;
+                    case '2':
+                      tokenType = TokenType.PROMO;
+                      break;
+                    case '3':
+                      tokenType = TokenType.SOULBOUND;
+                      break;
+                  }
                   if (athlete) {
                     try {
                       await GameTeamAthlete.create({
                         gameTeam: currGameTeam,
                         athlete: athlete,
+                        token_id: tokenId,
+                        type: tokenType,
                       }).save();
                     } catch (e) {
                       logger.debug(e);
@@ -5349,7 +5364,27 @@ export class TasksService {
                     logger.debug('ERROR athlete apiId not found');
                   }
                 }
-                logger.debug('Successfully added team');
+                // for (let apiId of lineup) {
+                //   const athlete = await Athlete.findOne({
+                //     where: {
+                //       apiId: Number(apiId),
+                //     },
+                //   });
+                //   if (athlete) {
+                //     try {
+                //       await GameTeamAthlete.create({
+                //         gameTeam: currGameTeam,
+                //         athlete: athlete,
+
+                //       }).save();
+                //     } catch (e) {
+                //       logger.debug(e);
+                //     }
+                //   } else {
+                //     logger.debug('ERROR athlete apiId not found');
+                //   }
+                // }
+                // logger.debug('Successfully added team');
               } else {
                 logger.debug(
                   `Team already exists on Game ${convertGameId} for ${SportType.NFL} at ${ContractType.POLYGON}`

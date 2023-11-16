@@ -4,6 +4,7 @@ import {
   SportType,
   EventSubmitLineupType,
   ContractType,
+  TokenType,
 } from '../utils/types';
 import { getSportType } from '../helpers/Sport';
 import { Athlete } from '../entities/Athlete';
@@ -77,10 +78,16 @@ export async function submitLineupHandler(
       const lineup = event.data[0].lineup;
       for (let token_id of lineup) {
         let apiId = '';
-        if (token_id.includes('PR') || token_id.includes('SB')) {
-          token_id = token_id.split('_')[1];
+        let tempId = token_id;
+        let tokenType = TokenType.REG;
+        if (tempId.includes('PR') || tempId.includes('SB')) {
+          tokenType = TokenType.PROMO;
+          tempId = tempId.split('_')[1];
+        } else if (tempId.includes('SB')) {
+          tokenType = TokenType.SOULBOUND;
+          tempId = tempId.split('_')[1];
         }
-        apiId = token_id.split('CR')[0];
+        apiId = tempId.split('CR')[0];
 
         const athlete = await Athlete.findOne({
           where: {
@@ -93,6 +100,8 @@ export async function submitLineupHandler(
             await GameTeamAthlete.create({
               gameTeam: currGameTeam,
               athlete: athlete,
+              token_id: token_id,
+              type: tokenType,
             }).save();
           } catch (e) {
             Logger.error(e);
