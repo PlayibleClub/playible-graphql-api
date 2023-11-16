@@ -159,21 +159,21 @@ export class GameResolver {
     const returnTeam = await AppDataSource.getRepository(Game)
       .createQueryBuilder('g')
       .groupBy('gt.id')
-      .addGroupBy('g.contract')
+      .addGroupBy('g.chain')
       .orderBy('total', 'DESC')
       .select([
         '0 as total',
         'gt.name as team_name',
         'gt.id as game_team_id',
         'gt.wallet_address as wallet_address',
-        'g.contract as chain_name',
+        'g.chain as chain_name',
       ])
       .innerJoin('g.teams', 'gt')
       .innerJoin('gt.athletes', 'gta')
       .innerJoin('gta.athlete', 'a')
       .where('g.gameId = :gameId', { gameId: gameId })
       .andWhere('g.sport = :sport', { sport: sport })
-      .andWhere('g.contract = :contract', { contract: chain })
+      .andWhere('g.chain = :chain', { chain: chain })
       .getRawMany();
     console.log(returnTeam);
     return returnTeam;
@@ -187,14 +187,14 @@ export class GameResolver {
     const returnTeam = await AppDataSource.getRepository(Game)
       .createQueryBuilder('g')
       .groupBy('gt.id')
-      .addGroupBy('g.contract')
+      .addGroupBy('g.chain')
       .orderBy('total', 'DESC')
       .select([
         'SUM(as2.fantasyScore) as total',
         'gt.name as team_name',
         'gt.id as game_team_id',
         'gt.wallet_address as wallet_address',
-        'g.contract as chain_name',
+        'g.chain as chain_name',
       ])
       .innerJoin('g.teams', 'gt')
       .innerJoin('gt.athletes', 'gta')
@@ -205,7 +205,7 @@ export class GameResolver {
       .andWhere('as2.gameDate <= g.endTime')
       .andWhere('g.sport = :sport', { sport: sport })
       .andWhere('as2.played = 1')
-      .andWhere('g.contract = :contract', { contract: chain })
+      .andWhere('g.chain = :chain', { chain: chain })
       .getRawMany();
     console.log(returnTeam);
     return returnTeam;
@@ -222,14 +222,14 @@ export class GameResolver {
     const returnTeam = await AppDataSource.getRepository(Game)
       .createQueryBuilder('g')
       .groupBy('gt.id')
-      .addGroupBy('g.contract')
+      .addGroupBy('g.chain')
       .orderBy('total', 'DESC')
       .select([
         'SUM(as2.fantasyScore) as total',
         'gt.name as team_name',
         'gt.id as game_team_id',
         'gt.wallet_address as wallet_address',
-        'g.contract as chain_name',
+        'g.chain as chain_name',
       ])
       .innerJoin('g.teams', 'gt')
       .innerJoin('gt.athletes', 'gta')
@@ -240,7 +240,7 @@ export class GameResolver {
       .andWhere('as2.gameDate <= g.endTime')
       .andWhere('g.sport = :sport', { sport: sport })
       .andWhere('as2.played = 1')
-      .andWhere('g.contract = :contract', { contract: chain })
+      .andWhere('g.chain = :chain', { chain: chain })
       .andWhere('gt.name = :teamName', { teamName: teamName })
       .andWhere('gt.wallet_address = :address', { address: address })
       .getRawMany();
@@ -309,14 +309,14 @@ export class GameResolver {
     const polygonResults = await AppDataSource.getRepository(Leaderboard)
       .createQueryBuilder('l')
       .groupBy('gt.id')
-      .addGroupBy('g.contract')
+      .addGroupBy('g.chain')
       .orderBy('total', 'DESC')
       .select([
         '0 as total',
         'gt.name as team_name',
         'gt.id as game_team_id',
         'gt.wallet_address as wallet_address',
-        'g.contract as chain_name',
+        'g.chain as chain_name',
       ])
       .innerJoin('l.polygonGame', 'g')
       .innerJoin('g.teams', 'gt')
@@ -331,14 +331,14 @@ export class GameResolver {
     const nearResults = await AppDataSource.getRepository(Leaderboard)
       .createQueryBuilder('l')
       .groupBy('gt.id')
-      .addGroupBy('g.contract')
+      .addGroupBy('g.chain')
       .orderBy('total', 'DESC')
       .select([
         '0 as total',
         'gt.name as team_name',
         'gt.id as game_team_id',
         'gt.wallet_address as wallet_address',
-        'g.contract as chain_name',
+        'g.chain as chain_name',
       ])
       .innerJoin('l.nearGame', 'g')
       .innerJoin('g.teams', 'gt')
@@ -379,14 +379,14 @@ export class GameResolver {
     const polygonResults = await AppDataSource.getRepository(Leaderboard)
       .createQueryBuilder('l')
       .groupBy('gt.id')
-      .addGroupBy('g.contract')
+      .addGroupBy('g.chain')
       .orderBy('total', 'DESC')
       .select([
         'SUM(as2.fantasyScore) as total',
         'gt.name as team_name',
         'gt.id as game_team_id',
         'gt.wallet_address as wallet_address',
-        'g.contract as chain_name',
+        'g.chain as chain_name',
       ])
       .innerJoin('l.polygonGame', 'g')
       .innerJoin('g.teams', 'gt')
@@ -402,14 +402,14 @@ export class GameResolver {
     const nearResults = await AppDataSource.getRepository(Leaderboard)
       .createQueryBuilder('l')
       .groupBy('gt.id')
-      .addGroupBy('g.contract')
+      .addGroupBy('g.chain')
       .orderBy('total', 'DESC')
       .select([
         'SUM(as2.fantasyScore) as total',
         'gt.name as team_name',
         'gt.id as game_team_id',
         'gt.wallet_address as wallet_address',
-        'g.contract as chain_name',
+        'g.chain as chain_name',
       ])
       .innerJoin('l.nearGame', 'g')
       .innerJoin('g.teams', 'gt')
