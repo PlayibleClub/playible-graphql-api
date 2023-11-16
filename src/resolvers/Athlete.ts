@@ -16,10 +16,13 @@ import axios, { AxiosResponse } from 'axios';
 import { S3 } from 'aws-sdk';
 import { Athlete } from '../entities/Athlete';
 import { AthleteStat } from '../entities/AthleteStat';
+import { GameTeam } from '../entities/GameTeam';
+import { GameTeamAthlete } from '../entities/GameTeamAthlete';
+
 import { Team } from '../entities/Team';
 import fs from 'fs';
 import path from 'path';
-import { In, MoreThanOrEqual, LessThanOrEqual } from 'typeorm';
+import { In, MoreThanOrEqual, LessThanOrEqual, Between } from 'typeorm';
 import {
   NFL_ATHLETE_IDS,
   NFL_ATHLETE_PROMO_IDS,
@@ -33,7 +36,7 @@ import moment from 'moment';
 import { ethers } from 'ethers';
 import promoOpenPackStorageABI from './../utils/polygon-contract-abis/promo_open_pack_storage.json';
 import regularOpenPackStorageABI from './../utils/polygon-contract-abis/regular_open_pack_storage.json';
-import { IPFSMetadata } from './../utils/types';
+import { IPFSMetadata, ContractType } from './../utils/types';
 @ObjectType()
 class Distribution {
   @Field()
@@ -166,7 +169,66 @@ export class AthleteResolver {
 
     return athlete;
   }
-
+  @Query(() => [GameTeamAthlete])
+  async getEntrySummaryAthletes(
+    @Arg('teamName') teamName: string,
+    @Arg('address') address: string,
+    @Arg('gameId') gameId: number,
+    @Arg('chain') chain: ContractType,
+    @Arg('from') from: Date,
+    @Arg('to') to: Date
+  ): Promise<GameTeamAthlete[]> {
+    // let playerTeam = await GameTeam.findOneOrFail({
+    //   where: {
+    //     name: teamName,
+    //     wallet_address: address,
+    //     game: {
+    //       gameId: gameId,
+    //       contract: chain,
+    //     },
+    //     athletes:{
+    //       athlete:{
+    //         stats:{
+    //           gameDate: Between(from, to)
+    //         }
+    //       }
+    //     }
+    //   },
+    //   relations: {
+    //     athletes:{
+    //       athlete:{
+    //         stats: true
+    //       }
+    //     }
+    //   }
+    // });
+    let test = await GameTeamAthlete.find({
+      where: {
+        gameTeam: {
+          name: teamName,
+          wallet_address: address,
+          game: {
+            gameId: gameId,
+            contract: chain,
+          },
+        },
+        athlete: {
+          stats: {
+            gameDate: Between(from, to),
+          },
+        },
+      },
+      relations: {
+        gameTeam: {
+          game: true,
+        },
+        athlete: {
+          stats: true,
+        },
+      },
+    });
+    return test;
+  }
   @Query(() => [Athlete])
   async getAthleteByIds(
     @Arg('ids', () => [Number]) ids: number[]
