@@ -202,7 +202,7 @@ export class AthleteResolver {
     //     }
     //   }
     // });
-    let test = await GameTeamAthlete.find({
+    let returnAthletes = await GameTeamAthlete.find({
       where: {
         gameTeam: {
           name: teamName,
@@ -223,11 +223,12 @@ export class AthleteResolver {
           game: true,
         },
         athlete: {
+          team: true,
           stats: true,
         },
       },
     });
-    test.forEach((athlete) => {
+    returnAthletes.forEach((athlete) => {
       //add played = 1
       athlete.athlete.stats = athlete.athlete.stats.filter((stat) => {
         stat.gameDate &&
@@ -235,7 +236,7 @@ export class AthleteResolver {
           moment(stat.gameDate).unix() <= moment(to).unix();
       });
     });
-    return test;
+    return returnAthletes;
   }
   @Query(() => [Athlete])
   async getAthleteByIds(
