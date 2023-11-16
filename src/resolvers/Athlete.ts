@@ -174,9 +174,9 @@ export class AthleteResolver {
     @Arg('teamName') teamName: string,
     @Arg('address') address: string,
     @Arg('gameId') gameId: number,
-    @Arg('chain') chain: ContractType
-    // @Arg('from') from: Date,
-    // @Arg('to') to: Date
+    @Arg('chain') chain: ContractType,
+    @Arg('from') from: Date,
+    @Arg('to') to: Date
   ): Promise<GameTeamAthlete[]> {
     // let playerTeam = await GameTeam.findOneOrFail({
     //   where: {
@@ -226,6 +226,13 @@ export class AthleteResolver {
           stats: true,
         },
       },
+    });
+    test.forEach((athlete) => {
+      athlete.athlete.stats = athlete.athlete.stats.filter((stat) => {
+        stat.gameDate &&
+          moment(stat.gameDate).unix() >= moment(from).unix() &&
+          moment(stat.gameDate).unix() <= moment(to).unix();
+      });
     });
     return test;
   }
