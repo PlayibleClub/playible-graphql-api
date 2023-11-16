@@ -264,6 +264,9 @@ export class GameResolver {
               id: id,
             },
           },
+          relations: {
+            polygonGame: true,
+          },
         });
         return result;
       case ChainType.NEAR:
@@ -273,6 +276,9 @@ export class GameResolver {
             nearGame: {
               id: id,
             },
+          },
+          relations: {
+            nearGame: true,
           },
         });
         return result;
