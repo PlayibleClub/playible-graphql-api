@@ -4750,7 +4750,7 @@ export class TasksService {
       //credentials
       s3BucketName: 'near-lake-data-testnet',
       s3RegionName: 'eu-central-1',
-      startBlockHeight: 146005786, // for testnet
+      startBlockHeight: 146220550, // for testnet
       //startBlockHeight: 97856450//97543661//97856450, //97239921 old
     };
     const nearGameMainnetContracts = [
