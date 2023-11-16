@@ -5364,6 +5364,9 @@ export class TasksService {
                     logger.debug('ERROR athlete apiId not found');
                   }
                 }
+                logger.debug(
+                  `Successfully added team ${teamName} for ${address} on game ${gameId} at chain ${ChainType.POLYGON}`
+                );
                 // for (let apiId of lineup) {
                 //   const athlete = await Athlete.findOne({
                 //     where: {
