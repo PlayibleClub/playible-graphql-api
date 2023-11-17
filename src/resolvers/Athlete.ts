@@ -178,30 +178,6 @@ export class AthleteResolver {
     @Arg('from') from: Date,
     @Arg('to') to: Date
   ): Promise<GameTeamAthlete[]> {
-    // let playerTeam = await GameTeam.findOneOrFail({
-    //   where: {
-    //     name: teamName,
-    //     wallet_address: address,
-    //     game: {
-    //       gameId: gameId,
-    //       contract: chain,
-    //     },
-    //     athletes:{
-    //       athlete:{
-    //         stats:{
-    //           gameDate: Between(from, to)
-    //         }
-    //       }
-    //     }
-    //   },
-    //   relations: {
-    //     athletes:{
-    //       athlete:{
-    //         stats: true
-    //       }
-    //     }
-    //   }
-    // });
     let returnAthletes = await GameTeamAthlete.find({
       where: {
         gameTeam: {
@@ -230,11 +206,12 @@ export class AthleteResolver {
     });
     returnAthletes.forEach((athlete) => {
       //add played = 1
-      athlete.athlete.stats = athlete.athlete.stats.filter((stat) => {
-        stat.gameDate &&
+      athlete.athlete.stats = athlete.athlete.stats.filter(
+        (stat) =>
+          stat.gameDate &&
           moment(stat.gameDate).unix() >= moment(from).unix() &&
-          moment(stat.gameDate).unix() <= moment(to).unix();
-      });
+          moment(stat.gameDate).unix() <= moment(to).unix()
+      );
     });
     return returnAthletes;
   }
