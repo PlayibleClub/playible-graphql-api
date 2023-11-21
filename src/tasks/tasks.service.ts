@@ -4744,7 +4744,7 @@ export class TasksService {
     }
   }
 
-  @Timeout(1)
+  //@Timeout(1)
   async runNearLakeFrameworkIndexer() {
     const lakeConfig: types.LakeConfig = {
       //credentials
@@ -5268,16 +5268,20 @@ export class TasksService {
                 gameId: convertGameId,
                 name: `Game ${convertGameId}`,
                 description: 'on-going',
-                startTime: moment.unix(
-                  typeof gameTimeStart === 'bigint'
-                    ? Number(gameTimeStart)
-                    : gameTimeStart
-                ),
-                endTime: moment.unix(
-                  typeof gameTimeEnd === 'bigint'
-                    ? Number(gameTimeEnd)
-                    : gameTimeEnd
-                ),
+                startTime: moment
+                  .unix(
+                    typeof gameTimeStart === 'bigint'
+                      ? Number(gameTimeStart)
+                      : gameTimeStart
+                  )
+                  .utc(),
+                endTime: moment
+                  .unix(
+                    typeof gameTimeEnd === 'bigint'
+                      ? Number(gameTimeEnd)
+                      : gameTimeEnd
+                  )
+                  .utc(),
                 sport: SportType.NFL,
                 chain: ChainType.POLYGON,
               }).save();
