@@ -27,7 +27,7 @@ export async function addGameHandler(
     await Game.create({
       gameId: event.data[0].game_id,
       name: `Game ${event.data[0].game_id}`,
-      description: 'Playible NEAR game',
+      description: 'Playible NEAR Game',
       startTime: moment(event.data[0].game_time_start).utc(), //unix milliseconds
       endTime: moment(event.data[0].game_time_end).utc(),
       sport: sport,

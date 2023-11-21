@@ -5267,7 +5267,7 @@ export class TasksService {
               await Game.create({
                 gameId: convertGameId,
                 name: `Game ${convertGameId}`,
-                description: 'on-going',
+                description: 'Playible POLYGON Game',
                 startTime: moment
                   .unix(
                     typeof gameTimeStart === 'bigint'
