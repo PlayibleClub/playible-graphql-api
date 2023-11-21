@@ -4744,7 +4744,7 @@ export class TasksService {
     }
   }
 
-  //@Timeout(1)
+  @Timeout(1)
   async runNearLakeFrameworkIndexer() {
     const lakeConfig: types.LakeConfig = {
       //credentials
