@@ -28,8 +28,8 @@ export async function addGameHandler(
       gameId: event.data[0].game_id,
       name: `Game ${event.data[0].game_id}`,
       description: 'Playible NEAR game',
-      startTime: moment.unix(event.data[0].game_time_start).utc(),
-      endTime: moment.unix(event.data[0].game_time_end).utc(),
+      startTime: moment(event.data[0].game_time_start).utc(), //unix milliseconds
+      endTime: moment(event.data[0].game_time_end).utc(),
       sport: sport,
       chain: ChainType.NEAR,
     }).save();
