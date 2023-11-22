@@ -174,9 +174,7 @@ export class AthleteResolver {
     @Arg('teamName') teamName: string,
     @Arg('address') address: string,
     @Arg('gameId') gameId: number,
-    @Arg('chain') chain: ChainType,
-    @Arg('from') from: Date,
-    @Arg('to') to: Date
+    @Arg('chain') chain: ChainType
   ): Promise<GameTeamAthlete[]> {
     let returnAthletes = await GameTeamAthlete.find({
       where: {
@@ -204,13 +202,23 @@ export class AthleteResolver {
         },
       },
     });
+    console.log(
+      `Unix only: ${moment(returnAthletes[0].gameTeam.game.startTime).unix()}`
+    );
+    console.log(
+      `With UTC: ${moment
+        .utc(returnAthletes[0].gameTeam.game.startTime)
+        .unix()}`
+    );
     returnAthletes.forEach((athlete) => {
       //add played = 1
       athlete.athlete.stats = athlete.athlete.stats.filter(
         (stat) =>
           stat.gameDate &&
-          moment(stat.gameDate).unix() >= moment(from).unix() &&
-          moment(stat.gameDate).unix() <= moment(to).unix()
+          moment(stat.gameDate).unix() >=
+            moment(athlete.gameTeam.game.startTime).unix() &&
+          moment(stat.gameDate).unix() <=
+            moment(athlete.gameTeam.game.endTime).unix()
       );
     });
     return returnAthletes;
