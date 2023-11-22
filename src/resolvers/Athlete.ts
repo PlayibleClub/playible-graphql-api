@@ -202,14 +202,6 @@ export class AthleteResolver {
         },
       },
     });
-    console.log(
-      `Unix only: ${moment(returnAthletes[0].gameTeam.game.startTime).unix()}`
-    );
-    console.log(
-      `With UTC: ${moment
-        .utc(returnAthletes[0].gameTeam.game.startTime)
-        .unix()}`
-    );
     returnAthletes.forEach((athlete) => {
       //add played = 1
       athlete.athlete.stats = athlete.athlete.stats.filter(
