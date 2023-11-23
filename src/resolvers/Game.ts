@@ -76,12 +76,7 @@ export class GameResolver {
       },
       relations: {
         teams: {
-          athletes: {
-            athlete: {
-              team: true,
-              stats: true,
-            },
-          },
+          athletes: true,
         },
       },
     });
