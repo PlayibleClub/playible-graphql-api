@@ -483,6 +483,7 @@ export class AthleteResolver {
     let athleteLength = 0;
     let apiIdFromContract = [];
     let contractABI: string = '';
+    console.log('Start getAthleteApiIdFromPolygonOpenPack');
     switch (sportType) {
       case SportType.NFL:
         athleteLength = NFL_ATHLETE_IDS.length;
@@ -504,6 +505,7 @@ export class AthleteResolver {
       const result = await contract.addedAthletes(i, {
         from: process.env.METAMASK_WALLET_ADDRESS,
       });
+      console.log(i);
       //console.log(result);
       apiIdFromContract.push(Number(result[2]));
       //await new Promise((resolve) => setTimeout(resolve, 100));
