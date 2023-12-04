@@ -4757,7 +4757,7 @@ export class TasksService {
   async runNearLakeFrameworkIndexer() {
     const lakeConfig: types.LakeConfig = {
       //credentials
-      s3BucketName: 'near-lake-data-testnet',
+      s3BucketName: 'near-lake-data-mainnet',
       s3RegionName: 'eu-central-1',
       startBlockHeight: 147175993, // for testnet
       //startBlockHeight: 97856450//97543661//97856450, //97239921 old
@@ -4796,7 +4796,7 @@ export class TasksService {
           if (shard.chunk !== undefined && shard.chunk !== null) {
             let filteredReceipts = shard.receiptExecutionOutcomes.filter(
               (x) =>
-                nearGameTestnetContracts.includes(
+                nearGameMainnetContracts.includes(
                   x.executionOutcome.outcome.executorId
                 )
               // x.executionOutcome.outcome.executorId ===
@@ -4906,7 +4906,7 @@ export class TasksService {
     function listenToAthleteStorage() {
       let logger = new Logger('NFLAthleteStorage');
       console.log('Start polygon athlete listen');
-      const network = 'maticmum'; // dont forget to change to polygon mainnet
+      const network = 'matic'; // dont forget to change to polygon mainnet
       const athleteStorage = athleteStorageABI;
       const provider = new ethers.AlchemyProvider(
         network,
@@ -5244,7 +5244,7 @@ export class TasksService {
     function listenToNFLGameContract() {
       const logger = new Logger('NFLGameContract');
       console.log('Start polygon listen');
-      const network = 'maticmum'; //change to mainnet after
+      const network = 'matic'; //change to mainnet after
       const address = process.env.METAMASK_WALLET_ADDRESS ?? 'default';
       const abi = gameABI;
       const provider = new ethers.AlchemyProvider(
