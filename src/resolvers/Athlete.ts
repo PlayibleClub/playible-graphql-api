@@ -346,7 +346,7 @@ export class AthleteResolver {
     @Arg('isPromo') isPromo: boolean = false
   ): Promise<Number> {
     let athleteIds: number[] = [];
-    const nftImages = ['nftImageLocked', 'nftImagePromo'];
+    const nftImages = ['nftImage', 'nftImageLocked', 'nftImagePromo'];
     console.log(isPromo);
     //setup AWS S3 bucket
     const s3Filebase = new S3({
@@ -518,7 +518,6 @@ export class AthleteResolver {
         })
       ).map((athlete) => {
         if (isPromo) {
-          console.log('going here');
           const promoIpfs: IPFSMetadata = {
             name: `${athlete.firstName} ${athlete.lastName} Token`,
             description: 'Playible Athlete Promotional Token',
