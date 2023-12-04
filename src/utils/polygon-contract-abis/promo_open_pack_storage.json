@@ -2,41 +2,13 @@
 	{
 		"inputs": [
 			{
-				"internalType": "uint256",
-				"name": "requestId",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256[]",
-				"name": "randomWords",
-				"type": "uint256[]"
-			}
-		],
-		"name": "rawFulfillRandomWords",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
 				"internalType": "uint64",
 				"name": "subscriptionId",
 				"type": "uint64"
 			},
 			{
 				"internalType": "string",
-				"name": "_version",
-				"type": "string"
-			},
-			{
-				"internalType": "string",
 				"name": "_sport",
-				"type": "string"
-			},
-			{
-				"internalType": "string",
-				"name": "_release",
 				"type": "string"
 			}
 		],
@@ -83,77 +55,6 @@
 		],
 		"name": "ApprovalForAll",
 		"type": "event"
-	},
-	{
-		"inputs": [],
-		"name": "clearData",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"components": [
-					{
-						"internalType": "string",
-						"name": "athleteId",
-						"type": "string"
-					},
-					{
-						"internalType": "string",
-						"name": "soulboundTokenUri",
-						"type": "string"
-					},
-					{
-						"internalType": "string",
-						"name": "singleUseTokenUri",
-						"type": "string"
-					},
-					{
-						"internalType": "string",
-						"name": "symbol",
-						"type": "string"
-					},
-					{
-						"internalType": "string",
-						"name": "name",
-						"type": "string"
-					},
-					{
-						"internalType": "string",
-						"name": "team",
-						"type": "string"
-					},
-					{
-						"internalType": "string",
-						"name": "position",
-						"type": "string"
-					}
-				],
-				"internalType": "struct PromotionalOpenPack.addAthleteInfo[]",
-				"name": "athletes",
-				"type": "tuple[]"
-			}
-		],
-		"name": "executeAddAthletes",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "incrementSingleUseTokenCounter",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "incrementSoulboundTokenCounter",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
 	},
 	{
 		"anonymous": false,
@@ -263,13 +164,6 @@
 		"type": "event"
 	},
 	{
-		"inputs": [],
-		"name": "renounceOwnership",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
 		"anonymous": false,
 		"inputs": [
 			{
@@ -289,19 +183,6 @@
 		"type": "event"
 	},
 	{
-		"inputs": [],
-		"name": "requestRandomWords",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "requestId",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
 		"anonymous": false,
 		"inputs": [
 			{
@@ -319,154 +200,6 @@
 		],
 		"name": "RequestSent",
 		"type": "event"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "from",
-				"type": "address"
-			},
-			{
-				"internalType": "address",
-				"name": "to",
-				"type": "address"
-			},
-			{
-				"internalType": "uint256[]",
-				"name": "ids",
-				"type": "uint256[]"
-			},
-			{
-				"internalType": "uint256[]",
-				"name": "amounts",
-				"type": "uint256[]"
-			},
-			{
-				"internalType": "bytes",
-				"name": "data",
-				"type": "bytes"
-			}
-		],
-		"name": "safeBatchTransferFrom",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "from",
-				"type": "address"
-			},
-			{
-				"internalType": "address",
-				"name": "to",
-				"type": "address"
-			},
-			{
-				"internalType": "uint256",
-				"name": "id",
-				"type": "uint256"
-			},
-			{
-				"internalType": "uint256",
-				"name": "amount",
-				"type": "uint256"
-			},
-			{
-				"internalType": "bytes",
-				"name": "data",
-				"type": "bytes"
-			}
-		],
-		"name": "safeTransferFrom",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "operator",
-				"type": "address"
-			},
-			{
-				"internalType": "bool",
-				"name": "approved",
-				"type": "bool"
-			}
-		],
-		"name": "setApprovalForAll",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "ownerId",
-				"type": "address"
-			}
-		],
-		"name": "setOwnerId",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "enum PromotionalOpenPack.PackType",
-				"name": "_packType",
-				"type": "uint8"
-			}
-		],
-		"name": "setPackType",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "string[]",
-				"name": "positions",
-				"type": "string[]"
-			},
-			{
-				"internalType": "uint256[]",
-				"name": "amounts",
-				"type": "uint256[]"
-			},
-			{
-				"internalType": "string[]",
-				"name": "flexPositions",
-				"type": "string[]"
-			},
-			{
-				"internalType": "uint256",
-				"name": "flexSharedAmount",
-				"type": "uint256"
-			},
-			{
-				"internalType": "string[]",
-				"name": "anyPositions",
-				"type": "string[]"
-			},
-			{
-				"internalType": "uint256",
-				"name": "anySharedAmount",
-				"type": "uint256"
-			}
-		],
-		"name": "setStarterPositions",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
 	},
 	{
 		"anonymous": false,
@@ -506,19 +239,6 @@
 		"type": "event"
 	},
 	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "newOwner",
-				"type": "address"
-			}
-		],
-		"name": "transferOwnership",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
 		"anonymous": false,
 		"inputs": [
 			{
@@ -556,19 +276,6 @@
 		"type": "event"
 	},
 	{
-		"inputs": [
-			{
-				"internalType": "uint64",
-				"name": "newSubscriptionId",
-				"type": "uint64"
-			}
-		],
-		"name": "updateSubscriptionId",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
 		"anonymous": false,
 		"inputs": [
 			{
@@ -586,6 +293,19 @@
 		],
 		"name": "URI",
 		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_address",
+				"type": "address"
+			}
+		],
+		"name": "addAddressToWhitelist",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
 	},
 	{
 		"inputs": [
@@ -755,13 +475,102 @@
 		"type": "function"
 	},
 	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "deleteAthletes",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "requestId",
+				"type": "uint256"
+			}
+		],
+		"name": "deleteByRequestId",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "userAddress",
+				"type": "address"
+			}
+		],
+		"name": "deleteByUserAddress",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"components": [
+					{
+						"internalType": "string",
+						"name": "athleteId",
+						"type": "string"
+					},
+					{
+						"internalType": "string",
+						"name": "soulboundTokenUri",
+						"type": "string"
+					},
+					{
+						"internalType": "string",
+						"name": "singleUseTokenUri",
+						"type": "string"
+					},
+					{
+						"internalType": "string",
+						"name": "symbol",
+						"type": "string"
+					},
+					{
+						"internalType": "string",
+						"name": "name",
+						"type": "string"
+					},
+					{
+						"internalType": "string",
+						"name": "team",
+						"type": "string"
+					},
+					{
+						"internalType": "string",
+						"name": "position",
+						"type": "string"
+					}
+				],
+				"internalType": "struct PromotionalOpenPack.addAthleteInfo[]",
+				"name": "athletes",
+				"type": "tuple[]"
+			}
+		],
+		"name": "executeAddAthletes",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
 		"inputs": [],
-		"name": "currentPackType",
+		"name": "getAddedAthletesCount",
 		"outputs": [
 			{
-				"internalType": "enum PromotionalOpenPack.PackType",
+				"internalType": "uint256",
 				"name": "",
-				"type": "uint8"
+				"type": "uint256"
 			}
 		],
 		"stateMutability": "view",
@@ -785,11 +594,6 @@
 		"name": "getContractInfo",
 		"outputs": [
 			{
-				"internalType": "string",
-				"name": "Version",
-				"type": "string"
-			},
-			{
 				"internalType": "address",
 				"name": "ownerId",
 				"type": "address"
@@ -797,11 +601,6 @@
 			{
 				"internalType": "string",
 				"name": "sport",
-				"type": "string"
-			},
-			{
-				"internalType": "string",
-				"name": "release",
 				"type": "string"
 			}
 		],
@@ -842,19 +641,6 @@
 				"internalType": "string",
 				"name": "",
 				"type": "string"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "getPackType",
-		"outputs": [
-			{
-				"internalType": "enum PromotionalOpenPack.PackType",
-				"name": "",
-				"type": "uint8"
 			}
 		],
 		"stateMutability": "view",
@@ -923,6 +709,39 @@
 		"type": "function"
 	},
 	{
+		"inputs": [],
+		"name": "incrementSingleUseTokenCounter",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "incrementSoulboundTokenCounter",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_address",
+				"type": "address"
+			}
+		],
+		"name": "isAddressWhitelisted",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
 		"inputs": [
 			{
 				"internalType": "address",
@@ -947,32 +766,14 @@
 		"type": "function"
 	},
 	{
-		"inputs": [],
-		"name": "lastRequestId",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
 		"inputs": [
 			{
 				"internalType": "uint256",
-				"name": "",
+				"name": "requestId",
 				"type": "uint256"
-			},
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
 			}
 		],
-		"name": "member",
+		"name": "isRequestIdZero",
 		"outputs": [
 			{
 				"internalType": "bool",
@@ -986,12 +787,25 @@
 	{
 		"inputs": [
 			{
-				"internalType": "string",
-				"name": "",
-				"type": "string"
+				"internalType": "address",
+				"name": "userAddress",
+				"type": "address"
 			}
 		],
-		"name": "nextIndex",
+		"name": "isUserToRequestIdZero",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "lastRequestId",
 		"outputs": [
 			{
 				"internalType": "uint256",
@@ -1005,6 +819,63 @@
 	{
 		"inputs": [],
 		"name": "owner",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "requestId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256[]",
+				"name": "randomWords",
+				"type": "uint256[]"
+			}
+		],
+		"name": "rawFulfillRandomWords",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_address",
+				"type": "address"
+			}
+		],
+		"name": "removeAddressFromWhitelist",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "renounceOwnership",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"name": "requestIdToUser",
 		"outputs": [
 			{
 				"internalType": "address",
@@ -1035,22 +906,16 @@
 		"type": "function"
 	},
 	{
-		"inputs": [
+		"inputs": [],
+		"name": "requestRandomWords",
+		"outputs": [
 			{
 				"internalType": "uint256",
-				"name": "",
+				"name": "requestId",
 				"type": "uint256"
 			}
 		],
-		"name": "requestIdToUser",
-		"outputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"stateMutability": "view",
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
@@ -1078,16 +943,138 @@
 		"type": "function"
 	},
 	{
-		"inputs": [],
-		"name": "starterListCount",
-		"outputs": [
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "from",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "to",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256[]",
+				"name": "ids",
+				"type": "uint256[]"
+			},
+			{
+				"internalType": "uint256[]",
+				"name": "amounts",
+				"type": "uint256[]"
+			},
+			{
+				"internalType": "bytes",
+				"name": "data",
+				"type": "bytes"
+			}
+		],
+		"name": "safeBatchTransferFrom",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "from",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "to",
+				"type": "address"
+			},
 			{
 				"internalType": "uint256",
-				"name": "",
+				"name": "id",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			},
+			{
+				"internalType": "bytes",
+				"name": "data",
+				"type": "bytes"
+			}
+		],
+		"name": "safeTransferFrom",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "operator",
+				"type": "address"
+			},
+			{
+				"internalType": "bool",
+				"name": "approved",
+				"type": "bool"
+			}
+		],
+		"name": "setApprovalForAll",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "ownerId",
+				"type": "address"
+			}
+		],
+		"name": "setOwnerId",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string[]",
+				"name": "positions",
+				"type": "string[]"
+			},
+			{
+				"internalType": "uint256[]",
+				"name": "amounts",
+				"type": "uint256[]"
+			},
+			{
+				"internalType": "string[]",
+				"name": "flexPositions",
+				"type": "string[]"
+			},
+			{
+				"internalType": "uint256",
+				"name": "flexSharedAmount",
+				"type": "uint256"
+			},
+			{
+				"internalType": "string[]",
+				"name": "anyPositions",
+				"type": "string[]"
+			},
+			{
+				"internalType": "uint256",
+				"name": "anySharedAmount",
 				"type": "uint256"
 			}
 		],
-		"stateMutability": "view",
+		"name": "setStarterPositions",
+		"outputs": [],
+		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
@@ -1125,6 +1112,45 @@
 	{
 		"inputs": [
 			{
+				"internalType": "address",
+				"name": "newOwner",
+				"type": "address"
+			}
+		],
+		"name": "transferOwnership",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "newLogicAddress",
+				"type": "address"
+			}
+		],
+		"name": "updatePromoOpenPackLogicAddress",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint64",
+				"name": "newSubscriptionId",
+				"type": "uint64"
+			}
+		],
+		"name": "updateSubscriptionId",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
 				"internalType": "uint256",
 				"name": "tokenId",
 				"type": "uint256"
@@ -1155,56 +1181,6 @@
 				"internalType": "uint256",
 				"name": "",
 				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "viewAddedAthletes",
-		"outputs": [
-			{
-				"components": [
-					{
-						"internalType": "string",
-						"name": "athleteId",
-						"type": "string"
-					},
-					{
-						"internalType": "string",
-						"name": "soulboundTokenUri",
-						"type": "string"
-					},
-					{
-						"internalType": "string",
-						"name": "singleUseTokenUri",
-						"type": "string"
-					},
-					{
-						"internalType": "string",
-						"name": "symbol",
-						"type": "string"
-					},
-					{
-						"internalType": "string",
-						"name": "name",
-						"type": "string"
-					},
-					{
-						"internalType": "string",
-						"name": "team",
-						"type": "string"
-					},
-					{
-						"internalType": "string",
-						"name": "position",
-						"type": "string"
-					}
-				],
-				"internalType": "struct PromotionalOpenPack.athleteInfo[]",
-				"name": "",
-				"type": "tuple[]"
 			}
 		],
 		"stateMutability": "view",
@@ -1295,6 +1271,25 @@
 	{
 		"inputs": [
 			{
+				"internalType": "uint256",
+				"name": "requestId",
+				"type": "uint256"
+			}
+		],
+		"name": "viewRequestIdToUser",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
 				"internalType": "string",
 				"name": "position",
 				"type": "string"
@@ -1361,6 +1356,44 @@
 				"internalType": "uint64",
 				"name": "",
 				"type": "uint64"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "userAddress",
+				"type": "address"
+			}
+		],
+		"name": "viewUserToRequestId",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "whitelist",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
 			}
 		],
 		"stateMutability": "view",

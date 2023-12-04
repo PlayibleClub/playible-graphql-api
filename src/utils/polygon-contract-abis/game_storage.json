@@ -3,31 +3,6 @@
 		"anonymous": false,
 		"inputs": [
 			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "gameId",
-				"type": "uint256"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "gameTimeStart",
-				"type": "uint256"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "gameTimeEnd",
-				"type": "uint256"
-			}
-		],
-		"name": "AddGame",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
 				"indexed": true,
 				"internalType": "address",
 				"name": "previousOwner",
@@ -41,56 +16,6 @@
 			}
 		],
 		"name": "OwnershipTransferred",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "gameId",
-				"type": "uint256"
-			}
-		],
-		"name": "RemoveGame",
-		"type": "event"
-	},
-	{
-		"anonymous": false,
-		"inputs": [
-			{
-				"indexed": false,
-				"internalType": "string",
-				"name": "result",
-				"type": "string"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256",
-				"name": "gameId",
-				"type": "uint256"
-			},
-			{
-				"indexed": false,
-				"internalType": "string",
-				"name": "teamName",
-				"type": "string"
-			},
-			{
-				"indexed": false,
-				"internalType": "address",
-				"name": "signer",
-				"type": "address"
-			},
-			{
-				"indexed": false,
-				"internalType": "uint256[]",
-				"name": "lineup",
-				"type": "uint256[]"
-			}
-		],
-		"name": "SucceedLineupSubmission",
 		"type": "event"
 	},
 	{
@@ -208,11 +133,6 @@
 			{
 				"internalType": "uint256[]",
 				"name": "lineup",
-				"type": "uint256[]"
-			},
-			{
-				"internalType": "uint256[]",
-				"name": "apiIds",
 				"type": "uint256[]"
 			}
 		],
@@ -362,7 +282,7 @@
 				"type": "address"
 			}
 		],
-		"name": "checkAddressExistInWhitelist",
+		"name": "checkAddressExistsInWhitelist",
 		"outputs": [
 			{
 				"internalType": "bool",
@@ -392,6 +312,30 @@
 			}
 		],
 		"name": "checkTeamExists",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "gameId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "uint8",
+				"name": "tokenType",
+				"type": "uint8"
+			}
+		],
+		"name": "checkTypeExistsInWhitelist",
 		"outputs": [
 			{
 				"internalType": "bool",

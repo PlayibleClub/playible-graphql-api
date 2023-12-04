@@ -16,10 +16,13 @@ import axios, { AxiosResponse } from 'axios';
 import { S3 } from 'aws-sdk';
 import { Athlete } from '../entities/Athlete';
 import { AthleteStat } from '../entities/AthleteStat';
+import { GameTeam } from '../entities/GameTeam';
+import { GameTeamAthlete } from '../entities/GameTeamAthlete';
+
 import { Team } from '../entities/Team';
 import fs from 'fs';
 import path from 'path';
-import { In, MoreThanOrEqual, LessThanOrEqual } from 'typeorm';
+import { In, MoreThanOrEqual, LessThanOrEqual, Between } from 'typeorm';
 import {
   NFL_ATHLETE_IDS,
   NFL_ATHLETE_PROMO_IDS,
@@ -33,7 +36,7 @@ import moment from 'moment';
 import { ethers } from 'ethers';
 import promoOpenPackStorageABI from './../utils/polygon-contract-abis/promo_open_pack_storage.json';
 import regularOpenPackStorageABI from './../utils/polygon-contract-abis/regular_open_pack_storage.json';
-import { IPFSMetadata } from './../utils/types';
+import { IPFSMetadata, ChainType } from './../utils/types';
 @ObjectType()
 class Distribution {
   @Field()
@@ -166,7 +169,52 @@ export class AthleteResolver {
 
     return athlete;
   }
-
+  @Query(() => [GameTeamAthlete])
+  async getEntrySummaryAthletes(
+    @Arg('teamName') teamName: string,
+    @Arg('address') address: string,
+    @Arg('gameId') gameId: number,
+    @Arg('chain') chain: ChainType
+  ): Promise<GameTeamAthlete[]> {
+    let returnAthletes = await GameTeamAthlete.find({
+      where: {
+        gameTeam: {
+          name: teamName,
+          wallet_address: address,
+          game: {
+            gameId: gameId,
+            chain: chain,
+          },
+        },
+        // athlete: {
+        //   stats: {
+        //     gameDate: Between(from, to),
+        //   },
+        // },
+      },
+      relations: {
+        gameTeam: {
+          game: true,
+        },
+        athlete: {
+          team: true,
+          stats: true,
+        },
+      },
+    });
+    returnAthletes.forEach((athlete) => {
+      //add played = 1
+      athlete.athlete.stats = athlete.athlete.stats.filter(
+        (stat) =>
+          stat.gameDate &&
+          moment(stat.gameDate).unix() >=
+            moment(athlete.gameTeam.game.startTime).unix() &&
+          moment(stat.gameDate).unix() <=
+            moment(athlete.gameTeam.game.endTime).unix()
+      );
+    });
+    return returnAthletes;
+  }
   @Query(() => [Athlete])
   async getAthleteByIds(
     @Arg('ids', () => [Number]) ids: number[]
@@ -298,7 +346,7 @@ export class AthleteResolver {
     @Arg('isPromo') isPromo: boolean = false
   ): Promise<Number> {
     let athleteIds: number[] = [];
-    const nftImages = ['nftImageLocked', 'nftImagePromo'];
+    const nftImages = ['nftImage', 'nftImageLocked', 'nftImagePromo'];
     console.log(isPromo);
     //setup AWS S3 bucket
     const s3Filebase = new S3({
@@ -470,7 +518,6 @@ export class AthleteResolver {
         })
       ).map((athlete) => {
         if (isPromo) {
-          console.log('going here');
           const promoIpfs: IPFSMetadata = {
             name: `${athlete.firstName} ${athlete.lastName} Token`,
             description: 'Playible Athlete Promotional Token',

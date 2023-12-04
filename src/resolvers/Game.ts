@@ -24,7 +24,7 @@ import {
   QueryBuilder,
 } from 'typeorm';
 import { CreateGameArgs, CreateTeamArgs, GetGameArgs } from '../args/GameArgs';
-import { GameTab, SportType, ContractType } from '../utils/types';
+import { GameTab, SportType, ChainType } from '../utils/types';
 import { AppDataSource } from '../utils/db';
 import moment from 'moment-timezone';
 import { Leaderboard } from '../entities/Leaderboard';
@@ -57,6 +57,26 @@ export class GameResolver {
             athlete: { team: true, stats: true },
             //asset: { collection: true },
           },
+        },
+      },
+    });
+  }
+
+  @Query(() => Game)
+  async getGameByGameIdAndChain(
+    @Arg('gameId') gameId: number,
+    @Arg('sport') sport: SportType,
+    @Arg('chain') chain: ChainType
+  ): Promise<Game> {
+    return await Game.findOneOrFail({
+      where: {
+        gameId: gameId,
+        sport: sport,
+        chain: chain,
+      },
+      relations: {
+        teams: {
+          athletes: true,
         },
       },
     });
@@ -126,75 +146,179 @@ export class GameResolver {
   }
 
   @Query(() => [LeaderboardResult])
-  async getLeaderboard(
+  async getLeaderboardTeams(
     @Arg('gameId') gameId: number,
-    @Arg('sport') sport: SportType
+    @Arg('sport') sport: SportType,
+    @Arg('chain') chain: ChainType
   ): Promise<LeaderboardResult[]> {
     const returnTeam = await AppDataSource.getRepository(Game)
       .createQueryBuilder('g')
       .groupBy('gt.id')
+      .addGroupBy('g.chain')
       .orderBy('total', 'DESC')
       .select([
-        'SUM(as.fantasyScore) as total',
+        '0 as total',
         'gt.name as team_name',
         'gt.id as game_team_id',
         'gt.wallet_address as wallet_address',
+        'g.chain as chain_name',
       ])
       .innerJoin('g.teams', 'gt')
       .innerJoin('gt.athletes', 'gta')
       .innerJoin('gta.athlete', 'a')
-      .innerJoin('a.stats', 'as')
       .where('g.gameId = :gameId', { gameId: gameId })
-      .andWhere('as.gameDate >= g.startTime')
-      .andWhere('as.gameDate <= g.endTime')
       .andWhere('g.sport = :sport', { sport: sport })
-      .andWhere('as.played = 1')
+      .andWhere('g.chain = :chain', { chain: chain })
       .getRawMany();
+    console.log(returnTeam);
     return returnTeam;
   }
-
   @Query(() => [LeaderboardResult])
-  async getMergedLeaderboardResult(
+  async getLeaderboardResult(
     @Arg('gameId') gameId: number,
     @Arg('sport') sport: SportType,
-    @Arg('chain') chain: ContractType
+    @Arg('chain') chain: ChainType
   ): Promise<LeaderboardResult[]> {
-    let gameChain: string; //default
-    switch (chain) {
-      case ContractType.POLYGON:
-        gameChain = 'l.polygonGame = :gameId';
-        break;
-      case ContractType.NEAR:
-        gameChain = 'l.nearGame = :gameId';
-        break;
-      default:
-        return [];
-    }
-
-    const season = '2023REG';
-    const type = 'season';
-    //separate results
-    const polygonResults = await AppDataSource.getRepository(Leaderboard)
-      .createQueryBuilder('l')
+    const returnTeam = await AppDataSource.getRepository(Game)
+      .createQueryBuilder('g')
       .groupBy('gt.id')
-      .addGroupBy('g.contract')
+      .addGroupBy('g.chain')
       .orderBy('total', 'DESC')
       .select([
         'SUM(as2.fantasyScore) as total',
         'gt.name as team_name',
         'gt.id as game_team_id',
         'gt.wallet_address as wallet_address',
-        'g.contract as chain_name',
+        'g.chain as chain_name',
+      ])
+      .innerJoin('g.teams', 'gt')
+      .innerJoin('gt.athletes', 'gta')
+      .innerJoin('gta.athlete', 'a')
+      .innerJoin('a.stats', 'as2')
+      .where('g.gameId = :gameId', { gameId: gameId })
+      .andWhere('as2.gameDate >= g.startTime')
+      .andWhere('as2.gameDate <= g.endTime')
+      .andWhere('g.sport = :sport', { sport: sport })
+      .andWhere('as2.played = 1')
+      .andWhere('g.chain = :chain', { chain: chain })
+      .getRawMany();
+    console.log(returnTeam);
+    return returnTeam;
+  }
+
+  @Query(() => [LeaderboardResult])
+  async getLeaderboardResultForPlayer(
+    @Arg('gameId') gameId: number,
+    @Arg('sport') sport: SportType,
+    @Arg('chain') chain: ChainType,
+    @Arg('address') address: string,
+    @Arg('teamName') teamName: string
+  ): Promise<LeaderboardResult[]> {
+    const returnTeam = await AppDataSource.getRepository(Game)
+      .createQueryBuilder('g')
+      .groupBy('gt.id')
+      .addGroupBy('g.chain')
+      .orderBy('total', 'DESC')
+      .select([
+        'SUM(as2.fantasyScore) as total',
+        'gt.name as team_name',
+        'gt.id as game_team_id',
+        'gt.wallet_address as wallet_address',
+        'g.chain as chain_name',
+      ])
+      .innerJoin('g.teams', 'gt')
+      .innerJoin('gt.athletes', 'gta')
+      .innerJoin('gta.athlete', 'a')
+      .innerJoin('a.stats', 'as2')
+      .where('g.gameId = :gameId', { gameId: gameId })
+      .andWhere('as2.gameDate >= g.startTime')
+      .andWhere('as2.gameDate <= g.endTime')
+      .andWhere('g.sport = :sport', { sport: sport })
+      .andWhere('as2.played = 1')
+      .andWhere('g.chain = :chain', { chain: chain })
+      .andWhere('gt.name = :teamName', { teamName: teamName })
+      .andWhere('gt.wallet_address = :address', { address: address })
+      .getRawMany();
+    console.log(returnTeam);
+    return returnTeam;
+  }
+
+  @Query(() => Leaderboard)
+  async checkIfGameExistsInMultiChainLeaderboard(
+    @Arg('gameId') id: number,
+    @Arg('sport') sport: SportType,
+    @Arg('chain') chain: ChainType
+  ): Promise<Leaderboard> {
+    let result;
+    switch (chain) {
+      case ChainType.POLYGON:
+        result = await Leaderboard.findOneOrFail({
+          where: {
+            sport: sport,
+            polygonGame: {
+              id: id,
+            },
+          },
+          relations: {
+            polygonGame: true,
+            nearGame: true,
+          },
+        });
+        return result;
+      case ChainType.NEAR:
+        result = await Leaderboard.findOneOrFail({
+          where: {
+            sport: sport,
+            nearGame: {
+              id: id,
+            },
+          },
+          relations: {
+            polygonGame: true,
+            nearGame: true,
+          },
+        });
+        return result;
+    }
+  }
+
+  @Query(() => [LeaderboardResult])
+  async getMultiChainLeaderboardTeams(
+    @Arg('gameId') gameId: number,
+    @Arg('sport') sport: SportType,
+    @Arg('chain') chain: ChainType
+  ): Promise<LeaderboardResult[]> {
+    let gameChain: string; //default
+    switch (chain) {
+      case ChainType.POLYGON:
+        gameChain = 'l.polygonGame = :gameId';
+        break;
+      case ChainType.NEAR:
+        gameChain = 'l.nearGame = :gameId';
+        break;
+      default:
+        return [];
+    }
+
+    //separate results
+    const polygonResults = await AppDataSource.getRepository(Leaderboard)
+      .createQueryBuilder('l')
+      .groupBy('gt.id')
+      .addGroupBy('g.chain')
+      .orderBy('total', 'DESC')
+      .select([
+        '0 as total',
+        'gt.name as team_name',
+        'gt.id as game_team_id',
+        'gt.wallet_address as wallet_address',
+        'g.chain as chain_name',
       ])
       .innerJoin('l.polygonGame', 'g')
       .innerJoin('g.teams', 'gt')
       .innerJoin('gt.athletes', 'gta')
       .innerJoin('gta.athlete', 'a')
-      .innerJoin('a.stats', 'as2')
       .where(gameChain, { gameId: gameId })
       .andWhere('g.sport = :sport', { sport: sport })
-      .andWhere('as2.season = :season', { season: season })
-      .andWhere('as2.type = :type', { type: type })
       // .andWhere('as.gameDate >= g.startTime')
       // .andWhere('as.gameDate <= g.endTime')
       //.andWhere('as.played = 1')
@@ -202,26 +326,23 @@ export class GameResolver {
     const nearResults = await AppDataSource.getRepository(Leaderboard)
       .createQueryBuilder('l')
       .groupBy('gt.id')
-      .addGroupBy('g.contract')
+      .addGroupBy('g.chain')
       .orderBy('total', 'DESC')
       .select([
-        'SUM(as2.fantasyScore) as total',
+        '0 as total',
         'gt.name as team_name',
         'gt.id as game_team_id',
         'gt.wallet_address as wallet_address',
-        'g.contract as chain_name',
+        'g.chain as chain_name',
       ])
       .innerJoin('l.nearGame', 'g')
       .innerJoin('g.teams', 'gt')
       .innerJoin('gt.athletes', 'gta')
       .innerJoin('gta.athlete', 'a')
-      .innerJoin('a.stats', 'as2')
       .where(gameChain, { gameId: gameId })
       .andWhere('g.sport = :sport', { sport: sport })
       // .andWhere('as.gameDate >= g.startTime')
       // .andWhere('as.gameDate <= g.endTime')
-      .andWhere('as2.season = :season', { season: season })
-      .andWhere('as2.type = :type', { type: type })
       //.andWhere('as.played = 1')
       .getRawMany();
 
@@ -231,10 +352,80 @@ export class GameResolver {
     results.sort((a, b) => b.total - a.total);
     return results;
   }
+  @Query(() => [LeaderboardResult])
+  async getMultiChainLeaderboardResult(
+    @Arg('gameId') gameId: number,
+    @Arg('sport') sport: SportType,
+    @Arg('chain') chain: ChainType
+  ): Promise<LeaderboardResult[]> {
+    let gameChain: string; //default
+    switch (chain) {
+      case ChainType.POLYGON:
+        gameChain = 'l.polygonGame = :gameId';
+        break;
+      case ChainType.NEAR:
+        gameChain = 'l.nearGame = :gameId';
+        break;
+      default:
+        return [];
+    }
+
+    //separate results
+    const polygonResults = await AppDataSource.getRepository(Leaderboard)
+      .createQueryBuilder('l')
+      .groupBy('gt.id')
+      .addGroupBy('g.chain')
+      .orderBy('total', 'DESC')
+      .select([
+        'SUM(as2.fantasyScore) as total',
+        'gt.name as team_name',
+        'gt.id as game_team_id',
+        'gt.wallet_address as wallet_address',
+        'g.chain as chain_name',
+      ])
+      .innerJoin('l.polygonGame', 'g')
+      .innerJoin('g.teams', 'gt')
+      .innerJoin('gt.athletes', 'gta')
+      .innerJoin('gta.athlete', 'a')
+      .innerJoin('a.stats', 'as2')
+      .where(gameChain, { gameId: gameId })
+      .andWhere('g.sport = :sport', { sport: sport })
+      .andWhere('as2.gameDate >= g.startTime')
+      .andWhere('as2.gameDate <= g.endTime')
+      .andWhere('as2.played = 1')
+      .getRawMany();
+    const nearResults = await AppDataSource.getRepository(Leaderboard)
+      .createQueryBuilder('l')
+      .groupBy('gt.id')
+      .addGroupBy('g.chain')
+      .orderBy('total', 'DESC')
+      .select([
+        'SUM(as2.fantasyScore) as total',
+        'gt.name as team_name',
+        'gt.id as game_team_id',
+        'gt.wallet_address as wallet_address',
+        'g.chain as chain_name',
+      ])
+      .innerJoin('l.nearGame', 'g')
+      .innerJoin('g.teams', 'gt')
+      .innerJoin('gt.athletes', 'gta')
+      .innerJoin('gta.athlete', 'a')
+      .innerJoin('a.stats', 'as2')
+      .where(gameChain, { gameId: gameId })
+      .andWhere('g.sport = :sport', { sport: sport })
+      .andWhere('as2.gameDate >= g.startTime')
+      .andWhere('as2.gameDate <= g.endTime')
+      .andWhere('as2.played = 1')
+      .getRawMany();
+
+    const results = polygonResults.concat(nearResults);
+    results.sort((a, b) => b.total - a.total);
+    return results;
+  }
 
   @Authorized('ADMIN')
   @Mutation(() => Leaderboard)
-  async mergeIntoLeaderboard(
+  async mergeIntoMultiChainLeaderboard(
     @Arg('nearGameId') nearGameId: number,
     @Arg('polygonGameId') polygonGameId: number,
     @Arg('sport') sport: SportType
@@ -244,14 +435,14 @@ export class GameResolver {
       where: {
         sport: sport,
         gameId: nearGameId,
-        contract: ContractType.NEAR,
+        chain: ChainType.NEAR,
       },
     });
     const polygonGame = await Game.findOneOrFail({
       where: {
         sport: sport,
         gameId: polygonGameId,
-        contract: ContractType.POLYGON,
+        chain: ChainType.POLYGON,
       },
     });
 

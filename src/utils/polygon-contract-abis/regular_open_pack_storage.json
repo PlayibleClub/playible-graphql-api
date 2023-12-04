@@ -2,23 +2,59 @@
 	{
 		"inputs": [
 			{
+				"internalType": "address",
+				"name": "_address",
+				"type": "address"
+			}
+		],
+		"name": "addAddressToWhitelist",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "amount",
+				"type": "uint256"
+			}
+		],
+		"name": "deleteAthletes",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "requestId",
+				"type": "uint256"
+			}
+		],
+		"name": "deleteByRequestId",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "incrementTokenId",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
 				"internalType": "uint64",
 				"name": "subscriptionId",
 				"type": "uint64"
 			},
 			{
 				"internalType": "string",
-				"name": "_version",
-				"type": "string"
-			},
-			{
-				"internalType": "string",
 				"name": "_sport",
-				"type": "string"
-			},
-			{
-				"internalType": "string",
-				"name": "_release",
 				"type": "string"
 			}
 		],
@@ -67,8 +103,14 @@
 		"type": "event"
 	},
 	{
-		"inputs": [],
-		"name": "deleteAthletesInBatches",
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "userAddress",
+				"type": "address"
+			}
+		],
+		"name": "deleteByUserAddress",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -119,13 +161,6 @@
 		"type": "function"
 	},
 	{
-		"inputs": [],
-		"name": "incrementTokenId",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
 		"anonymous": false,
 		"inputs": [
 			{
@@ -158,11 +193,6 @@
 					{
 						"internalType": "string",
 						"name": "position",
-						"type": "string"
-					},
-					{
-						"internalType": "string",
-						"name": "release",
 						"type": "string"
 					}
 				],
@@ -246,6 +276,19 @@
 			}
 		],
 		"name": "rawFulfillRandomWords",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "_address",
+				"type": "address"
+			}
+		],
+		"name": "removeAddressFromWhitelist",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"
@@ -533,6 +576,19 @@
 	{
 		"inputs": [
 			{
+				"internalType": "address",
+				"name": "newLogicAddress",
+				"type": "address"
+			}
+		],
+		"name": "updateOpenPackLogicAddress",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
 				"internalType": "uint64",
 				"name": "newSubscriptionId",
 				"type": "uint64"
@@ -600,11 +656,6 @@
 			{
 				"internalType": "string",
 				"name": "position",
-				"type": "string"
-			},
-			{
-				"internalType": "string",
-				"name": "release",
 				"type": "string"
 			}
 		],
@@ -731,6 +782,19 @@
 	},
 	{
 		"inputs": [],
+		"name": "getAddedAthletesCount",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
 		"name": "getAthletePositionSize",
 		"outputs": [
 			{
@@ -747,11 +811,6 @@
 		"name": "getContractInfo",
 		"outputs": [
 			{
-				"internalType": "string",
-				"name": "Version",
-				"type": "string"
-			},
-			{
 				"internalType": "address",
 				"name": "ownerId",
 				"type": "address"
@@ -759,11 +818,6 @@
 			{
 				"internalType": "string",
 				"name": "sport",
-				"type": "string"
-			},
-			{
-				"internalType": "string",
-				"name": "release",
 				"type": "string"
 			}
 		],
@@ -862,6 +916,25 @@
 		"inputs": [
 			{
 				"internalType": "address",
+				"name": "_address",
+				"type": "address"
+			}
+		],
+		"name": "isAddressWhitelisted",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
 				"name": "account",
 				"type": "address"
 			},
@@ -883,32 +956,14 @@
 		"type": "function"
 	},
 	{
-		"inputs": [],
-		"name": "lastRequestId",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
 		"inputs": [
 			{
 				"internalType": "uint256",
-				"name": "",
+				"name": "requestId",
 				"type": "uint256"
-			},
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
 			}
 		],
-		"name": "member",
+		"name": "isRequestIdZero",
 		"outputs": [
 			{
 				"internalType": "bool",
@@ -922,12 +977,25 @@
 	{
 		"inputs": [
 			{
-				"internalType": "string",
-				"name": "",
-				"type": "string"
+				"internalType": "address",
+				"name": "userAddress",
+				"type": "address"
 			}
 		],
-		"name": "nextIndex",
+		"name": "isUserToRequestIdZero",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "lastRequestId",
 		"outputs": [
 			{
 				"internalType": "uint256",
@@ -1014,19 +1082,6 @@
 		"type": "function"
 	},
 	{
-		"inputs": [],
-		"name": "starterListCount",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
 		"inputs": [
 			{
 				"internalType": "bytes4",
@@ -1040,19 +1095,6 @@
 				"internalType": "bool",
 				"name": "",
 				"type": "bool"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "tokenCounter",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
 			}
 		],
 		"stateMutability": "view",
@@ -1091,56 +1133,6 @@
 				"internalType": "uint256",
 				"name": "",
 				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "viewAddedAthletes",
-		"outputs": [
-			{
-				"components": [
-					{
-						"internalType": "string",
-						"name": "athleteId",
-						"type": "string"
-					},
-					{
-						"internalType": "string",
-						"name": "tokenUri",
-						"type": "string"
-					},
-					{
-						"internalType": "string",
-						"name": "symbol",
-						"type": "string"
-					},
-					{
-						"internalType": "string",
-						"name": "name",
-						"type": "string"
-					},
-					{
-						"internalType": "string",
-						"name": "team",
-						"type": "string"
-					},
-					{
-						"internalType": "string",
-						"name": "position",
-						"type": "string"
-					},
-					{
-						"internalType": "string",
-						"name": "release",
-						"type": "string"
-					}
-				],
-				"internalType": "struct OpenPack.athleteInfo[]",
-				"name": "",
-				"type": "tuple[]"
 			}
 		],
 		"stateMutability": "view",
@@ -1231,6 +1223,25 @@
 	{
 		"inputs": [
 			{
+				"internalType": "uint256",
+				"name": "requestId",
+				"type": "uint256"
+			}
+		],
+		"name": "viewRequestIdToUser",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
 				"internalType": "string",
 				"name": "position",
 				"type": "string"
@@ -1274,11 +1285,6 @@
 						"internalType": "string",
 						"name": "position",
 						"type": "string"
-					},
-					{
-						"internalType": "string",
-						"name": "release",
-						"type": "string"
 					}
 				],
 				"internalType": "struct OpenPack.athleteInfo",
@@ -1297,6 +1303,44 @@
 				"internalType": "uint64",
 				"name": "",
 				"type": "uint64"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "userAddress",
+				"type": "address"
+			}
+		],
+		"name": "viewUserToRequestId",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"name": "whitelist",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
 			}
 		],
 		"stateMutability": "view",

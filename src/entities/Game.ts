@@ -8,7 +8,7 @@ import {
   Relation,
 } from 'typeorm';
 
-import { SportType, ContractType } from '../utils/types';
+import { SportType, ChainType } from '../utils/types';
 import { GameTeam } from './GameTeam';
 
 @ObjectType()
@@ -57,10 +57,10 @@ export class Game extends BaseEntity {
   @Field(() => String)
   @Column({
     type: 'enum',
-    enum: ContractType,
-    default: ContractType.NEAR,
+    enum: ChainType,
+    default: ChainType.NEAR,
   })
-  contract: ContractType = ContractType.NEAR;
+  chain: ChainType = ChainType.NEAR;
 
   @Field(() => [GameTeam])
   @OneToMany(() => GameTeam, (gameTeam) => gameTeam.game, {

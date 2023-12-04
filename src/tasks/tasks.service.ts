@@ -51,7 +51,7 @@ import {
   ResponseStatus,
   SportMap,
   TokenType,
-  ContractType,
+  ChainType,
 } from '../utils/types';
 import {
   CricketTeamInterface,
@@ -78,7 +78,7 @@ import { getSportType } from '../helpers/Sport';
 import { addGameHandler, submitLineupHandler } from '../helpers/EventHandler';
 import { computeShoheiOhtaniScores } from '../helpers/Athlete';
 import e from 'express';
-import gameABI from '../utils/polygon-contract-abis/game_storage.json';
+import gameABI from '../utils/polygon-contract-abis/game_logic.json';
 import athleteStorageABI from '../utils/polygon-contract-abis/regular_athlete_storage.json';
 import promoAthleteStorageABI from '../utils/polygon-contract-abis/promo_athlete_storage.json';
 @Injectable()
@@ -4759,7 +4759,7 @@ export class TasksService {
       //credentials
       s3BucketName: 'near-lake-data-testnet',
       s3RegionName: 'eu-central-1',
-      startBlockHeight: 143081340, // for testnet
+      startBlockHeight: 147175993, // for testnet
       //startBlockHeight: 97856450//97543661//97856450, //97239921 old
     };
     const nearGameMainnetContracts = [
@@ -4789,7 +4789,7 @@ export class TasksService {
           hash: streamerMessage.block.header.hash,
         },
       });
-      console.log(streamerMessage.block.header.height);
+      //console.log(streamerMessage.block.header.height);
       if (!block) {
         //console.log(`Response array length ${nearResponses.length}`)
         for (let shard of streamerMessage.shards) {
@@ -5244,7 +5244,7 @@ export class TasksService {
     function listenToNFLGameContract() {
       const logger = new Logger('NFLGameContract');
       console.log('Start polygon listen');
-      const network = 'maticmum';
+      const network = 'maticmum'; //change to mainnet after
       const address = process.env.METAMASK_WALLET_ADDRESS ?? 'default';
       const abi = gameABI;
       const provider = new ethers.AlchemyProvider(
@@ -5267,7 +5267,7 @@ export class TasksService {
             const game = await Game.findOne({
               where: {
                 gameId: convertGameId,
-                contract: ContractType.POLYGON,
+                chain: ChainType.POLYGON,
                 sport: SportType.NFL,
               },
             });
@@ -5276,27 +5276,31 @@ export class TasksService {
               await Game.create({
                 gameId: convertGameId,
                 name: `Game ${convertGameId}`,
-                description: 'on-going',
-                startTime: moment.unix(
-                  typeof gameTimeStart === 'bigint'
-                    ? Number(gameTimeStart)
-                    : gameTimeStart
-                ),
-                endTime: moment.unix(
-                  typeof gameTimeEnd === 'bigint'
-                    ? Number(gameTimeEnd)
-                    : gameTimeEnd
-                ),
+                description: 'Playible POLYGON Game',
+                startTime: moment
+                  .unix(
+                    typeof gameTimeStart === 'bigint'
+                      ? Number(gameTimeStart)
+                      : gameTimeStart
+                  )
+                  .utc(),
+                endTime: moment
+                  .unix(
+                    typeof gameTimeEnd === 'bigint'
+                      ? Number(gameTimeEnd)
+                      : gameTimeEnd
+                  )
+                  .utc(),
                 sport: SportType.NFL,
-                contract: ContractType.POLYGON,
+                chain: ChainType.POLYGON,
               }).save();
 
               logger.debug(
-                `Game ${convertGameId} created for ${SportType.NFL} at ${ContractType.POLYGON}`
+                `Game ${convertGameId} created for ${SportType.NFL} at ${ChainType.POLYGON}`
               );
             } else {
               logger.error(
-                `Game ${convertGameId} for ${SportType.NFL} at ${ContractType.POLYGON} already exists`
+                `Game ${convertGameId} for ${SportType.NFL} at ${ChainType.POLYGON} already exists`
               );
             }
 
@@ -5306,7 +5310,7 @@ export class TasksService {
 
         gameContract.on(
           'SucceedLineupSubmission',
-          async (result, gameId, teamName, address, lineup, event) => {
+          async (result, gameId, teamName, address, lineup, tokens, event) => {
             logger.debug(result);
             const convertGameId =
               typeof gameId === 'bigint' ? Number(gameId) : gameId;
@@ -5315,7 +5319,7 @@ export class TasksService {
               where: {
                 gameId: convertGameId,
                 sport: SportType.NFL,
-                contract: ContractType.POLYGON,
+                chain: ChainType.POLYGON,
               },
             });
             if (game) {
@@ -5339,17 +5343,32 @@ export class TasksService {
                   name: teamName,
                   wallet_address: address,
                 }).save();
-                for (let apiId of lineup) {
+                for (let i = 0; i < lineup.length; i++) {
                   const athlete = await Athlete.findOne({
                     where: {
-                      apiId: Number(apiId),
+                      apiId: Number(lineup[i]),
                     },
                   });
+                  let tokenId = Number(tokens[i]).toString();
+                  let tokenType: TokenType = TokenType.REG;
+                  switch (tokenId[0]) {
+                    case '1':
+                      tokenType = TokenType.REG;
+                      break;
+                    case '2':
+                      tokenType = TokenType.PROMO;
+                      break;
+                    case '3':
+                      tokenType = TokenType.SOULBOUND;
+                      break;
+                  }
                   if (athlete) {
                     try {
                       await GameTeamAthlete.create({
                         gameTeam: currGameTeam,
                         athlete: athlete,
+                        token_id: tokenId,
+                        type: tokenType,
                       }).save();
                     } catch (e) {
                       logger.debug(e);
@@ -5358,15 +5377,38 @@ export class TasksService {
                     logger.debug('ERROR athlete apiId not found');
                   }
                 }
-                logger.debug('Successfully added team');
+                logger.debug(
+                  `Successfully added team ${teamName} for ${address} on game ${gameId} at chain ${ChainType.POLYGON}`
+                );
+                // for (let apiId of lineup) {
+                //   const athlete = await Athlete.findOne({
+                //     where: {
+                //       apiId: Number(apiId),
+                //     },
+                //   });
+                //   if (athlete) {
+                //     try {
+                //       await GameTeamAthlete.create({
+                //         gameTeam: currGameTeam,
+                //         athlete: athlete,
+
+                //       }).save();
+                //     } catch (e) {
+                //       logger.debug(e);
+                //     }
+                //   } else {
+                //     logger.debug('ERROR athlete apiId not found');
+                //   }
+                // }
+                // logger.debug('Successfully added team');
               } else {
                 logger.debug(
-                  `Team already exists on Game ${convertGameId} for ${SportType.NFL} at ${ContractType.POLYGON}`
+                  `Team already exists on Game ${convertGameId} for ${SportType.NFL} at ${ChainType.POLYGON}`
                 );
               }
             } else {
               logger.error(
-                `Game ${convertGameId} does not exist for ${SportType.NFL} at ${ContractType.POLYGON}`
+                `Game ${convertGameId} does not exist for ${SportType.NFL} at ${ChainType.POLYGON}`
               );
             }
           }
