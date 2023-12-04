@@ -506,6 +506,7 @@ export class AthleteResolver {
       });
       console.log(result);
       apiIdFromContract.push(result[2]);
+      await new Promise((resolve) => setTimeout(resolve, 2000));
     }
     return apiIdFromContract;
   }
