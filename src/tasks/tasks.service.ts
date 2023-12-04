@@ -5254,7 +5254,7 @@ export class TasksService {
 
       provider.pollingInterval = 20000;
       const gameContract = new Contract(
-        process.env.POLYGON_GAME_ADDRESS ?? 'contract',
+        process.env.POLYGON_NFL_GAME_ADDRESS ?? 'contract', //change to NFL specific
         abi,
         provider
       );
