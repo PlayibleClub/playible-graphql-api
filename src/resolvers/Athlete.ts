@@ -478,9 +478,9 @@ export class AthleteResolver {
   @Mutation(() => [Number])
   async getAthleteApiIdFromPolygonOpenPack(
     @Arg('contractAddress') contractAddress: string,
-    @Arg('sportType') sportType: SportType
+    @Arg('sportType') sportType: SportType,
+    @Arg('athleteLength') athleteLength: number
   ): Promise<Number[]> {
-    let athleteLength = 0;
     let apiIdFromContract = [];
     let contractABI: string = '';
     console.log('Start getAthleteApiIdFromPolygonOpenPack');
@@ -507,6 +507,7 @@ export class AthleteResolver {
       });
       console.log(i);
       //console.log(result);
+      //console.log(Number(result[2]));
       apiIdFromContract.push(Number(result[2]));
       //await new Promise((resolve) => setTimeout(resolve, 100));
     }
