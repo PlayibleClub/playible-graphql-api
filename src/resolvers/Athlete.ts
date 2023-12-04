@@ -475,6 +475,42 @@ export class AthleteResolver {
   }
 
   @Authorized('ADMIN')
+  @Mutation(() => [Number])
+  async getAthleteApiIdFromPolygonOpenPack(
+    @Arg('contractAddress') contractAddress: string,
+    @Arg('sportType') sportType: SportType
+  ): Promise<Number[]> {
+    let athleteLength = 0;
+    let apiIdFromContract = [];
+    let contractABI: string = '';
+    switch (sportType) {
+      case SportType.NFL:
+        athleteLength = NFL_ATHLETE_IDS.length;
+        contractABI = JSON.stringify(regularOpenPackStorageABI);
+        break;
+    }
+    const network = 'matic';
+    const provider = new ethers.AlchemyProvider(
+      network,
+      //process.env.ALCHEMY_ZKEVM_TESTNET_API_KEY
+      process.env.ALCHEMY_POLYGON_API_KEY
+    );
+    const signer = new ethers.Wallet(
+      process.env.METAMASK_PRIVATE_KEY ?? '',
+      provider
+    );
+    const contract = new ethers.Contract(contractAddress, contractABI, signer);
+    for (let i = 0; i < athleteLength; i++) {
+      const result = await contract.addedAthletes(i, {
+        from: process.env.METAMASK_WALLET_ADDRESS,
+      });
+      console.log(result);
+      apiIdFromContract.push(result[2]);
+    }
+    return apiIdFromContract;
+  }
+
+  @Authorized('ADMIN')
   @Mutation(() => Number)
   async addStarterAthletesToOpenPackContractPolygon(
     @Arg('sportType') sportType: SportType,
@@ -584,12 +620,13 @@ export class AthleteResolver {
       for (const chunk of chunkifiedAthletes) {
         console.log('Executing add athletes...');
         try {
-          await contract.executeAddAthletes(chunk, {
+          const receipt = await contract.executeAddAthletes(chunk, {
             from: process.env.METAMASK_WALLET_ADDRESS,
           });
         } catch (e) {
           console.log(e);
         }
+
         await new Promise((resolve) => setTimeout(resolve, 15000));
       }
       // await contract.executeAddAthletes(athletes, {
