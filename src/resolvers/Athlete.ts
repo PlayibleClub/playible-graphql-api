@@ -505,12 +505,13 @@ export class AthleteResolver {
       const result = await contract.addedAthletes(i, {
         from: process.env.METAMASK_WALLET_ADDRESS,
       });
-      console.log(i);
+      //console.log(i);
       //console.log(result);
-      //console.log(Number(result[2]));
+      console.log(Number(result[2]));
       apiIdFromContract.push(Number(result[2]));
       //await new Promise((resolve) => setTimeout(resolve, 100));
     }
+    console.log('getAthleteApiIdFromPolygonOpenPack Done');
     console.log(apiIdFromContract);
     return apiIdFromContract;
   }
