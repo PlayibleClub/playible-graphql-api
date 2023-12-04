@@ -509,6 +509,10 @@ export class AthleteResolver {
       //console.log(result);
       console.log(Number(result[2]));
       apiIdFromContract.push(Number(result[2]));
+      if (i + 1 === athleteLength) {
+        console.log('getAthleteApiIdFromPolygonOpenPack done');
+        console.log(apiIdFromContract);
+      }
       //await new Promise((resolve) => setTimeout(resolve, 100));
     }
     console.log('getAthleteApiIdFromPolygonOpenPack Done');
