@@ -4910,7 +4910,7 @@ export class TasksService {
       const athleteStorage = athleteStorageABI;
       const provider = new ethers.AlchemyProvider(
         network,
-        process.env.ALCHEMY_POLYGON_MUMBAI_API_KEY
+        process.env.ALCHEMY_POLYGON_MATIC_API_KEY
       );
 
       provider.pollingInterval = 20000;
@@ -5249,7 +5249,7 @@ export class TasksService {
       const abi = gameABI;
       const provider = new ethers.AlchemyProvider(
         network,
-        process.env.ALCHEMY_POLYGON_MUMBAI_API_KEY
+        process.env.ALCHEMY_POLYGON_MATIC_API_KEY
       );
 
       provider.pollingInterval = 20000;
