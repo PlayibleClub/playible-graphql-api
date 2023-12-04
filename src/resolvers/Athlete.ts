@@ -504,10 +504,11 @@ export class AthleteResolver {
       const result = await contract.addedAthletes(i, {
         from: process.env.METAMASK_WALLET_ADDRESS,
       });
-      console.log(result);
+      //console.log(result);
       apiIdFromContract.push(result[2]);
       //await new Promise((resolve) => setTimeout(resolve, 100));
     }
+    console.log(apiIdFromContract);
     return apiIdFromContract;
   }
 
