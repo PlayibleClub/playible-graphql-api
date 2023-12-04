@@ -505,7 +505,7 @@ export class AthleteResolver {
         from: process.env.METAMASK_WALLET_ADDRESS,
       });
       //console.log(result);
-      apiIdFromContract.push(result[2]);
+      apiIdFromContract.push(Number(result[2]));
       //await new Promise((resolve) => setTimeout(resolve, 100));
     }
     console.log(apiIdFromContract);
