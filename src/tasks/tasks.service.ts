@@ -4759,7 +4759,7 @@ export class TasksService {
       //credentials
       s3BucketName: 'near-lake-data-mainnet',
       s3RegionName: 'eu-central-1',
-      startBlockHeight: 107216427, // for testnet
+      startBlockHeight: 107217727, // for testnet
       //startBlockHeight: 97856450//97543661//97856450, //97239921 old
     };
     const nearGameMainnetContracts = [
@@ -4772,7 +4772,7 @@ export class TasksService {
       'game.nfl.playible.testnet',
       'game.basketball.playible.testnet',
     ];
-    let currentBlockHeight = lakeConfig.startBlockHeight;
+    //let currentBlockHeight = lakeConfig.startBlockHeight;
     //Function to receive responses from lake-indexer
     async function handleStreamerMessage(
       streamerMessage: types.StreamerMessage
@@ -4783,7 +4783,7 @@ export class TasksService {
       // }`)
       //console.log(count)
       //check if current block height is existing within the database
-      currentBlockHeight = streamerMessage.block.header.height;
+      //currentBlockHeight = streamerMessage.block.header.height;
       const block = await NearBlock.findOne({
         where: {
           height: streamerMessage.block.header.height,
@@ -4855,7 +4855,7 @@ export class TasksService {
                       }
                     } else {
                       Logger.debug(
-                        `No logs found for NEAR receipt at ${currentBlockHeight}`
+                        `No logs found for NEAR receipt at ${streamerMessage.block.header.height}`
                       );
                     }
                   } else if (
@@ -4897,7 +4897,7 @@ export class TasksService {
                       }
                     } else {
                       Logger.debug(
-                        `No logs found for NEAR receipt at ${currentBlockHeight}`
+                        `No logs found for NEAR receipt at ${streamerMessage.block.header.height}`
                       );
                     }
                   }
