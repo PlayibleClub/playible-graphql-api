@@ -346,7 +346,7 @@ export class AthleteResolver {
     @Arg('isPromo') isPromo: boolean = false
   ): Promise<Number> {
     let athleteIds: number[] = [];
-    const nftImages = ['nftImage'];
+    const nftImages = ['nftImageLocked', 'nftImagePromo'];
     console.log(isPromo);
     //setup AWS S3 bucket
     const s3Filebase = new S3({
