@@ -4753,13 +4753,13 @@ export class TasksService {
     }
   }
 
-  //@Timeout(1)
+  @Timeout(1)
   async runNearLakeFrameworkIndexer() {
     const lakeConfig: types.LakeConfig = {
       //credentials
       s3BucketName: 'near-lake-data-mainnet',
       s3RegionName: 'eu-central-1',
-      startBlockHeight: 147175993, // for testnet
+      startBlockHeight: 107193301, // for testnet
       //startBlockHeight: 97856450//97543661//97856450, //97239921 old
     };
     const nearGameMainnetContracts = [
@@ -5239,7 +5239,7 @@ export class TasksService {
 
     listenToAthleteStorage();
   }
-  //@Timeout(1)
+  @Timeout(1)
   async runPolygonMainnetNFLGameWebSocketListener() {
     function listenToNFLGameContract() {
       const logger = new Logger('NFLGameContract');
@@ -5262,6 +5262,7 @@ export class TasksService {
         gameContract.on(
           'AddGame',
           async (gameId, gameTimeStart, gameTimeEnd, event) => {
+            logger.debug('Found Playible Polygon NFL game');
             const convertGameId =
               typeof gameId === 'bigint' ? Number(gameId) : gameId;
             const game = await Game.findOne({
@@ -5311,6 +5312,7 @@ export class TasksService {
         gameContract.on(
           'SucceedLineupSubmission',
           async (result, gameId, teamName, address, lineup, tokens, event) => {
+            logger.debug('Found Playible Polygon NFL Submit Lineup');
             logger.debug(result);
             const convertGameId =
               typeof gameId === 'bigint' ? Number(gameId) : gameId;
