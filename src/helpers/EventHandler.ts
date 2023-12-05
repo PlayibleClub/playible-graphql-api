@@ -34,10 +34,10 @@ export async function addGameHandler(
       chain: ChainType.NEAR,
     }).save();
 
-    Logger.debug(`Game ${event.data[0].game_id} created for ${sport}`);
+    Logger.debug(`Game ${event.data[0].game_id} created for ${sport} on NEAR`);
     return true;
   } else {
-    Logger.error(`Game ${event.data[0].game_id} already exists`);
+    Logger.error(`Game ${event.data[0].game_id} already exists on NEAR`);
     return false;
   }
 }
@@ -110,14 +110,20 @@ export async function submitLineupHandler(
           Logger.error('ERROR athlete apiId not found, disregarding...');
         }
       }
-      Logger.debug('Successfully added team');
+      Logger.debug(
+        `Successfully added team ${event.data[0].team_name} for ${event.data[0].signer} on game ${event.data[0].game_id} ${sport} on NEAR `
+      );
       return true;
     } else {
-      Logger.error(`Team already exists on Game ${game.gameId} for ${sport}`);
+      Logger.error(
+        `Team already exists on Game ${game.gameId} for ${sport} on NEAR`
+      );
       return false;
     }
   } else {
-    Logger.error(`Game ${event.data[0].game_id} does not exist for ${sport}`);
+    Logger.error(
+      `Game ${event.data[0].game_id} does not exist for ${sport} on NEAR`
+    );
     return false;
   }
 }
