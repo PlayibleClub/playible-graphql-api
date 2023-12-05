@@ -4759,7 +4759,7 @@ export class TasksService {
       //credentials
       s3BucketName: 'near-lake-data-mainnet',
       s3RegionName: 'eu-central-1',
-      startBlockHeight: 107200275, // for testnet
+      startBlockHeight: 107216482, // for testnet
       //startBlockHeight: 97856450//97543661//97856450, //97239921 old
     };
     const nearGameMainnetContracts = [
@@ -4772,6 +4772,7 @@ export class TasksService {
       'game.nfl.playible.testnet',
       'game.basketball.playible.testnet',
     ];
+    let currentBlockHeight = lakeConfig.startBlockHeight;
     //Function to receive responses from lake-indexer
     async function handleStreamerMessage(
       streamerMessage: types.StreamerMessage
@@ -4782,7 +4783,7 @@ export class TasksService {
       // }`)
       //console.log(count)
       //check if current block height is existing within the database
-
+      currentBlockHeight = streamerMessage.block.header.height;
       const block = await NearBlock.findOne({
         where: {
           height: streamerMessage.block.header.height,
@@ -4819,34 +4820,42 @@ export class TasksService {
                     // const object: EventAddGameType = JSON.parse(JSON.stringify(receipt.executionOutcome.outcome.logs[0]))
                     // console.log(object.EVENT_JSON.event)
                     console.log(receipt.executionOutcome.outcome.logs[0]);
-                    const event: EventAddGameType = JSON.parse(
-                      receipt.executionOutcome.outcome.logs[0].substring(11)
-                    );
-                    const sport = getSportType(
-                      receipt.executionOutcome.outcome.executorId
-                    );
+                    if (
+                      receipt.executionOutcome.outcome.logs[0] !== undefined
+                    ) {
+                      const event: EventAddGameType = JSON.parse(
+                        receipt.executionOutcome.outcome.logs[0].substring(11)
+                      );
+                      const sport = getSportType(
+                        receipt.executionOutcome.outcome.executorId
+                      );
 
-                    let success = await addGameHandler(event, sport);
+                      let success = await addGameHandler(event, sport);
 
-                    if (success) {
-                      let nearBlock = await NearBlock.create({
-                        height: streamerMessage.block.header.height,
-                        hash: streamerMessage.block.header.hash,
-                        timestamp: moment().utc(),
-                      });
+                      if (success) {
+                        let nearBlock = await NearBlock.create({
+                          height: streamerMessage.block.header.height,
+                          hash: streamerMessage.block.header.hash,
+                          timestamp: moment().utc(),
+                        });
 
-                      let saveResponse = await NearResponse.create({
-                        receiverId: receipt.receipt.receiverId,
-                        signerId: receipt.receipt.predecessorId,
-                        receiptIds: [receipt.receipt.receiptId],
-                        methodName: object.FunctionCall.methodName,
-                        status: ResponseStatus.SUCCESS,
-                      });
+                        let saveResponse = await NearResponse.create({
+                          receiverId: receipt.receipt.receiverId,
+                          signerId: receipt.receipt.predecessorId,
+                          receiptIds: [receipt.receipt.receiptId],
+                          methodName: object.FunctionCall.methodName,
+                          status: ResponseStatus.SUCCESS,
+                        });
 
-                      nearBlock.nearResponse = saveResponse;
-                      await NearBlock.save(nearBlock);
+                        nearBlock.nearResponse = saveResponse;
+                        await NearBlock.save(nearBlock);
+                        Logger.debug(
+                          `Successfully created Block ${streamerMessage.block.header.height} for ${object.FunctionCall.methodName} call`
+                        );
+                      }
+                    } else {
                       Logger.debug(
-                        `Successfully created Block ${streamerMessage.block.header.height} for ${object.FunctionCall.methodName} call`
+                        `No logs found for NEAR receipt at ${currentBlockHeight}`
                       );
                     }
                   } else if (
@@ -4855,32 +4864,40 @@ export class TasksService {
                   ) {
                     //console.log(receipt.executionOutcome.outcome.logs)
                     console.log(receipt.executionOutcome.outcome.logs);
-                    const event: EventSubmitLineupType = JSON.parse(
-                      receipt.executionOutcome.outcome.logs[0].substring(11)
-                    );
-                    const sport = getSportType(
-                      receipt.executionOutcome.outcome.executorId
-                    );
+                    if (
+                      receipt.executionOutcome.outcome.logs[0] !== undefined
+                    ) {
+                      const event: EventSubmitLineupType = JSON.parse(
+                        receipt.executionOutcome.outcome.logs[0].substring(11)
+                      );
+                      const sport = getSportType(
+                        receipt.executionOutcome.outcome.executorId
+                      );
 
-                    let success = await submitLineupHandler(event, sport);
+                      let success = await submitLineupHandler(event, sport);
 
-                    if (success) {
-                      let nearBlock = await NearBlock.create({
-                        height: streamerMessage.block.header.height,
-                        hash: streamerMessage.block.header.hash,
-                        timestamp: moment().utc(),
-                      });
-                      let saveResponse = await NearResponse.create({
-                        receiverId: receipt.receipt.receiverId,
-                        signerId: event.data[0].signer,
-                        receiptIds: [receipt.receipt.receiptId],
-                        methodName: event.event,
-                        status: ResponseStatus.SUCCESS,
-                      });
-                      nearBlock.nearResponse = saveResponse;
-                      await NearBlock.save(nearBlock);
+                      if (success) {
+                        let nearBlock = await NearBlock.create({
+                          height: streamerMessage.block.header.height,
+                          hash: streamerMessage.block.header.hash,
+                          timestamp: moment().utc(),
+                        });
+                        let saveResponse = await NearResponse.create({
+                          receiverId: receipt.receipt.receiverId,
+                          signerId: event.data[0].signer,
+                          receiptIds: [receipt.receipt.receiptId],
+                          methodName: event.event,
+                          status: ResponseStatus.SUCCESS,
+                        });
+                        nearBlock.nearResponse = saveResponse;
+                        await NearBlock.save(nearBlock);
+                        Logger.debug(
+                          `Successfully created Block ${streamerMessage.block.header.height} for ${object.FunctionCall.methodName} call`
+                        );
+                      }
+                    } else {
                       Logger.debug(
-                        `Successfully created Block ${streamerMessage.block.header.height} for ${object.FunctionCall.methodName} call`
+                        `No logs found for NEAR receipt at ${currentBlockHeight}`
                       );
                     }
                   }
@@ -4895,7 +4912,7 @@ export class TasksService {
     }
 
     try {
-      console.log('test');
+      console.log('Start NEAR Lake Indexer');
       await startStream(lakeConfig, handleStreamerMessage);
     } catch (e) {
       console.log('Lake Indexer encountered an error.');
