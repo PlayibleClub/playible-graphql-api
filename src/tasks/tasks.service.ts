@@ -4898,6 +4898,7 @@ export class TasksService {
       console.log('test');
       await startStream(lakeConfig, handleStreamerMessage);
     } catch (e) {
+      console.log('Lake Indexer encountered an error.');
       console.log(e);
     }
   }
