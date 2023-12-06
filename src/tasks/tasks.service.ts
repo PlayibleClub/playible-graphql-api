@@ -5434,8 +5434,8 @@ export class TasksService {
           }
         );
       } catch (error) {
-        const code = (error as any).code;
-        const message = (error as any).message;
+        const code = (error as any).error.code;
+        const message = (error as any).error.message;
         if (
           (code === '-32000' || code === -32000) &&
           message === 'filter not found'
