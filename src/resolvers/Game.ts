@@ -349,7 +349,7 @@ export class GameResolver {
     console.log(polygonResults);
     console.log(nearResults);
     const results = polygonResults.concat(nearResults);
-    results.sort((a, b) => b.total - a.total);
+    // results.sort((a, b) => b.total - a.total);
     return results;
   }
   @Query(() => [LeaderboardResult])
