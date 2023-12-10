@@ -80,7 +80,7 @@ export async function submitLineupHandler(
         let apiId = '';
         let tempId = token_id;
         let tokenType = TokenType.REG;
-        if (tempId.includes('PR') || tempId.includes('SB')) {
+        if (tempId.includes('PR')) {
           tokenType = TokenType.PROMO;
           tempId = tempId.split('_')[1];
         } else if (tempId.includes('SB')) {
