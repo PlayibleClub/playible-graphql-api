@@ -177,7 +177,9 @@ export class GameResolver {
   async getLeaderboardResult(
     @Arg('gameId') gameId: number,
     @Arg('sport') sport: SportType,
-    @Arg('chain') chain: ChainType
+    @Arg('chain') chain: ChainType,
+    @Arg('startTime') startTime: Date,
+    @Arg('endTime') endTime: Date
   ): Promise<LeaderboardResult[]> {
     const returnTeam = await AppDataSource.getRepository(Game)
       .createQueryBuilder('g')
@@ -196,8 +198,8 @@ export class GameResolver {
       .innerJoin('gta.athlete', 'a')
       .innerJoin('a.stats', 'as2')
       .where('g.gameId = :gameId', { gameId: gameId })
-      .andWhere('as2.gameDate >= g.startTime')
-      .andWhere('as2.gameDate <= g.endTime')
+      .andWhere('as2.gameDate >= :startTime', { startTime: startTime })
+      .andWhere('as2.gameDate <= :endTime', { endTime: endTime })
       .andWhere('g.sport = :sport', { sport: sport })
       .andWhere('as2.played = 1')
       .andWhere('g.chain = :chain', { chain: chain })
@@ -356,7 +358,9 @@ export class GameResolver {
   async getMultiChainLeaderboardResult(
     @Arg('gameId') gameId: number,
     @Arg('sport') sport: SportType,
-    @Arg('chain') chain: ChainType
+    @Arg('chain') chain: ChainType,
+    @Arg('startTime') startTime: Date,
+    @Arg('endTime') endTime: Date
   ): Promise<LeaderboardResult[]> {
     let gameChain: string; //default
     switch (chain) {
@@ -390,8 +394,8 @@ export class GameResolver {
       .innerJoin('a.stats', 'as2')
       .where(gameChain, { gameId: gameId })
       .andWhere('g.sport = :sport', { sport: sport })
-      .andWhere('as2.gameDate >= g.startTime')
-      .andWhere('as2.gameDate <= g.endTime')
+      .andWhere('as2.gameDate >= :startTime', { startTime: startTime })
+      .andWhere('as2.gameDate <= :endTime', { endTime: endTime })
       .andWhere('as2.played = 1')
       .getRawMany();
     const nearResults = await AppDataSource.getRepository(Leaderboard)
@@ -413,8 +417,8 @@ export class GameResolver {
       .innerJoin('a.stats', 'as2')
       .where(gameChain, { gameId: gameId })
       .andWhere('g.sport = :sport', { sport: sport })
-      .andWhere('as2.gameDate >= g.startTime')
-      .andWhere('as2.gameDate <= g.endTime')
+      .andWhere('as2.gameDate >= :startTime', { startTime: startTime })
+      .andWhere('as2.gameDate <= :endTime', { endTime: endTime })
       .andWhere('as2.played = 1')
       .getRawMany();
 
