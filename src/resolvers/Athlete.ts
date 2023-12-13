@@ -174,7 +174,8 @@ export class AthleteResolver {
     @Arg('teamName') teamName: string,
     @Arg('address') address: string,
     @Arg('gameId') gameId: number,
-    @Arg('chain') chain: ChainType
+    @Arg('chain') chain: ChainType,
+    @Arg('sport') sport: SportType
   ): Promise<GameTeamAthlete[]> {
     let returnAthletes = await GameTeamAthlete.find({
       where: {
@@ -184,6 +185,7 @@ export class AthleteResolver {
           game: {
             gameId: gameId,
             chain: chain,
+            sport: sport,
           },
         },
         // athlete: {
