@@ -223,7 +223,7 @@ export class AthleteResolver {
     const returnAthletes = await AppDataSource.getRepository(GameTeamAthlete)
       .createQueryBuilder('gta')
       .groupBy('gta.id')
-      .groupBy('a.apiId')
+      .addGroupBy('a.apiId')
       .addGroupBy('a.firstName')
       .addGroupBy('a.lastName')
       .select([
