@@ -16,6 +16,8 @@ import axios, { AxiosResponse } from 'axios';
 import { S3 } from 'aws-sdk';
 import { Athlete } from '../entities/Athlete';
 import { AthleteStat } from '../entities/AthleteStat';
+import { AppDataSource } from '../utils/db';
+import { Game } from '../entities/Game';
 import { GameTeam } from '../entities/GameTeam';
 import { GameTeamAthlete } from '../entities/GameTeamAthlete';
 
@@ -32,6 +34,7 @@ import {
   MLB_ATHLETE_PROMO_IDS,
   TEST_ATHLETE_IDS,
 } from './../utils/athlete-ids';
+import { EntrySummaryResult } from './../utils/types';
 import moment from 'moment';
 import { ethers } from 'ethers';
 import promoOpenPackStorageABI from './../utils/polygon-contract-abis/promo_open_pack_storage.json';
@@ -200,21 +203,47 @@ export class AthleteResolver {
         },
         athlete: {
           team: true,
-          stats: true,
         },
       },
     });
-    returnAthletes.forEach((athlete) => {
-      //add played = 1
-      athlete.athlete.stats = athlete.athlete.stats.filter(
-        (stat) =>
-          stat.gameDate &&
-          moment(stat.gameDate).unix() >=
-            moment(athlete.gameTeam.game.startTime).unix() &&
-          moment(stat.gameDate).unix() <=
-            moment(athlete.gameTeam.game.endTime).unix()
-      );
-    });
+
+    return returnAthletes;
+  }
+
+  @Query(() => [EntrySummaryResult])
+  async getEntrySummaryAthletesWithScore(
+    @Arg('teamName') teamName: string,
+    @Arg('address') address: string,
+    @Arg('gameId') gameId: number,
+    @Arg('chain') chain: ChainType,
+    @Arg('sport') sport: SportType,
+    @Arg('startTime') startTime: Date,
+    @Arg('endTime') endTime: Date
+  ): Promise<EntrySummaryResult[]> {
+    const returnAthletes = await AppDataSource.getRepository(GameTeamAthlete)
+      .createQueryBuilder('gta')
+      .groupBy('gta.id')
+      .addGroupBy('a.firstName')
+      .addGroupBy('a.lastName')
+      .select([
+        'gta.id as game_team_athlete_id',
+        'a.apiId as athlete_id',
+        'a.firstName as first_name',
+        'a.lastName as last_name',
+        'SUM(as2.fantasyScore) as total',
+      ])
+      .innerJoin(GameTeam, 'gt', 'gt.id = gta.gameTeamId')
+      .innerJoin(Game, 'g', 'g.id = gt.gameId')
+      .innerJoin(Athlete, 'a', 'gta.athleteId = a.id')
+      .innerJoin(AthleteStat, 'as2', 'as2.athleteId = a.id')
+      .where('g.gameId = :gameId', { gameId: gameId })
+      .andWhere('g.sport = :sport', { sport: sport })
+      .andWhere('gt.name = :teamName', { teamName: teamName })
+      .andWhere('gt.wallet_address = :address', { address: address })
+      .andWhere('g.chain = :chain', { chain: chain })
+      .andWhere('as2.gameDate >= :startTime', { startTime: startTime })
+      .andWhere('as2.gameDate <= :endTime', { endTime: endTime })
+      .getRawMany();
     return returnAthletes;
   }
   @Query(() => [Athlete])

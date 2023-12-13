@@ -133,3 +133,21 @@ export class LeaderboardResult {
   @Field(() => String)
   chain_name: ChainType;
 }
+
+@ObjectType()
+export class EntrySummaryResult {
+  @Field(() => ID)
+  game_team_athlete_id: number;
+
+  @Field(() => Number)
+  athlete_id: number;
+
+  @Field(() => String)
+  first_name: string;
+
+  @Field(() => String)
+  last_name: string;
+
+  @Field(() => Number)
+  total: number;
+}
