@@ -170,7 +170,7 @@ export class GameResolver {
       .andWhere('g.sport = :sport', { sport: sport })
       .andWhere('g.chain = :chain', { chain: chain })
       .getRawMany();
-    console.log(returnTeam);
+    //console.log(returnTeam);
     return returnTeam;
   }
   @Query(() => [LeaderboardResult])
@@ -204,7 +204,7 @@ export class GameResolver {
       .andWhere('as2.played = 1')
       .andWhere('g.chain = :chain', { chain: chain })
       .getRawMany();
-    console.log(returnTeam);
+    //console.log(returnTeam);
     return returnTeam;
   }
 
@@ -241,7 +241,7 @@ export class GameResolver {
       .andWhere('gt.name = :teamName', { teamName: teamName })
       .andWhere('gt.wallet_address = :address', { address: address })
       .getRawMany();
-    console.log(returnTeam);
+    //console.log(returnTeam);
     return returnTeam;
   }
 
@@ -348,8 +348,8 @@ export class GameResolver {
       //.andWhere('as.played = 1')
       .getRawMany();
 
-    console.log(polygonResults);
-    console.log(nearResults);
+    //console.log(polygonResults);
+    //console.log(nearResults);
     const results = polygonResults.concat(nearResults);
     // results.sort((a, b) => b.total - a.total);
     return results;
