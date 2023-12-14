@@ -4753,13 +4753,13 @@ export class TasksService {
     }
   }
 
-  //@Timeout(1)
+  @Timeout(1)
   async runNearLakeFrameworkIndexer() {
     const lakeConfig: types.LakeConfig = {
       //credentials
       s3BucketName: 'near-lake-data-mainnet',
       s3RegionName: 'eu-central-1',
-      startBlockHeight: 107814023, // for testnet
+      startBlockHeight: 107915369, // for testnet
       //startBlockHeight: 97856450//97543661//97856450, //97239921 old
     };
     const nearGameMainnetContracts = [
@@ -5257,7 +5257,7 @@ export class TasksService {
 
     listenToAthleteStorage();
   }
-  //@Timeout(1)
+  @Timeout(1)
   async runPolygonMainnetNFLGameWebSocketListener() {
     function listenToNFLGameContract() {
       const logger = new Logger('NFLGameContract');
