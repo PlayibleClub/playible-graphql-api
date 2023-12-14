@@ -428,7 +428,7 @@ export class AthleteResolver {
     //let fileArray: Buffer[] = new Buffer[];
     for (let athlete of athletes) {
       for (let imageType of nftImages) {
-        // console.log(`Reading athlete ${athlete.id}`);
+        console.log(`Reading athlete ${athlete.apiId}`);
 
         // // const request = s3Filebase.putObject(fileBaseParams)
         // // request.on('httpHeaders', async (statusCode, headers) => {
