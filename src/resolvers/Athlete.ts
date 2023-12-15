@@ -503,6 +503,7 @@ export class AthleteResolver {
           await Athlete.save(athlete);
         });
         request.on('error', (error) => {
+          console.log('Error on filebase bucket request');
           console.log(error);
         });
         request.send();
