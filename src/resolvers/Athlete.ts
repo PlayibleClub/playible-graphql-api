@@ -475,8 +475,8 @@ export class AthleteResolver {
           ACL: 'public-read',
           Body: data,
           Metadata: {
-            firstName: athlete.firstName,
-            lastName: athlete.lastName,
+            // firstName: athlete.firstName,
+            // lastName: athlete.lastName,
             apiId: athlete.apiId.toString(),
           },
         };
