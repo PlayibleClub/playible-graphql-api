@@ -589,7 +589,7 @@ export class AthleteResolver {
         contractABI = JSON.stringify(promoOpenPackStorageABI);
     }
     //const network = "maticmum"; // polygon testnet
-    const network = 'matic'; // Polygon zkEVM Testnet ChainId
+    const network = 'maticmum'; // Polygon zkEVM Testnet ChainId
     try {
       const provider = new ethers.AlchemyProvider(
         network,
