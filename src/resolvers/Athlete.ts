@@ -480,7 +480,7 @@ export class AthleteResolver {
             apiId: athlete.apiId.toString(),
           },
         };
-        await new Promise((resolve) => setTimeout(resolve, 2000));
+        //await new Promise((resolve) => setTimeout(resolve, 2000));
         const request = s3Filebase.putObject(fileBaseParams);
         request.on('httpHeaders', async (statusCode, headers) => {
           // console.log(`Status Code ${statusCode}`);
@@ -505,6 +505,7 @@ export class AthleteResolver {
         });
         request.on('error', (error) => {
           console.log('Error on filebase bucket request');
+          console.log(`Athlete who errored : ${athlete.apiId}`);
           console.log(error);
         });
         request.send();
