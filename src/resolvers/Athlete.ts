@@ -480,6 +480,7 @@ export class AthleteResolver {
             apiId: athlete.apiId.toString(),
           },
         };
+        await new Promise((resolve) => setTimeout(resolve, 1000));
         const request = s3Filebase.putObject(fileBaseParams);
         request.on('httpHeaders', async (statusCode, headers) => {
           // console.log(`Status Code ${statusCode}`);
