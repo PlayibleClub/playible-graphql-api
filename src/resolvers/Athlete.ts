@@ -39,6 +39,7 @@ import moment from 'moment';
 import { ethers } from 'ethers';
 import promoOpenPackStorageABI from './../utils/polygon-contract-abis/promo_open_pack_storage.json';
 import regularOpenPackStorageABI from './../utils/polygon-contract-abis/regular_open_pack_storage.json';
+import regularOpenPackStorageNbaABI from './../utils/polygon-contract-abis/regular_open_pack_storage_nba.json';
 import { IPFSMetadata, ChainType } from './../utils/types';
 @ObjectType()
 class Distribution {
@@ -581,7 +582,7 @@ export class AthleteResolver {
         break;
       case SportType.NBA:
         athleteIds = NBA_ATHLETE_IDS;
-        contractABI = JSON.stringify(regularOpenPackStorageABI);
+        contractABI = JSON.stringify(regularOpenPackStorageNbaABI);
         break;
       case SportType.NBA_PROMO:
         athleteIds = NBA_ATHLETE_PROMO_IDS;
