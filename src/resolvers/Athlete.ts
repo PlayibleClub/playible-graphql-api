@@ -531,6 +531,10 @@ export class AthleteResolver {
         athleteLength = NFL_ATHLETE_IDS.length;
         contractABI = JSON.stringify(regularOpenPackStorageABI);
         break;
+      case SportType.NBA:
+        athleteLength = NBA_ATHLETE_IDS.length;
+        contractABI = JSON.stringify(regularOpenPackStorageNbaABI);
+        break;
     }
     const network = 'matic';
     const provider = new ethers.AlchemyProvider(

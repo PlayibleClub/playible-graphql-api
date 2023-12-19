@@ -5258,8 +5258,8 @@ export class TasksService {
     listenToAthleteStorage();
   }
   //@Timeout(1)
-  async runPolygonMainnetNFLGameWebSocketListener() {
-    function listenToNFLGameContract() {
+  async runPolygonMainnetNBAGameWebSocketListener() {
+    function listenToNBAGameContract() {
       const logger = new Logger('NFLGameContract');
       console.log('Start polygon listen');
       const network = 'matic'; //change to mainnet after
@@ -5272,7 +5272,7 @@ export class TasksService {
 
       provider.pollingInterval = 20000;
       const gameContract = new Contract(
-        process.env.POLYGON_NFL_GAME_ADDRESS ?? 'contract', //change to NFL specific
+        process.env.POLYGON_NBA_GAME_ADDRESS ?? 'contract', //change to NFL specific
         abi,
         provider
       );
@@ -5287,7 +5287,7 @@ export class TasksService {
               where: {
                 gameId: convertGameId,
                 chain: ChainType.POLYGON,
-                sport: SportType.NFL,
+                sport: SportType.NBA,
               },
             });
             if (!game) {
@@ -5310,16 +5310,16 @@ export class TasksService {
                       : gameTimeEnd
                   )
                   .utc(),
-                sport: SportType.NFL,
+                sport: SportType.NBA,
                 chain: ChainType.POLYGON,
               }).save();
 
               logger.debug(
-                `Game ${convertGameId} created for ${SportType.NFL} at ${ChainType.POLYGON}`
+                `Game ${convertGameId} created for ${SportType.NBA} at ${ChainType.POLYGON}`
               );
             } else {
               logger.error(
-                `Game ${convertGameId} for ${SportType.NFL} at ${ChainType.POLYGON} already exists`
+                `Game ${convertGameId} for ${SportType.NBA} at ${ChainType.POLYGON} already exists`
               );
             }
 
@@ -5330,7 +5330,7 @@ export class TasksService {
         gameContract.on(
           'SucceedLineupSubmission',
           async (result, gameId, teamName, address, lineup, tokens, event) => {
-            logger.debug('Found Playible Polygon NFL Submit Lineup');
+            logger.debug('Found Playible Polygon NBA Submit Lineup');
             logger.debug(result);
             const convertGameId =
               typeof gameId === 'bigint' ? Number(gameId) : gameId;
@@ -5338,7 +5338,7 @@ export class TasksService {
             const game = await Game.findOne({
               where: {
                 gameId: convertGameId,
-                sport: SportType.NFL,
+                sport: SportType.NBA,
                 chain: ChainType.POLYGON,
               },
             });
@@ -5423,7 +5423,7 @@ export class TasksService {
                 // logger.debug('Successfully added team');
               } else {
                 logger.debug(
-                  `Team already exists on Game ${convertGameId} for ${SportType.NFL} at ${ChainType.POLYGON}`
+                  `Team already exists on Game ${convertGameId} for ${SportType.NBA} at ${ChainType.POLYGON}`
                 );
               }
             } else {
@@ -5444,7 +5444,7 @@ export class TasksService {
             'Encountered an error in alchemy listeners, rerunning function to reconnect'
           );
           gameContract.removeAllListeners();
-          setTimeout(() => listenToNFLGameContract(), 1000);
+          setTimeout(() => listenToNBAGameContract(), 1000);
         }
       }
 
@@ -5458,7 +5458,7 @@ export class TasksService {
       //   console.log(event);
       // });
     }
-    listenToNFLGameContract();
+    listenToNBAGameContract();
   }
 
   //@Timeout(1)
