@@ -686,6 +686,7 @@ export class AthleteResolver {
         try {
           const receipt = await contract.executeAddAthletes(chunk, {
             from: process.env.METAMASK_WALLET_ADDRESS,
+            gas: 1500000000, //for testnet gas
           });
         } catch (e) {
           console.log(e);
