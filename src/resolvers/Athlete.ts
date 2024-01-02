@@ -679,7 +679,7 @@ export class AthleteResolver {
         }
       });
 
-      const chunkifiedAthletes = chunkify(athletes, 35, false);
+      const chunkifiedAthletes = chunkify(athletes, 33, false);
       console.log(chunkifiedAthletes.length);
       for (const chunk of chunkifiedAthletes) {
         console.log('Executing add athletes...');
