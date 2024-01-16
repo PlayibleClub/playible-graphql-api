@@ -85,7 +85,11 @@ import promoAthleteStorageABI from '../utils/polygon-contract-abis/promo_athlete
 @Injectable()
 export class NearService {
   private readonly logger = new Logger(NearService.name);
-  this.logger.debug("Starting NEAR service");
+
+  @Timeout(1)
+  async runService() {
+    this.logger.debug('Starting NEAR service');
+  }
   //@Timeout(1)
   async runNearLakeFrameworkIndexer() {
     const lakeConfig: types.LakeConfig = {

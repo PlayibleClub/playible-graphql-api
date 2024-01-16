@@ -85,7 +85,10 @@ import promoAthleteStorageABI from '../utils/polygon-contract-abis/promo_athlete
 @Injectable()
 export class BaseballService {
   private readonly logger = new Logger(BaseballService.name);
-  this.logger.debug("Starting baseball service");
+  @Timeout(1)
+  async runService() {
+    this.logger.debug('Starting baseball service');
+  }
   //@Timeout(1)
   async syncMlbData2() {
     const teamCount = await Team.count({
