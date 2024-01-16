@@ -85,7 +85,7 @@ import promoAthleteStorageABI from '../utils/polygon-contract-abis/promo_athlete
 @Injectable()
 export class BasketballService {
   private readonly logger = new Logger(BasketballService.name);
-
+  this.logger.debug("Starting baseball service");
   //@Timeout(1)
   async runPolygonMainnetNBAGameWebSocketListener() {
     function listenToNBAGameContract() {
