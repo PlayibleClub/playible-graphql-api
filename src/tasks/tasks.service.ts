@@ -4759,7 +4759,7 @@ export class TasksService {
       //credentials
       s3BucketName: 'near-lake-data-mainnet',
       s3RegionName: 'eu-central-1',
-      startBlockHeight: 107915669, // for testnet
+      startBlockHeight: 110452400, // for testnet
       //startBlockHeight: 97856450//97543661//97856450, //97239921 old
     };
     const nearGameMainnetContracts = [
@@ -4873,26 +4873,31 @@ export class TasksService {
                       const sport = getSportType(
                         receipt.executionOutcome.outcome.executorId
                       );
-
-                      let success = await submitLineupHandler(event, sport);
-
-                      if (success) {
-                        let nearBlock = await NearBlock.create({
-                          height: streamerMessage.block.header.height,
-                          hash: streamerMessage.block.header.hash,
-                          timestamp: moment().utc(),
-                        });
-                        let saveResponse = await NearResponse.create({
-                          receiverId: receipt.receipt.receiverId,
-                          signerId: event.data[0].signer,
-                          receiptIds: [receipt.receipt.receiptId],
-                          methodName: event.event,
-                          status: ResponseStatus.SUCCESS,
-                        });
-                        nearBlock.nearResponse = saveResponse;
-                        await NearBlock.save(nearBlock);
+                      let result = event.data[0].result;
+                      if (result === 'success') {
+                        let success = await submitLineupHandler(event, sport);
+                        if (success) {
+                          let nearBlock = await NearBlock.create({
+                            height: streamerMessage.block.header.height,
+                            hash: streamerMessage.block.header.hash,
+                            timestamp: moment().utc(),
+                          });
+                          let saveResponse = await NearResponse.create({
+                            receiverId: receipt.receipt.receiverId,
+                            signerId: event.data[0].signer,
+                            receiptIds: [receipt.receipt.receiptId],
+                            methodName: event.event,
+                            status: ResponseStatus.SUCCESS,
+                          });
+                          nearBlock.nearResponse = saveResponse;
+                          await NearBlock.save(nearBlock);
+                          Logger.debug(
+                            `Successfully created Block ${streamerMessage.block.header.height} for ${object.FunctionCall.methodName} call`
+                          );
+                        }
+                      } else {
                         Logger.debug(
-                          `Successfully created Block ${streamerMessage.block.header.height} for ${object.FunctionCall.methodName} call`
+                          `Indexer has found submit_lineup_result_callbacks but it was not a successful transaction at ${streamerMessage.block.header.height}`
                         );
                       }
                     } else {
@@ -5257,7 +5262,7 @@ export class TasksService {
 
     listenToAthleteStorage();
   }
-  @Timeout(1)
+  //@Timeout(1)
   async runPolygonMainnetNFLGameWebSocketListener() {
     function listenToNFLGameContract() {
       const logger = new Logger('NFLGameContract');
