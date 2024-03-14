@@ -89,7 +89,7 @@ export class BaseballService {
   async runService() {
     this.logger.debug('Starting baseball service');
   }
-  //@Timeout(1)
+  @Timeout(1)
   async syncMlbData2() {
     const teamCount = await Team.count({
       where: { sport: SportType.MLB },
@@ -167,45 +167,48 @@ export class BaseballService {
         const newAthlete: Athlete[] = [];
         const updateAthlete: Athlete[] = [];
         for (let athlete of data) {
-          try {
-            const team = await Team.findOne({
-              where: { apiId: athlete['GlobalTeamID'] },
-            });
-
-            if (team) {
-              const currAthlete = await Athlete.findOne({
-                where: { apiId: athlete['PlayerID'] },
+          if (MLB_ATHLETE_IDS.includes(athlete['PlayerID'])) {
+            try {
+              const team = await Team.findOne({
+                where: { apiId: athlete['GlobalTeamID'] },
               });
 
-              if (currAthlete) {
-                currAthlete.firstName = athlete['FirstName'];
-                currAthlete.lastName = athlete['LastName'];
-                currAthlete.position =
-                  athlete['Position'] !== null ? athlete['Position'] : 'N/A';
-                currAthlete.jersey = athlete['Jersey'];
-                currAthlete.isActive = athlete['Status'] === 'Active';
-                currAthlete.isInjured = athlete['InjuryStatus'];
-                updateAthlete.push(currAthlete);
-              } else {
-                newAthlete.push(
-                  Athlete.create({
-                    apiId: athlete['PlayerID'],
-                    firstName: athlete['FirstName'],
-                    lastName: athlete['LastName'],
-                    position:
-                      athlete['Position'] !== null
-                        ? athlete['Position']
-                        : 'N/A',
-                    jersey: athlete['Jersey'],
-                    team,
-                    isActive: athlete['Status'] === 'Active',
-                    isInjured: athlete['InjuryStatus'],
-                  })
-                );
+              if (team) {
+                const currAthlete = await Athlete.findOne({
+                  where: { apiId: athlete['PlayerID'] },
+                });
+
+                if (currAthlete) {
+                  currAthlete.firstName = athlete['FirstName'];
+                  currAthlete.lastName = athlete['LastName'];
+                  currAthlete.position =
+                    athlete['Position'] !== null ? athlete['Position'] : 'N/A';
+                  currAthlete.jersey = athlete['Jersey'];
+                  currAthlete.isActive = athlete['Status'] === 'Active';
+                  currAthlete.isInjured = athlete['InjuryStatus'];
+                  currAthlete.team = team;
+                  updateAthlete.push(currAthlete);
+                } else {
+                  newAthlete.push(
+                    Athlete.create({
+                      apiId: athlete['PlayerID'],
+                      firstName: athlete['FirstName'],
+                      lastName: athlete['LastName'],
+                      position:
+                        athlete['Position'] !== null
+                          ? athlete['Position']
+                          : 'N/A',
+                      jersey: athlete['Jersey'],
+                      team,
+                      isActive: athlete['Status'] === 'Active',
+                      isInjured: athlete['InjuryStatus'],
+                    })
+                  );
+                }
               }
+            } catch (err) {
+              this.logger.error(err);
             }
-          } catch (err) {
-            this.logger.error(err);
           }
         }
         await Athlete.save([...newAthlete, ...updateAthlete], { chunk: 20 });
@@ -224,7 +227,7 @@ export class BaseballService {
     );
   }
 
-  //@Timeout(300000)
+  @Timeout(300000)
   async generateAthleteMlbAssets() {
     this.logger.debug('Generate Athlete MLB Assets: STARTED');
 
@@ -307,7 +310,7 @@ export class BaseballService {
     this.logger.debug('Generate Athlete MLB Assets: FINISHED');
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`);
   }
-  //@Timeout(450000)
+  @Timeout(450000)
   async generateAthleteMlbAssetsAnimation() {
     this.logger.debug('Generate Athlete MLB Assets Animation: STARTED');
 
@@ -396,7 +399,7 @@ export class BaseballService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`);
   }
 
-  //@Timeout(600000)
+  @Timeout(600000)
   async generateAthleteMlbAssetsPromo() {
     this.logger.debug('Generate Athlete MLB Assets Promo: STARTED');
 
@@ -507,7 +510,7 @@ export class BaseballService {
     }
   }
 
-  //@Timeout(750000)
+  @Timeout(750000)
   async generateAthleteMlbAssetsLocked() {
     this.logger.debug('Generate Athlete MLB Assets Locked: STARTED');
 
