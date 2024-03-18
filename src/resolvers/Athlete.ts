@@ -652,7 +652,7 @@ export class AthleteResolver {
         break;
       case SportType.MLB_PROMO:
         contractId = process.env.OPENPACK_MLB_PROMO_ACCOUNT_ID;
-        athleteIds = MLB_ATHLETE_PROMO_IDS;
+        athleteIds = MLB_ATHLETE_IDS;
         break;
       default:
         contractId = process.env.OPENPACK_NFL_ACCOUNT_ID; //add cricket athlete id/key here
