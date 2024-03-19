@@ -96,7 +96,7 @@ export class NearService {
       //credentials
       s3BucketName: 'near-lake-data-mainnet',
       s3RegionName: 'eu-central-1',
-      startBlockHeight: 115026544, // for testnet
+      startBlockHeight: 115027922, // for testnet
       //startBlockHeight: 97856450//97543661//97856450, //97239921 old
     };
     const nearGameMainnetContracts = [
