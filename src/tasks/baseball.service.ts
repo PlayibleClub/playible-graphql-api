@@ -301,13 +301,13 @@ export class BaseballService {
           this.logger.error(err);
         } else {
           let image = data['Location'];
-          if (image.contains('playible-api-production.s3.amazonaws.com')) {
+          if (image.includes('playible-api-production.s3.amazonaws.com')) {
             athlete.nftImage = image.replace(
               'playible-api-production.s3.amazonaws.com',
               'images.playible.io'
             );
           } else if (
-            image.contains(
+            image.includes(
               'playible-api-production.s3.ap-southeast-1.amazonaws.com'
             )
           ) {
@@ -405,13 +405,13 @@ export class BaseballService {
           this.logger.error(err);
         } else {
           let image = data['Location'];
-          if (image.contains('playible-api-production.s3.amazonaws.com')) {
+          if (image.includes('playible-api-production.s3.amazonaws.com')) {
             athlete.nftAnimation = image.replace(
               'playible-api-production.s3.amazonaws.com',
               'images.playible.io'
             );
           } else if (
-            image.contains(
+            image.includes(
               'playible-api-production.s3.ap-southeast-1.amazonaws.com'
             )
           ) {
@@ -502,13 +502,13 @@ export class BaseballService {
           this.logger.error(err);
         } else {
           let image = data['Location'];
-          if (image.contains('playible-api-production.s3.amazonaws.com')) {
+          if (image.includes('playible-api-production.s3.amazonaws.com')) {
             athlete.nftImagePromo = image.replace(
               'playible-api-production.s3.amazonaws.com',
               'images.playible.io'
             );
           } else if (
-            image.contains(
+            image.includes(
               'playible-api-production.s3.ap-southeast-1.amazonaws.com'
             )
           ) {
@@ -628,13 +628,13 @@ export class BaseballService {
           this.logger.error(err);
         } else {
           let image = data['Location'];
-          if (image.contains('playible-api-production.s3.amazonaws.com')) {
+          if (image.includes('playible-api-production.s3.amazonaws.com')) {
             athlete.nftImageLocked = image.replace(
               'playible-api-production.s3.amazonaws.com',
               'images.playible.io'
             );
           } else if (
-            image.contains(
+            image.includes(
               'playible-api-production.s3.ap-southeast-1.amazonaws.com'
             )
           ) {
