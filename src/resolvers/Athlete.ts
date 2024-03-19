@@ -39,6 +39,7 @@ import moment from 'moment';
 import { ethers } from 'ethers';
 import promoOpenPackStorageABI from './../utils/polygon-contract-abis/promo_open_pack_storage.json';
 import regularOpenPackStorageABI from './../utils/polygon-contract-abis/regular_open_pack_storage.json';
+import regularOpenPackStorageNbaABI from './../utils/polygon-contract-abis/regular_open_pack_storage_nba.json';
 import { IPFSMetadata, ChainType } from './../utils/types';
 @ObjectType()
 class Distribution {
@@ -318,59 +319,6 @@ export class AthleteResolver {
     return athletes;
   }
 
-  @Query(() => [UserAthleteResponse])
-  async getUserAthletePortfolio(
-    @Arg('accountId') accountId: string,
-    @Arg('sportType') sportType: SportType
-  ): Promise<UserAthleteResponse[]> {
-    const nearApi = await setup();
-    const account = await nearApi.account(
-      process.env.NEAR_MAIN_ACCOUNT_ID || ''
-    );
-    let contractId;
-
-    switch (sportType) {
-      case SportType.NFL:
-        contractId = process.env.ATHLETE_NFL_NFT_ACCOUNT_ID;
-        break;
-      case SportType.NBA:
-        contractId = process.env.ATHLETE_NBA_NFT_ACCOUNT_ID;
-        break;
-      case SportType.MLB:
-        contractId = process.env.ATHLETE_MLB_NFT_ACCOUNT_ID;
-        break;
-      default:
-        contractId = process.env.ATHLETE_NFL_NFT_ACCOUNT_ID;
-        break;
-    }
-
-    const contract: any = new Contract(account, contractId || '', {
-      viewMethods: ['nft_tokens_for_owner'],
-      changeMethods: [],
-    });
-
-    const res: any = await contract.nft_tokens_for_owner({
-      account_id: accountId,
-    });
-    const ids = res.map((token: any) => {
-      const idTrait = JSON.parse(token.metadata.extra).find(
-        (trait: any) => trait.trait_type === 'athlete_id'
-      );
-      return { tokenId: token.token_id, id: parseInt(idTrait.value) };
-    });
-    const athletes = await Athlete.find({
-      where: { id: In(ids.map((id: any) => id.id)) },
-      relations: { team: true, stats: { opponent: true } },
-    });
-
-    return athletes.map((athlete) => {
-      return {
-        tokenId: ids.find((id: any) => id.id === athlete.id)?.tokenId,
-        athlete: athlete,
-      };
-    });
-  }
-
   @Authorized('ADMIN')
   @Mutation(() => Number)
   async addAthletesToFilebaseS3IPFSBucket(
@@ -378,7 +326,7 @@ export class AthleteResolver {
     @Arg('isPromo') isPromo: boolean = false
   ): Promise<Number> {
     let athleteIds: number[] = [];
-    const nftImages = ['nftImageLocked', 'nftImagePromo'];
+    const nftImages = ['nftImage'];
     console.log(isPromo);
     //setup AWS S3 bucket
     const s3Filebase = new S3({
@@ -400,6 +348,12 @@ export class AthleteResolver {
       case SportType.NFL_PROMO:
         athleteIds = NFL_ATHLETE_PROMO_IDS;
         break;
+      case SportType.NBA:
+        athleteIds = NBA_ATHLETE_IDS;
+        break;
+      case SportType.NBA_PROMO:
+        athleteIds = NBA_ATHLETE_PROMO_IDS;
+        break;
     }
 
     const athletes = await Athlete.find({
@@ -408,46 +362,22 @@ export class AthleteResolver {
       },
     });
     console.log(athletes.length);
-    // try {
-    //   const filepath = path.join(__dirname, "/temp-images");
-    //   console.log(filepath);
-    //   await fs.promises.mkdir(filepath, {
-    //     recursive: true,
-    //   });
-    //   await fs.promises.rm(filepath, { recursive: true });
-    // } catch (e) {
-    //   console.log(e);
-    // }
 
-    //let fileArray: Buffer[] = new Buffer[];
     for (let athlete of athletes) {
       for (let imageType of nftImages) {
-        // console.log(`Reading athlete ${athlete.id}`);
-
-        // // const request = s3Filebase.putObject(fileBaseParams)
-        // // request.on('httpHeaders', async (statusCode, headers) => {
-        // //   console.log(`Status Code ${statusCode}`)
-        // //   console.log(`CID: ${headers['x-amz-meta-cid']}`)
-        // //   athlete.nftAnimation = headers['x-amz-meta-cid']
-        // //   await Athlete.save(athlete)
-        // // })
-        // // request.send()
         let fileType = '';
         let response: AxiosResponse;
-        // let link = "";
         switch (imageType) {
           case 'nftImageLocked':
             response = await axios.get(athlete.nftImageLocked ?? 'default', {
               responseType: 'arraybuffer',
             });
-            //link = athlete.nftImageLocked ?? 'default'
             fileType = 'SB';
             break;
           case 'nftImagePromo':
             response = await axios.get(athlete.nftImagePromo ?? 'default', {
               responseType: 'arraybuffer',
             });
-            //link = athlete.nftImagePromo ?? 'default'
             fileType = 'P';
             break;
           case 'nftImage':
@@ -455,12 +385,9 @@ export class AthleteResolver {
             response = await axios.get(athlete.nftImage ?? 'default', {
               responseType: 'arraybuffer',
             });
-            //link = athlete.nftImage ?? 'default'
             fileType = 'R';
-            //console.log(response);
             break;
         }
-        //fileArray.push(Buffer.from(response.data, "utf8"));
         const data = Buffer.from(response.data, 'utf8');
         const fileBaseParams = {
           Bucket: process.env.FILEBUCKET_BUCKET_NAME ?? '',
@@ -469,17 +396,15 @@ export class AthleteResolver {
           ACL: 'public-read',
           Body: data,
           Metadata: {
-            firstName: athlete.firstName,
-            lastName: athlete.lastName,
+            // firstName: athlete.firstName,
+            // lastName: athlete.lastName,
             apiId: athlete.apiId.toString(),
           },
         };
+        //await new Promise((resolve) => setTimeout(resolve, 2000));
         const request = s3Filebase.putObject(fileBaseParams);
         request.on('httpHeaders', async (statusCode, headers) => {
-          // console.log(`Status Code ${statusCode}`);
           let test = statusCode;
-          // console.log(`Filename: ${fileType}_${athlete.apiId}`);
-          // console.log(`CID: ${headers['x-amz-meta-cid']}`);
           switch (imageType) {
             case 'nftImageLocked':
               athlete.soulBoundCid = headers['x-amz-meta-cid'];
@@ -497,6 +422,8 @@ export class AthleteResolver {
           await Athlete.save(athlete);
         });
         request.on('error', (error) => {
+          console.log('Error on filebase bucket request');
+          console.log(`Athlete who errored : ${athlete.apiId}`);
           console.log(error);
         });
         request.send();
@@ -521,6 +448,10 @@ export class AthleteResolver {
         athleteLength = NFL_ATHLETE_IDS.length;
         contractABI = JSON.stringify(regularOpenPackStorageABI);
         break;
+      case SportType.NBA:
+        athleteLength = NBA_ATHLETE_IDS.length;
+        contractABI = JSON.stringify(regularOpenPackStorageNbaABI);
+        break;
     }
     const network = 'matic';
     const provider = new ethers.AlchemyProvider(
@@ -537,15 +468,12 @@ export class AthleteResolver {
       const result = await contract.addedAthletes(i, {
         from: process.env.METAMASK_WALLET_ADDRESS,
       });
-      //console.log(i);
-      //console.log(result);
       console.log(Number(result[2]));
       apiIdFromContract.push(Number(result[2]));
       if (i + 1 === athleteLength) {
         console.log('getAthleteApiIdFromPolygonOpenPack done');
         console.log(apiIdFromContract);
       }
-      //await new Promise((resolve) => setTimeout(resolve, 100));
     }
     console.log('getAthleteApiIdFromPolygonOpenPack Done');
     console.log(apiIdFromContract);
@@ -569,9 +497,17 @@ export class AthleteResolver {
       case SportType.NFL_PROMO:
         athleteIds = NFL_ATHLETE_PROMO_IDS;
         contractABI = JSON.stringify(promoOpenPackStorageABI);
+        break;
+      case SportType.NBA:
+        athleteIds = NBA_ATHLETE_IDS;
+        contractABI = JSON.stringify(regularOpenPackStorageNbaABI);
+        break;
+      case SportType.NBA_PROMO:
+        athleteIds = NBA_ATHLETE_PROMO_IDS;
+        contractABI = JSON.stringify(promoOpenPackStorageABI);
     }
     //const network = "maticmum"; // polygon testnet
-    const network = 'matic'; // Polygon zkEVM Testnet ChainId
+    const network = 'maticmum'; // Polygon zkEVM Testnet ChainId
     try {
       const provider = new ethers.AlchemyProvider(
         network,
@@ -657,13 +593,14 @@ export class AthleteResolver {
         }
       });
 
-      const chunkifiedAthletes = chunkify(athletes, 35, false);
+      const chunkifiedAthletes = chunkify(athletes, 33, false);
       console.log(chunkifiedAthletes.length);
       for (const chunk of chunkifiedAthletes) {
         console.log('Executing add athletes...');
         try {
           const receipt = await contract.executeAddAthletes(chunk, {
             from: process.env.METAMASK_WALLET_ADDRESS,
+            gasPrice: 1500000000, //for testnet gas
           });
         } catch (e) {
           console.log(e);
@@ -715,7 +652,7 @@ export class AthleteResolver {
         break;
       case SportType.MLB_PROMO:
         contractId = process.env.OPENPACK_MLB_PROMO_ACCOUNT_ID;
-        athleteIds = MLB_ATHLETE_PROMO_IDS;
+        athleteIds = MLB_ATHLETE_IDS;
         break;
       default:
         contractId = process.env.OPENPACK_NFL_ACCOUNT_ID; //add cricket athlete id/key here
@@ -874,194 +811,5 @@ export class AthleteResolver {
       //no changes will be made
       return false;
     }
-  }
-
-  @Authorized('ADMIN')
-  @Mutation(() => String)
-  async updateNflAthleteStatsSeason(
-    @Arg('season') season: string
-  ): Promise<String> {
-    const { data, status } = await axios.get(
-      `${process.env.SPORTS_DATA_URL}nfl/stats/json/PlayerSeasonStats/${season}?key=${process.env.SPORTS_DATA_NFL_KEY}`
-    );
-
-    if (status === 200) {
-      const newStats: AthleteStat[] = [];
-      const updateStats: AthleteStat[] = [];
-
-      for (let athleteStat of data) {
-        const apiId: number = athleteStat['PlayerID'];
-        const numberOfGames: number =
-          athleteStat['Played'] > 0 ? athleteStat['Played'] : 1;
-        const curStat = await AthleteStat.findOne({
-          where: {
-            athlete: { apiId },
-            season: season.toString(),
-            type: AthleteStatType.SEASON,
-          },
-          relations: {
-            athlete: true,
-          },
-        });
-
-        if (curStat) {
-          // Update stats here
-          curStat.fantasyScore =
-            athleteStat['FantasyPointsDraftKings'] / numberOfGames;
-          curStat.completion =
-            athleteStat['PassingCompletionPercentage'] / numberOfGames;
-          curStat.carries = athleteStat['RushingAttempts'] / numberOfGames;
-          curStat.passingYards = athleteStat['PassingYards'] / numberOfGames;
-          curStat.rushingYards = athleteStat['RushingYards'] / numberOfGames;
-          curStat.receivingYards =
-            athleteStat['ReceivingYards'] / numberOfGames;
-          curStat.interceptions =
-            athleteStat['PassingInterceptions'] / numberOfGames;
-          curStat.passingTouchdowns =
-            athleteStat['PassingTouchdowns'] / numberOfGames;
-          curStat.rushingTouchdowns =
-            athleteStat['RushingTouchdowns'] / numberOfGames;
-          curStat.receivingTouchdowns =
-            athleteStat['ReceivingTouchdowns'] / numberOfGames;
-          curStat.targets = athleteStat['ReceivingTargets'] / numberOfGames;
-          curStat.receptions = athleteStat['Receptions'] / numberOfGames;
-          curStat.played = athleteStat['Played'];
-          updateStats.push(curStat);
-        } else {
-          const curAthlete = await Athlete.findOne({
-            where: { apiId },
-          });
-
-          if (curAthlete) {
-            newStats.push(
-              AthleteStat.create({
-                athlete: curAthlete,
-                season: season.toString(),
-                type: AthleteStatType.SEASON,
-                position: athleteStat['Position'],
-                played: athleteStat['Played'],
-                fantasyScore:
-                  athleteStat['FantasyPointsDraftKings'] / numberOfGames,
-                completion:
-                  athleteStat['PassingCompletionPercentage'] / numberOfGames,
-                carries: athleteStat['RushingAttempts'] / numberOfGames,
-                passingYards: athleteStat['PassingYards'] / numberOfGames,
-                rushingYards: athleteStat['RushingYards'] / numberOfGames,
-                receivingYards: athleteStat['ReceivingYards'] / numberOfGames,
-                passingTouchdowns:
-                  athleteStat['PassingTouchdowns'] / numberOfGames,
-                interceptions:
-                  athleteStat['PassingInterceptions'] / numberOfGames,
-                rushingTouchdowns:
-                  athleteStat['RushingTouchdowns'] / numberOfGames,
-                receivingTouchdowns:
-                  athleteStat['ReceivingTouchdowns'] / numberOfGames,
-                targets: athleteStat['ReceivingTargets'] / numberOfGames,
-                receptions: athleteStat['Receptions'] / numberOfGames,
-              })
-            );
-          }
-        }
-      }
-
-      await AthleteStat.save([...newStats, ...updateStats], { chunk: 20 });
-
-      return `New Stats Added: ${newStats.length} | Stats Updated: ${updateStats.length}`;
-    }
-
-    return 'No stats added or updated';
-  }
-
-  @Authorized('ADMIN')
-  @Mutation(() => String)
-  async updateNflAthleteStatsPerWeek(
-    @Arg('season') season: string,
-    @Arg('lastWeekOfSeason') week: string
-  ): Promise<String> {
-    for (let curWeek = 1; curWeek <= Number(week); curWeek++) {
-      const { data, status } = await axios.get(
-        `${process.env.SPORTS_DATA_URL}nfl/stats/json/PlayerGameStatsByWeek/${season}/${curWeek}?key=${process.env.SPORTS_DATA_NFL_KEY}`
-      );
-
-      if (status === 200) {
-        const newStats: AthleteStat[] = [];
-        const updateStats: AthleteStat[] = [];
-
-        for (let athleteStat of data) {
-          const apiId: number = athleteStat['PlayerID'];
-          const curStat = await AthleteStat.findOne({
-            where: {
-              athlete: { apiId },
-              season: season,
-              week: curWeek.toString(),
-              type: AthleteStatType.WEEKLY,
-            },
-            relations: {
-              athlete: true,
-            },
-          });
-
-          const opponent = await Team.findOne({
-            where: { apiId: athleteStat['GlobalOpponentID'] },
-          });
-
-          if (curStat) {
-            // Update stats here
-            curStat.fantasyScore = athleteStat['FantasyPointsDraftKings'];
-            curStat.completion = athleteStat['PassingCompletionPercentage'];
-            curStat.carries = athleteStat['RushingAttempts'];
-            curStat.passingYards = athleteStat['PassingYards'];
-            curStat.rushingYards = athleteStat['RushingYards'];
-            curStat.receivingYards = athleteStat['ReceivingYards'];
-            curStat.interceptions = athleteStat['PassingInterceptions'];
-            curStat.passingTouchdowns = athleteStat['PassingTouchdowns'];
-            curStat.rushingTouchdowns = athleteStat['RushingTouchdowns'];
-            curStat.receivingTouchdowns = athleteStat['ReceivingTouchdowns'];
-            curStat.targets = athleteStat['ReceivingTargets'];
-            curStat.receptions = athleteStat['Receptions'];
-            curStat.played = athleteStat['Played'];
-            curStat.opponent = opponent;
-            updateStats.push(curStat);
-          } else {
-            const curAthlete = await Athlete.findOne({
-              where: { apiId },
-            });
-
-            if (curAthlete) {
-              newStats.push(
-                AthleteStat.create({
-                  athlete: curAthlete,
-                  season: season,
-                  week: curWeek.toString(),
-                  opponent: opponent,
-                  gameDate: new Date(athleteStat['GameDate']),
-                  type: AthleteStatType.WEEKLY,
-                  played: athleteStat['Played'],
-                  position: athleteStat['Position'],
-                  fantasyScore: athleteStat['FantasyPointsDraftKings'],
-                  completion: athleteStat['PassingCompletionPercentage'],
-                  carries: athleteStat['RushingAttempts'],
-                  passingYards: athleteStat['PassingYards'],
-                  rushingYards: athleteStat['RushingYards'],
-                  receivingYards: athleteStat['ReceivingYards'],
-                  passingTouchdowns: athleteStat['PassingTouchdowns'],
-                  interceptions: athleteStat['PassingInterceptions'],
-                  rushingTouchdowns: athleteStat['RushingTouchdowns'],
-                  receivingTouchdowns: athleteStat['ReceivingTouchdowns'],
-                  targets: athleteStat['ReceivingTargets'],
-                  receptions: athleteStat['Receptions'],
-                })
-              );
-            }
-          }
-        }
-
-        await AthleteStat.save([...newStats, ...updateStats], { chunk: 20 });
-
-        console.log(`Update NFL Athlete Stats Week ${curWeek}: FINISHED`);
-      }
-    }
-
-    return 'Finished updating all weekly stats for NFL';
   }
 }
