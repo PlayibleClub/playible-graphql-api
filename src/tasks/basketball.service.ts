@@ -811,7 +811,6 @@ export class BasketballService {
   @Interval(900000) // Runs every 15 mins
   async updateNbaAthleteStatsPerSeason() {
     this.logger.debug('Update NBA Athlete Stats: STARTED');
-    this.logger.debug('hello');
     const timeFrames = await axios.get(
       `${process.env.SPORTS_DATA_URL}nba/scores/json/CurrentSeason?key=${process.env.SPORTS_DATA_NBA_KEY}`
     );

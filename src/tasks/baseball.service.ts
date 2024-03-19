@@ -89,7 +89,7 @@ export class BaseballService {
   async runService() {
     this.logger.debug('Starting baseball service');
   }
-  @Timeout(1)
+  //@Timeout(1)
   async syncMlbData2() {
     const teamCount = await Team.count({
       where: { sport: SportType.MLB },
@@ -227,7 +227,7 @@ export class BaseballService {
     );
   }
 
-  @Timeout(300000)
+  //@Timeout(300000)
   async generateAthleteMlbAssets() {
     this.logger.debug('Generate Athlete MLB Assets: STARTED');
 
@@ -315,7 +315,7 @@ export class BaseballService {
     this.logger.debug('Generate Athlete MLB Assets: FINISHED');
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`);
   }
-  @Timeout(450000)
+  //@Timeout(450000)
   async generateAthleteMlbAssetsAnimation() {
     this.logger.debug('Generate Athlete MLB Assets Animation: STARTED');
 
@@ -409,7 +409,7 @@ export class BaseballService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`);
   }
 
-  @Timeout(600000)
+  //@Timeout(600000)
   async generateAthleteMlbAssetsPromo() {
     this.logger.debug('Generate Athlete MLB Assets Promo: STARTED');
 
@@ -524,7 +524,7 @@ export class BaseballService {
     }
   }
 
-  //@Timeout(750000)
+  @Timeout(750000)
   async generateAthleteMlbAssetsLocked() {
     this.logger.debug('Generate Athlete MLB Assets Locked: STARTED');
 
