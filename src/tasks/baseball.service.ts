@@ -227,7 +227,7 @@ export class BaseballService {
     );
   }
 
-  //@Timeout(300000)
+  @Timeout(300000)
   async generateAthleteMlbAssets() {
     this.logger.debug('Generate Athlete MLB Assets: STARTED');
 
@@ -300,7 +300,12 @@ export class BaseballService {
         if (err) {
           this.logger.error(err);
         } else {
-          athlete.nftImage = data['Location'];
+          let image = data['Location'];
+
+          athlete.nftImage = image.replace(
+            'playible-api-dev.s3.amazonaws.com',
+            'dev-images.playible.io'
+          );
 
           await Athlete.save(athlete);
         }
