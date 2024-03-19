@@ -227,7 +227,7 @@ export class BaseballService {
     );
   }
 
-  //@Timeout(300000)
+  @Timeout(300000)
   async generateAthleteMlbAssets() {
     this.logger.debug('Generate Athlete MLB Assets: STARTED');
 
@@ -301,11 +301,21 @@ export class BaseballService {
           this.logger.error(err);
         } else {
           let image = data['Location'];
-
-          athlete.nftImage = image.replace(
-            'playible-api-production.s3.amazonaws.com',
-            'images.playible.io'
-          );
+          if (image.contains('playible-api-production.s3.amazonaws.com')) {
+            athlete.nftImage = image.replace(
+              'playible-api-production.s3.amazonaws.com',
+              'images.playible.io'
+            );
+          } else if (
+            image.contains(
+              'playible-api-production.s3.ap-southeast-1.amazonaws.com'
+            )
+          ) {
+            athlete.nftImage = image.replace(
+              'playible-api-production.s3.ap-southeast-1.amazonaws.com',
+              'images.playible.io'
+            );
+          }
 
           await Athlete.save(athlete);
         }
@@ -315,7 +325,7 @@ export class BaseballService {
     this.logger.debug('Generate Athlete MLB Assets: FINISHED');
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`);
   }
-  //@Timeout(450000)
+  @Timeout(450000)
   async generateAthleteMlbAssetsAnimation() {
     this.logger.debug('Generate Athlete MLB Assets Animation: STARTED');
 
@@ -395,11 +405,21 @@ export class BaseballService {
           this.logger.error(err);
         } else {
           let image = data['Location'];
-
-          athlete.nftAnimation = image.replace(
-            'playible-api-production.s3.amazonaws.com',
-            'images.playible.io'
-          );
+          if (image.contains('playible-api-production.s3.amazonaws.com')) {
+            athlete.nftAnimation = image.replace(
+              'playible-api-production.s3.amazonaws.com',
+              'images.playible.io'
+            );
+          } else if (
+            image.contains(
+              'playible-api-production.s3.ap-southeast-1.amazonaws.com'
+            )
+          ) {
+            athlete.nftAnimation = image.replace(
+              'playible-api-production.s3.ap-southeast-1.amazonaws.com',
+              'images.playible.io'
+            );
+          }
           await Athlete.save(athlete);
         }
       });
@@ -409,7 +429,7 @@ export class BaseballService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`);
   }
 
-  //@Timeout(600000)
+  @Timeout(600000)
   async generateAthleteMlbAssetsPromo() {
     this.logger.debug('Generate Athlete MLB Assets Promo: STARTED');
 
@@ -482,10 +502,21 @@ export class BaseballService {
           this.logger.error(err);
         } else {
           let image = data['Location'];
-          athlete.nftImagePromo = image.replace(
-            'playible-api-production.s3.amazonaws.com',
-            'images.playible.io'
-          );
+          if (image.contains('playible-api-production.s3.amazonaws.com')) {
+            athlete.nftImagePromo = image.replace(
+              'playible-api-production.s3.amazonaws.com',
+              'images.playible.io'
+            );
+          } else if (
+            image.contains(
+              'playible-api-production.s3.ap-southeast-1.amazonaws.com'
+            )
+          ) {
+            athlete.nftImagePromo = image.replace(
+              'playible-api-production.s3.ap-southeast-1.amazonaws.com',
+              'images.playible.io'
+            );
+          }
           await Athlete.save(athlete);
         }
       });
@@ -597,10 +628,21 @@ export class BaseballService {
           this.logger.error(err);
         } else {
           let image = data['Location'];
-          athlete.nftImageLocked = image.replace(
-            'playible-api-production.s3.amazonaws.com',
-            'images.playible.io'
-          );
+          if (image.contains('playible-api-production.s3.amazonaws.com')) {
+            athlete.nftImageLocked = image.replace(
+              'playible-api-production.s3.amazonaws.com',
+              'images.playible.io'
+            );
+          } else if (
+            image.contains(
+              'playible-api-production.s3.ap-southeast-1.amazonaws.com'
+            )
+          ) {
+            athlete.nftImageLocked = image.replace(
+              'playible-api-production.s3.ap-southeast-1.amazonaws.com',
+              'images.playible.io'
+            );
+          }
           await Athlete.save(athlete);
         }
       });
