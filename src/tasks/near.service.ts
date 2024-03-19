@@ -90,13 +90,13 @@ export class NearService {
   async runService() {
     this.logger.debug('Starting NEAR service');
   }
-  //@Timeout(1)
+  @Timeout(1)
   async runNearLakeFrameworkIndexer() {
     const lakeConfig: types.LakeConfig = {
       //credentials
       s3BucketName: 'near-lake-data-mainnet',
       s3RegionName: 'eu-central-1',
-      startBlockHeight: 107814023, // for testnet
+      startBlockHeight: 115016224, // for testnet
       //startBlockHeight: 97856450//97543661//97856450, //97239921 old
     };
     const nearGameMainnetContracts = [

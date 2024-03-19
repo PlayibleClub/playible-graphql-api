@@ -89,7 +89,7 @@ export class BaseballService {
   async runService() {
     this.logger.debug('Starting baseball service');
   }
-  //@Timeout(1)
+  @Timeout(1)
   async syncMlbData2() {
     const teamCount = await Team.count({
       where: { sport: SportType.MLB },
@@ -303,8 +303,8 @@ export class BaseballService {
           let image = data['Location'];
 
           athlete.nftImage = image.replace(
-            'playible-api-dev.s3.amazonaws.com',
-            'dev-images.playible.io'
+            'playible-api-production.s3.amazonaws.com',
+            'images.playible.io'
           );
 
           await Athlete.save(athlete);
@@ -315,7 +315,7 @@ export class BaseballService {
     this.logger.debug('Generate Athlete MLB Assets: FINISHED');
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`);
   }
-  //@Timeout(450000)
+  @Timeout(450000)
   async generateAthleteMlbAssetsAnimation() {
     this.logger.debug('Generate Athlete MLB Assets Animation: STARTED');
 
@@ -394,7 +394,12 @@ export class BaseballService {
         if (err) {
           this.logger.error(err);
         } else {
-          athlete.nftAnimation = data['Location'];
+          let image = data['Location'];
+
+          athlete.nftAnimation = image.replace(
+            'playible-api-production.s3.amazonaws.com',
+            'images.playible.io'
+          );
           await Athlete.save(athlete);
         }
       });
@@ -404,7 +409,7 @@ export class BaseballService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`);
   }
 
-  //@Timeout(600000)
+  @Timeout(600000)
   async generateAthleteMlbAssetsPromo() {
     this.logger.debug('Generate Athlete MLB Assets Promo: STARTED');
 
@@ -476,7 +481,11 @@ export class BaseballService {
         if (err) {
           this.logger.error(err);
         } else {
-          athlete.nftImagePromo = data['Location'];
+          let image = data['Location'];
+          athlete.nftImagePromo = image.replace(
+            'playible-api-production.s3.amazonaws.com',
+            'images.playible.io'
+          );
           await Athlete.save(athlete);
         }
       });
@@ -587,7 +596,11 @@ export class BaseballService {
         if (err) {
           this.logger.error(err);
         } else {
-          athlete.nftImageLocked = data['Location'];
+          let image = data['Location'];
+          athlete.nftImageLocked = image.replace(
+            'playible-api-production.s3.amazonaws.com',
+            'images.playible.io'
+          );
           await Athlete.save(athlete);
         }
       });
