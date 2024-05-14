@@ -646,6 +646,14 @@ export class AthleteResolver {
       case SportType.NBA_PROMO:
         athleteIds = NBA_ATHLETE_PROMO_IDS;
         contractABI = JSON.stringify(promoOpenPackStorageABI);
+        break;
+      case SportType.MLB:
+        athleteIds = MLB_ATHLETE_IDS;
+        contractABI = JSON.stringify(regularOpenPackStorageABI);
+        break;
+      case SportType.MLB_PROMO:
+        athleteIds = MLB_ATHLETE_PROMO_IDS;
+        contractABI = JSON.stringify(promoOpenPackStorageABI);
     }
     //const network = "maticmum"; // polygon testnet
     const url = 'https://sepolia.base.org'; // Base Testnet
