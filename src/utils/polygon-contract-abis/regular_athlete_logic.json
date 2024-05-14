@@ -1,5 +1,10 @@
 [
 	{
+		"inputs": [],
+		"stateMutability": "nonpayable",
+		"type": "constructor"
+	},
+	{
 		"anonymous": false,
 		"inputs": [
 			{
@@ -154,6 +159,297 @@
 		],
 		"name": "URI",
 		"type": "event"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "account",
+				"type": "address"
+			},
+			{
+				"internalType": "uint256",
+				"name": "id",
+				"type": "uint256"
+			}
+		],
+		"name": "balanceOf",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address[]",
+				"name": "accounts",
+				"type": "address[]"
+			},
+			{
+				"internalType": "uint256[]",
+				"name": "ids",
+				"type": "uint256[]"
+			}
+		],
+		"name": "balanceOfBatch",
+		"outputs": [
+			{
+				"internalType": "uint256[]",
+				"name": "",
+				"type": "uint256[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "a",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "b",
+				"type": "string"
+			}
+		],
+		"name": "compareStrings",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "pure",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "tokenId",
+				"type": "uint256"
+			}
+		],
+		"name": "getExtraMetadataAndUri",
+		"outputs": [
+			{
+				"components": [
+					{
+						"internalType": "uint256",
+						"name": "tokenId",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint8",
+						"name": "tokenType",
+						"type": "uint8"
+					},
+					{
+						"internalType": "uint256",
+						"name": "restrictedUntil",
+						"type": "uint256"
+					},
+					{
+						"internalType": "string",
+						"name": "tokenURI",
+						"type": "string"
+					}
+				],
+				"internalType": "struct AthleteLogic.TokenReturn",
+				"name": "",
+				"type": "tuple"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "ownerAddr",
+				"type": "address"
+			},
+			{
+				"internalType": "string[]",
+				"name": "positions",
+				"type": "string[]"
+			},
+			{
+				"internalType": "string",
+				"name": "team",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "name",
+				"type": "string"
+			}
+		],
+		"name": "getFilteredTokenSupplyForOwner",
+		"outputs": [
+			{
+				"internalType": "uint256",
+				"name": "",
+				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "ownerAddr",
+				"type": "address"
+			},
+			{
+				"internalType": "string[]",
+				"name": "positions",
+				"type": "string[]"
+			},
+			{
+				"internalType": "string",
+				"name": "team",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "name",
+				"type": "string"
+			},
+			{
+				"internalType": "uint256[]",
+				"name": "indexAndLimit",
+				"type": "uint256[]"
+			},
+			{
+				"internalType": "uint256",
+				"name": "supply",
+				"type": "uint256"
+			}
+		],
+		"name": "getFilteredTokensForOwnerPagination",
+		"outputs": [
+			{
+				"components": [
+					{
+						"internalType": "uint256",
+						"name": "tokenId",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint8",
+						"name": "tokenType",
+						"type": "uint8"
+					},
+					{
+						"internalType": "uint256",
+						"name": "restrictedUntil",
+						"type": "uint256"
+					},
+					{
+						"internalType": "string",
+						"name": "tokenURI",
+						"type": "string"
+					}
+				],
+				"internalType": "struct AthleteLogic.TokenReturn[]",
+				"name": "",
+				"type": "tuple[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256[]",
+				"name": "tokenIds",
+				"type": "uint256[]"
+			}
+		],
+		"name": "getTokenDataBatch",
+		"outputs": [
+			{
+				"components": [
+					{
+						"internalType": "uint256",
+						"name": "tokenId",
+						"type": "uint256"
+					},
+					{
+						"internalType": "uint8",
+						"name": "tokenType",
+						"type": "uint8"
+					},
+					{
+						"internalType": "uint256",
+						"name": "restrictedUntil",
+						"type": "uint256"
+					},
+					{
+						"internalType": "string",
+						"name": "tokenURI",
+						"type": "string"
+					}
+				],
+				"internalType": "struct AthleteLogic.TokenReturn[]",
+				"name": "",
+				"type": "tuple[]"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "account",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
+				"name": "operator",
+				"type": "address"
+			}
+		],
+		"name": "isApprovedForAll",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [],
+		"name": "owner",
+		"outputs": [
+			{
+				"internalType": "address",
+				"name": "",
+				"type": "address"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
 	},
 	{
 		"inputs": [],
@@ -342,6 +638,25 @@
 	{
 		"inputs": [
 			{
+				"internalType": "bytes4",
+				"name": "interfaceId",
+				"type": "bytes4"
+			}
+		],
+		"name": "supportsInterface",
+		"outputs": [
+			{
+				"internalType": "bool",
+				"name": "",
+				"type": "bool"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
 				"internalType": "address",
 				"name": "newOwner",
 				"type": "address"
@@ -382,6 +697,19 @@
 		"inputs": [
 			{
 				"internalType": "address",
+				"name": "_gameStorageAddr",
+				"type": "address"
+			}
+		],
+		"name": "updateGameStorageAddr",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
 				"name": "_openPackAddr",
 				"type": "address"
 			}
@@ -399,9 +727,107 @@
 				"type": "address"
 			},
 			{
+				"internalType": "uint256",
+				"name": "tokenId",
+				"type": "uint256"
+			},
+			{
+				"internalType": "string",
+				"name": "team",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "position",
+				"type": "string"
+			}
+		],
+		"name": "updateTeamAndPositionOfToken",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "tokenId",
+				"type": "uint256"
+			},
+			{
+				"components": [
+					{
+						"internalType": "uint256",
+						"name": "tokenId",
+						"type": "uint256"
+					},
+					{
+						"internalType": "string",
+						"name": "athleteId",
+						"type": "string"
+					},
+					{
+						"internalType": "string",
+						"name": "symbol",
+						"type": "string"
+					},
+					{
+						"internalType": "string",
+						"name": "name",
+						"type": "string"
+					},
+					{
+						"internalType": "string",
+						"name": "team",
+						"type": "string"
+					},
+					{
+						"internalType": "string",
+						"name": "position",
+						"type": "string"
+					},
+					{
+						"internalType": "uint8",
+						"name": "tokenType",
+						"type": "uint8"
+					},
+					{
+						"internalType": "uint256",
+						"name": "restrictedUntil",
+						"type": "uint256"
+					},
+					{
+						"internalType": "bool",
+						"name": "valid",
+						"type": "bool"
+					}
+				],
+				"internalType": "struct IAthlete.TokenExtraMetadata",
+				"name": "extra",
+				"type": "tuple"
+			}
+		],
+		"name": "updateTokenExtraMetadata",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "address",
+				"name": "ownerAddr",
+				"type": "address"
+			},
+			{
 				"internalType": "uint256[]",
 				"name": "tokenIds",
 				"type": "uint256[]"
+			},
+			{
+				"internalType": "uint256",
+				"name": "gameId",
+				"type": "uint256"
 			},
 			{
 				"internalType": "uint256",
@@ -447,321 +873,6 @@
 			}
 		],
 		"stateMutability": "nonpayable",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"stateMutability": "nonpayable",
-		"type": "constructor"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "account",
-				"type": "address"
-			},
-			{
-				"internalType": "uint256",
-				"name": "id",
-				"type": "uint256"
-			}
-		],
-		"name": "balanceOf",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address[]",
-				"name": "accounts",
-				"type": "address[]"
-			},
-			{
-				"internalType": "uint256[]",
-				"name": "ids",
-				"type": "uint256[]"
-			}
-		],
-		"name": "balanceOfBatch",
-		"outputs": [
-			{
-				"internalType": "uint256[]",
-				"name": "",
-				"type": "uint256[]"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "string",
-				"name": "a",
-				"type": "string"
-			},
-			{
-				"internalType": "string",
-				"name": "b",
-				"type": "string"
-			}
-		],
-		"name": "compareStrings",
-		"outputs": [
-			{
-				"internalType": "bool",
-				"name": "",
-				"type": "bool"
-			}
-		],
-		"stateMutability": "pure",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "tokenId",
-				"type": "uint256"
-			}
-		],
-		"name": "getExtraMetadataAndUri",
-		"outputs": [
-			{
-				"components": [
-					{
-						"internalType": "uint256",
-						"name": "tokenId",
-						"type": "uint256"
-					},
-					{
-						"internalType": "uint8",
-						"name": "tokenType",
-						"type": "uint8"
-					},
-					{
-						"internalType": "uint256",
-						"name": "restrictedUntil",
-						"type": "uint256"
-					},
-					{
-						"internalType": "string",
-						"name": "tokenURI",
-						"type": "string"
-					}
-				],
-				"internalType": "struct AthleteLogic.TokenReturn",
-				"name": "",
-				"type": "tuple"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "ownerAddr",
-				"type": "address"
-			},
-			{
-				"internalType": "string[]",
-				"name": "positions",
-				"type": "string[]"
-			},
-			{
-				"internalType": "string",
-				"name": "team",
-				"type": "string"
-			},
-			{
-				"internalType": "string",
-				"name": "name",
-				"type": "string"
-			},
-			{
-				"internalType": "uint256[]",
-				"name": "indexAndLimit",
-				"type": "uint256[]"
-			},
-			{
-				"internalType": "uint256",
-				"name": "supply",
-				"type": "uint256"
-			}
-		],
-		"name": "getFilteredTokensForOwnerPagination",
-		"outputs": [
-			{
-				"components": [
-					{
-						"internalType": "uint256",
-						"name": "tokenId",
-						"type": "uint256"
-					},
-					{
-						"internalType": "uint8",
-						"name": "tokenType",
-						"type": "uint8"
-					},
-					{
-						"internalType": "uint256",
-						"name": "restrictedUntil",
-						"type": "uint256"
-					},
-					{
-						"internalType": "string",
-						"name": "tokenURI",
-						"type": "string"
-					}
-				],
-				"internalType": "struct AthleteLogic.TokenReturn[]",
-				"name": "",
-				"type": "tuple[]"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "ownerAddr",
-				"type": "address"
-			},
-			{
-				"internalType": "string[]",
-				"name": "positions",
-				"type": "string[]"
-			},
-			{
-				"internalType": "string",
-				"name": "team",
-				"type": "string"
-			},
-			{
-				"internalType": "string",
-				"name": "name",
-				"type": "string"
-			}
-		],
-		"name": "getFilteredTokenSupplyForOwner",
-		"outputs": [
-			{
-				"internalType": "uint256",
-				"name": "",
-				"type": "uint256"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256[]",
-				"name": "tokenIds",
-				"type": "uint256[]"
-			}
-		],
-		"name": "getTokenDataBatch",
-		"outputs": [
-			{
-				"components": [
-					{
-						"internalType": "uint256",
-						"name": "tokenId",
-						"type": "uint256"
-					},
-					{
-						"internalType": "uint8",
-						"name": "tokenType",
-						"type": "uint8"
-					},
-					{
-						"internalType": "uint256",
-						"name": "restrictedUntil",
-						"type": "uint256"
-					},
-					{
-						"internalType": "string",
-						"name": "tokenURI",
-						"type": "string"
-					}
-				],
-				"internalType": "struct AthleteLogic.TokenReturn[]",
-				"name": "",
-				"type": "tuple[]"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "address",
-				"name": "account",
-				"type": "address"
-			},
-			{
-				"internalType": "address",
-				"name": "operator",
-				"type": "address"
-			}
-		],
-		"name": "isApprovedForAll",
-		"outputs": [
-			{
-				"internalType": "bool",
-				"name": "",
-				"type": "bool"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [],
-		"name": "owner",
-		"outputs": [
-			{
-				"internalType": "address",
-				"name": "",
-				"type": "address"
-			}
-		],
-		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "bytes4",
-				"name": "interfaceId",
-				"type": "bytes4"
-			}
-		],
-		"name": "supportsInterface",
-		"outputs": [
-			{
-				"internalType": "bool",
-				"name": "",
-				"type": "bool"
-			}
-		],
-		"stateMutability": "view",
 		"type": "function"
 	},
 	{
