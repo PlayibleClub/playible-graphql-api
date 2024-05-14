@@ -620,6 +620,149 @@ export class AthleteResolver {
     }
     return 0;
   }
+
+  @Authorized('ADMIN')
+  @Mutation(() => Number)
+  async addStarterAthletesToOpenPackContractBase(
+    @Arg('sportType') sportType: SportType,
+    @Arg('isPromo') isPromo: boolean = false,
+    @Arg('contractAddress') contractAddress: string
+  ): Promise<Number> {
+    let athleteIds: number[] = [];
+    let contractABI: string = '';
+    switch (sportType) {
+      case SportType.NFL:
+        athleteIds = NFL_ATHLETE_IDS;
+        contractABI = JSON.stringify(regularOpenPackStorageABI);
+        break;
+      case SportType.NFL_PROMO:
+        athleteIds = NFL_ATHLETE_PROMO_IDS;
+        contractABI = JSON.stringify(promoOpenPackStorageABI);
+        break;
+      case SportType.NBA:
+        athleteIds = NBA_ATHLETE_IDS;
+        contractABI = JSON.stringify(regularOpenPackStorageNbaABI);
+        break;
+      case SportType.NBA_PROMO:
+        athleteIds = NBA_ATHLETE_PROMO_IDS;
+        contractABI = JSON.stringify(promoOpenPackStorageABI);
+    }
+    //const network = "maticmum"; // polygon testnet
+    const url = 'https://sepolia.base.org'; // Base Testnet
+    const network = 'maticmum'; // Polygon zkEVM Testnet ChainId
+    try {
+      // const provider = new ethers.AlchemyProvider(
+      //   network,
+      //   //process.env.ALCHEMY_ZKEVM_TESTNET_API_KEY
+      //   process.env.ALCHEMY_POLYGON_API_KEY
+      // );
+      const provider = new ethers.JsonRpcProvider(url);
+      const signer = new ethers.Wallet(
+        process.env.METAMASK_PRIVATE_KEY ?? '',
+        provider
+      );
+      const contract = new ethers.Contract(
+        contractAddress,
+        contractABI,
+        signer
+      );
+
+      const athletes = (
+        await Athlete.find({
+          where: { apiId: In(athleteIds) },
+          order: { id: 'ASC' },
+          relations: { team: true },
+        })
+      ).map((athlete) => {
+        if (isPromo) {
+          const promoIpfs: IPFSMetadata = {
+            name: `${athlete.firstName} ${athlete.lastName} Token`,
+            description: 'Playible Athlete Promotional Token',
+            image: athlete.tokenPromoURI,
+            properties: {
+              athleteId: athlete.id.toString(),
+              symbol: athlete.apiId.toString(),
+              name: `${athlete.firstName} ${athlete.lastName}`,
+              team: athlete.team.key,
+              position: athlete.position,
+              release: '1',
+            },
+          };
+          const soulboundIpfs: IPFSMetadata = {
+            name: `${athlete.firstName} ${athlete.lastName} Token`,
+            description: 'Playible Athlete Soulbound Token',
+            image: athlete.tokenSoulboundURI,
+            properties: {
+              athleteId: athlete.id.toString(),
+              symbol: athlete.apiId.toString(),
+              name: `${athlete.firstName} ${athlete.lastName}`,
+              team: athlete.team.key,
+              position: athlete.position,
+              release: '1',
+            },
+          };
+          return {
+            athleteId: athlete.id.toString(),
+            soulboundTokenUri: JSON.stringify(soulboundIpfs),
+            singleUseTokenUri: JSON.stringify(promoIpfs),
+            symbol: athlete.apiId.toString(),
+            name: `${athlete.firstName} ${athlete.lastName}`,
+            team: athlete.team.key,
+            position: athlete.position,
+          };
+        } else {
+          const ipfs: IPFSMetadata = {
+            name: `${athlete.firstName} ${athlete.lastName} Token`,
+            description: 'Playible Athlete Token',
+            image: athlete.tokenURI,
+            properties: {
+              athleteId: athlete.id.toString(),
+              symbol: athlete.apiId.toString(),
+              name: `${athlete.firstName} ${athlete.lastName}`,
+              team: athlete.team.key,
+              position: athlete.position,
+              release: '1',
+            },
+          };
+          return {
+            athleteId: athlete.id.toString(),
+            //tokenUri: athlete.tokenURI,
+            tokenUri: JSON.stringify(ipfs),
+            symbol: athlete.apiId.toString(),
+            name: `${athlete.firstName} ${athlete.lastName}`,
+            team: athlete.team.key,
+            position: athlete.position,
+          };
+        }
+      });
+
+      const chunkifiedAthletes = chunkify(athletes, 33, false);
+      console.log(chunkifiedAthletes.length);
+      for (const chunk of chunkifiedAthletes) {
+        console.log('Executing add athletes...');
+        try {
+          const receipt = await contract.executeAddAthletes(chunk, {
+            from: process.env.METAMASK_WALLET_ADDRESS,
+            gasPrice: 1500000000, //for testnet gas
+          });
+        } catch (e) {
+          console.log(e);
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 15000));
+      }
+      // await contract.executeAddAthletes(athletes, {
+      //   from: process.env.METAMASK_WALLET_ADDRESS,
+      //   gasPrice: 1500000000,
+      //   //10000000000 10 gwei
+      // });
+      //console.log(JSON.stringify(athletes));
+      return athletes.length;
+    } catch (error) {
+      console.log(error);
+    }
+    return 0;
+  }
   @Authorized('ADMIN')
   @Mutation(() => Number)
   async addStarterAthletesToOpenPackContract(
