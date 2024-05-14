@@ -227,7 +227,7 @@ export class BaseballService {
     );
   }
 
-  @Timeout(300000)
+  //@Timeout(300000)
   async generateAthleteMlbAssets() {
     this.logger.debug('Generate Athlete MLB Assets: STARTED');
 
