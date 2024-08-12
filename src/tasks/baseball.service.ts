@@ -527,7 +527,7 @@ export class BaseballService {
   }
 
   //@Timeout(1)
-  @Interval(86400000) //runs every 1 day
+  //@Interval(86400000) //runs every 1 day
   async updateMlbAthleteHeadshots() {
     this.logger.debug('Update Athlete MLB Headshots: STARTED');
 
@@ -652,7 +652,7 @@ export class BaseballService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`);
   }
 
-  @Interval(3600000) // runs every 1 hour
+  //@Interval(3600000) // runs every 1 hour
   async updateMlbAthleteInjuryStatus() {
     this.logger.debug('Update MLB Athlete Injury Status: STARTED');
 
@@ -679,7 +679,7 @@ export class BaseballService {
     }
   }
 
-  @Interval(900000) // runs every 15 minutes
+  //@Interval(900000) // runs every 15 minutes
   async updateMlbAthleteStatsPerSeason() {
     this.logger.debug('Update MLB Athlete Stats (Season): STARTED');
 
@@ -846,7 +846,7 @@ export class BaseballService {
     }
   }
   //@Timeout(1)
-  @Interval(300000) // runs every 5 minutes
+  //@Interval(300000) // runs every 5 minutes
   async updateMlbAthleteStatsPerDay() {
     this.logger.debug('Update MLB Athlete Stats Per Day: STARTED');
 
@@ -1027,7 +1027,7 @@ export class BaseballService {
       }
     }
   }
-  @Interval(3600000) // runs every 1 hour
+  //@Interval(3600000) // runs every 1 hour
   async updateMlbCurrentSeason() {
     this.logger.debug('Update MLB Current Season: STARTED');
 
@@ -1071,7 +1071,7 @@ export class BaseballService {
       this.logger.debug('Update MLB Current Season: SPORTS DATA ERROR');
     }
   }
-  @Interval(4200000) // runs every 1 hour 20 minutes
+  //@Interval(4200000) // runs every 1 hour 20 minutes
   async updateMlbSchedules() {
     this.logger.debug('UPDATE MLB Schedules: STARTED');
 

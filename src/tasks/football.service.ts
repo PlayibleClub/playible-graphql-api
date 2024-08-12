@@ -904,7 +904,7 @@ export class FootballService {
   }
 
   //@Timeout(1)
-  @Interval(86400000) //runs every 1 day
+  //@Interval(86400000) //runs every 1 day
   async updateNflAthleteHeadshots() {
     this.logger.debug('Update Athlete NFL Headshots: STARTED');
 
@@ -932,7 +932,7 @@ export class FootballService {
     }
   }
 
-  @Interval(900000) // Runs every 15 mins
+  //@Interval(900000) // Runs every 15 mins
   async updateNflAthleteStatsPerSeason() {
     this.logger.debug('Update NFL Athlete Stats: STARTED');
 
@@ -1045,7 +1045,7 @@ export class FootballService {
       this.logger.error('NFL Timeframes Data: SPORTS DATA ERROR');
     }
   }
-  @Interval(300000) // Runs every 5 mins
+  //@Interval(300000) // Runs every 5 mins
   async updateNflAthleteStatsPerWeek() {
     this.logger.debug('Update NFL Athlete Stats Per Week: STARTED');
 
@@ -1162,7 +1162,7 @@ export class FootballService {
       this.logger.error('NFL Timeframes Data: SPORTS DATA ERROR');
     }
   }
-  @Interval(3600000) //runs every 1 hour
+  //@Interval(3600000) //runs every 1 hour
   async updateNflAthleteInjuryStatus() {
     this.logger.debug('Update NFL Athlete Injury Status: STARTED');
 
@@ -1434,7 +1434,7 @@ export class FootballService {
     }
   }
 
-  @Interval(259200000) //Runs every 3 days
+  //@Interval(259200000) //Runs every 3 days
   async updateNflTimeframe() {
     this.logger.debug('Update NFL Timeframe: STARTED');
 
@@ -1509,7 +1509,7 @@ export class FootballService {
     }
   }
 
-  @Interval(4200000)
+  //@Interval(4200000)
   async updateNflSchedules() {
     this.logger.debug('UPDATE NFL Schedules: STARTED');
 

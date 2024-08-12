@@ -674,7 +674,7 @@ export class BasketballService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`);
   }
   //@Timeout(1)
-  @Interval(86400000) //runs every 1 day
+  //@Interval(86400000) //runs every 1 day
   async updateNbaAthleteHeadshots() {
     this.logger.debug('Update Athlete NBA Headshots: STARTED');
 
@@ -780,7 +780,7 @@ export class BasketballService {
     this.logger.debug(`TOTAL ATHLETES: ${athletes.length}`);
   }
 
-  @Interval(3600000) //runs every 1 hour
+  //@Interval(3600000) //runs every 1 hour
   async updateNbaAthleteInjuryStatus() {
     this.logger.debug('Update NBA Athlete Injury Status: STARTED');
 
@@ -808,7 +808,7 @@ export class BasketballService {
     }
   }
   //@Timeout(1)
-  @Interval(900000) // Runs every 15 mins
+  //@Interval(900000) // Runs every 15 mins
   async updateNbaAthleteStatsPerSeason() {
     this.logger.debug('Update NBA Athlete Stats: STARTED');
     const timeFrames = await axios.get(
@@ -946,7 +946,7 @@ export class BasketballService {
   }
 
   //@Timeout(1)
-  @Interval(300000) // Runs every 5 mins
+  //@Interval(300000) // Runs every 5 mins
   async updateNbaAthleteStatsPerDay() {
     this.logger.debug('Update NBA Athlete Stats Per Day: STARTED');
 
@@ -1240,7 +1240,7 @@ export class BasketballService {
   }
 
   //@Timeout(1)
-  @Interval(3600000) //Runs every 1 hour
+  //@Interval(3600000) //Runs every 1 hour
   async updateNbaCurrentSeason() {
     this.logger.debug('Update NBA Current Season: STARTED');
 
@@ -1288,7 +1288,7 @@ export class BasketballService {
     }
   }
 
-  @Interval(4200000) // Runs every 1 hour 10 minutes
+  //@Interval(4200000) // Runs every 1 hour 10 minutes
   //@Timeout(1)
   async updateNbaSchedules() {
     this.logger.debug('UPDATE NBA Schedules: STARTED');
